@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <AssemblyName>TreasureRun</AssemblyName>
+    <RootNamespace>TreasureRun</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <Version>0.1.0</Version>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <!-- Override in Directory.Build.user.props (gitignored) if the game lives elsewhere. -->
+    <GamePath Condition="'$(GamePath)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Rogue Tower</GamePath>
+    <ManagedPath>$(GamePath)\Rogue Tower_Data\Managed</ManagedPath>
+    <BepInExPath>$(GamePath)\BepInEx</BepInExPath>
+    <PluginDeployPath>$(BepInExPath)\plugins\TreasureRun</PluginDeployPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.2" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="BepInEx" HintPath="$(BepInExPath)\core\BepInEx.dll" Private="false" />
+    <Reference Include="0Harmony" HintPath="$(BepInExPath)\core\0Harmony.dll" Private="false" />
+    <Reference Include="Assembly-CSharp" HintPath="$(ManagedPath)\Assembly-CSharp.dll" Private="false" Publicize="true" />
+    <Reference Include="UnityEngine" HintPath="$(ManagedPath)\UnityEngine.dll" Private="false" />
+    <Reference Include="UnityEngine.CoreModule" HintPath="$(ManagedPath)\UnityEngine.CoreModule.dll" Private="false" />
+    <Reference Include="UnityEngine.PhysicsModule" HintPath="$(ManagedPath)\UnityEngine.PhysicsModule.dll" Private="false" />
+    <Reference Include="UnityEngine.IMGUIModule" HintPath="$(ManagedPath)\UnityEngine.IMGUIModule.dll" Private="false" />
+    <Reference Include="UnityEngine.InputLegacyModule" HintPath="$(ManagedPath)\UnityEngine.InputLegacyModule.dll" Private="false" />
+    <Reference Include="UnityEngine.TextRenderingModule" HintPath="$(ManagedPath)\UnityEngine.TextRenderingModule.dll" Private="false" />
+    <Reference Include="UnityEngine.UI" HintPath="$(ManagedPath)\UnityEngine.UI.dll" Private="false" />
+    <Reference Include="UnityEngine.UIModule" HintPath="$(ManagedPath)\UnityEngine.UIModule.dll" Private="false" />
+    <Reference Include="Newtonsoft.Json" HintPath="$(ManagedPath)\Newtonsoft.Json.dll" Private="false" />
+  </ItemGroup>
+
+  <Target Name="DeployPlugin" AfterTargets="Build" Condition="Exists('$(BepInExPath)')">
+    <MakeDir Directories="$(PluginDeployPath)" />
+    <Copy SourceFiles="$(TargetPath);$(TargetDir)$(TargetName).pdb" DestinationFolder="$(PluginDeployPath)" SkipUnchangedFiles="true" />
+    <Message Importance="high" Text="Deployed $(TargetFileName) -> $(PluginDeployPath)" />
+  </Target>
+
+</Project>

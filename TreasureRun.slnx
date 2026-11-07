@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/TreasureRun/TreasureRun.csproj" />
+  </Folder>
+</Solution>
