@@ -22,6 +22,10 @@ namespace TreasureRun
             Log = Logger;
             ModConfig.Bind(Config);
 
+            Treasures.TreasureRegistry.RegisterAll();
+            Treasures.TreasureInventory.Initialize();
+            TreasureOfferUI.Initialize();
+
             harmony = new Harmony(Guid);
             harmony.PatchAll(typeof(Plugin).Assembly);
 
@@ -30,6 +34,7 @@ namespace TreasureRun
             UnityEngine.Object.DontDestroyOnLoad(host);
             host.hideFlags = UnityEngine.HideFlags.HideAndDontSave;
             host.AddComponent<DevHud>();
+            host.AddComponent<DebugTools>();
 
             Log.LogInfo($"{Name} {Version} loaded, {System.Linq.Enumerable.Count(harmony.GetPatchedMethods())} methods patched.");
         }

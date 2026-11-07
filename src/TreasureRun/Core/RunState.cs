@@ -17,7 +17,21 @@ namespace TreasureRun.Core
         public string StartedUtc;
 
         public RunRandom Rng;
+
+        /// <summary>Treasure ids in acquisition order.</summary>
         public List<string> OwnedTreasures = new List<string>();
+
+        /// <summary>Extra luck rolls per <see cref="LuckCategory"/> name (positive = advantage, negative = disadvantage).</summary>
+        public Dictionary<string, int> LuckBonus = new Dictionary<string, int>();
+
+        /// <summary>Treasure offers shown since the last one containing Epic or better (pity timer).</summary>
+        public int OffersSinceEpicOrBetter;
+
+        /// <summary>Generic per-treasure state, e.g. "second_wind.used" = 1.</summary>
+        public Dictionary<string, int> Counters = new Dictionary<string, int>();
+
+        public int GetCounter(string key) => Counters.TryGetValue(key, out int v) ? v : 0;
+        public void SetCounter(string key, int value) => Counters[key] = value;
 
         public static RunState CreateNew(int gameMode, bool monsterMode)
         {
