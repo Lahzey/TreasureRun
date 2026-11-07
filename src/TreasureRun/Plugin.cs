@@ -1,6 +1,8 @@
 using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
+using TreasureRun.Core;
+using TreasureRun.UI;
 
 namespace TreasureRun
 {
@@ -18,14 +20,18 @@ namespace TreasureRun
         private void Awake()
         {
             Log = Logger;
+            ModConfig.Bind(Config);
+
             harmony = new Harmony(Guid);
             harmony.PatchAll(typeof(Plugin).Assembly);
-            Log.LogInfo($"{Name} {Version} loaded, {System.Linq.Enumerable.Count(harmony.GetPatchedMethods())} methods patched.");
-        }
 
-        private void OnDestroy()
-        {
-            harmony?.UnpatchSelf();
+            // Own persistent host object: some games destroy BepInEx's manager object on scene load.
+            var host = new UnityEngine.GameObject("TreasureRun.Host");
+            UnityEngine.Object.DontDestroyOnLoad(host);
+            host.hideFlags = UnityEngine.HideFlags.HideAndDontSave;
+            host.AddComponent<DevHud>();
+
+            Log.LogInfo($"{Name} {Version} loaded, {System.Linq.Enumerable.Count(harmony.GetPatchedMethods())} methods patched.");
         }
     }
 }

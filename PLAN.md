@@ -147,7 +147,7 @@ enum Rarity { Common, Uncommon, Rare, Epic, Legendary, Mythical }
 | # | Milestone |
 |---|---|
 | **M0 Setup** | BepInEx + UnityExplorer installed, git repo, plugin skeleton that logs on load |
-| **M1 Mode toggle** | "Treasure Run" toggle in PlayMenu; `RunState` lifecycle |
+| **M1 Mode toggle** | "Treasure Run" toggle in PlayMenu, above the lane buttons; `RunState` lifecycle. Later: swap the menu background (`Canvas/BackgroundImage` in MainMenu) while the toggle is on |
 | **M2 First playable** | Chest → 1-of-3 treasure choice (reusing the card panel), ~10 simple treasures, rarity colors, `Luck` service, debug grant hotkey |
 | **M3 Level-up rework** | Card whitelist + treasure-per-slot chance |
 | **M4 Framework** | `GameEvents`, stat modifier layer, exclusion groups, pity, inventory bar with tooltips, ~50 treasures |
