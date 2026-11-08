@@ -21,6 +21,7 @@ namespace TreasureRun.Patches
             if (!TreasureRunMode.Active) return;
             CardPanel.Capture(__instance);
             CardPool.Build(__instance);
+            InventoryBar.Create(__instance);
         }
 
         /// <summary>Opening a chest: one treasure offer per drop instead of one card draw per drop.</summary>

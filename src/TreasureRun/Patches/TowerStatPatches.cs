@@ -6,69 +6,55 @@ using TreasureRun.Treasures;
 namespace TreasureRun.Patches
 {
     /// <summary>
-    /// Stat modifiers applied on top of the vanilla tower stat calculation (first step towards the M4 stat layer).
-    /// Tower.SetStats is the base every tower override calls first; Dropper (Shredder) recomputes its
-    /// fire rate afterwards, so attack speed is re-applied there.
+    /// Hooks the <see cref="StatLayer"/> into the vanilla stat calculation. Tower.SetStats is the base every tower
+    /// override calls first; Dropper (Shredder) recomputes its fire rate afterwards, so attack speed is re-applied there.
     /// </summary>
     [HarmonyPatch]
     internal static class TowerStatPatches
     {
-        /// <summary>Attack speed multiplier from Undivided Attention: +100% shared across all towers.</summary>
-        public static float AttackSpeedMultiplier
+        internal static void Initialize()
         {
-            get
+            // Hivemind (placeholder treasure): +1 damage per 3 towers.
+            StatLayer.Register("hivemind", (t, b) =>
             {
-                if (CardCounters.Get(CustomCardIds.UndividedAttention) <= 0) return 1f;
-                int towers = System.Math.Max(1, GameEvents.TowerCount);
-                return 1f + 1f / towers;
-            }
-        }
+                int n = TreasureInventory.CountOf("hivemind");
+                if (n > 0) b.Flat(TowerStat.Damage, n * (GameEvents.TowerCount / 3));
+            });
 
-        /// <summary>True while any modifier depends on the number of towers.</summary>
-        private static bool DependsOnTowerCount =>
-            TreasureInventory.Owns("hivemind") || CardCounters.Get(CustomCardIds.UndividedAttention) > 0;
+            // Undivided Attention (card): +100% attack speed shared across all towers.
+            StatLayer.Register("undivided_attention", (t, b) =>
+            {
+                if (CardCounters.Get(CustomCardIds.UndividedAttention) > 0)
+                    b.Percent(TowerStat.AttackSpeed, 1f / System.Math.Max(1, GameEvents.TowerCount));
+            });
+
+            // Treasures may change stat providers' output: refresh after each gain.
+            TreasureInventory.TreasureGained += _ => StatLayer.Refresh();
+        }
 
         [HarmonyPostfix, HarmonyPatch(typeof(Tower), nameof(Tower.SetStats))]
         private static void TowerSetStatsPostfix(Tower __instance)
         {
-            if (!TreasureRunMode.Active) return;
-
-            int hivemind = TreasureInventory.CountOf("hivemind");
-            if (hivemind > 0) __instance.damage += hivemind * (GameEvents.TowerCount / 3);
-
-            ApplyAttackSpeed(__instance);
+            if (TreasureRunMode.Active) StatLayer.ApplyAll(__instance);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(Dropper), nameof(Dropper.SetStats))]
         private static void DropperSetStatsPostfix(Dropper __instance)
         {
-            if (TreasureRunMode.Active) ApplyAttackSpeed(__instance);
+            if (TreasureRunMode.Active) StatLayer.ApplyAttackSpeedOnly(__instance);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(Dropper), nameof(Dropper.SetDropPoints))]
         private static void DropperSetDropPointsPostfix(Dropper __instance)
         {
-            if (TreasureRunMode.Active) ApplyAttackSpeed(__instance);
+            if (TreasureRunMode.Active) StatLayer.ApplyAttackSpeedOnly(__instance);
         }
 
-        /// <summary>rps is "seconds per shot", freshly computed by the patched method; divide to speed up.</summary>
-        private static void ApplyAttackSpeed(Tower tower)
-        {
-            float mult = AttackSpeedMultiplier;
-            if (mult != 1f && tower.rps > 0f) tower.rps /= mult;
-        }
-
-        // Tower count changed: refresh stats that depend on it. (GameEventPatches updates the count first.)
+        // Tower count changed: many modifiers depend on it. (GameEventPatches updates the count first.)
         [HarmonyPostfix, HarmonyPatch(typeof(TowerManager), nameof(TowerManager.AddNewTower)), HarmonyPriority(Priority.Low)]
-        private static void AddNewTowerPostfix(TowerManager __instance)
-        {
-            if (TreasureRunMode.Active && DependsOnTowerCount) __instance.UpdateAllTowers();
-        }
+        private static void AddNewTowerPostfix() => StatLayer.Refresh();
 
         [HarmonyPostfix, HarmonyPatch(typeof(TowerManager), nameof(TowerManager.RemoveTower)), HarmonyPriority(Priority.Low)]
-        private static void RemoveTowerPostfix(TowerManager __instance)
-        {
-            if (TreasureRunMode.Active && DependsOnTowerCount) __instance.UpdateAllTowers();
-        }
+        private static void RemoveTowerPostfix() => StatLayer.Refresh();
     }
 }

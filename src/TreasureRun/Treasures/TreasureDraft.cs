@@ -31,12 +31,36 @@ namespace TreasureRun.Treasures
                 offer.Add(pick);
             }
 
+            ApplyPrism(offer, run);
+
             if (offer.Any(t => t.Rarity >= Rarity.Epic)) run.OffersSinceEpicOrBetter = 0;
             else run.OffersSinceEpicOrBetter++;
 
             // The pity pick is always rolled first; shuffle so it lands in a random slot.
             Shuffle(offer);
             return offer;
+        }
+
+        /// <summary>
+        /// Prism of Ascendance: one random slot (per Prism owned) is replaced by a treasure one rarity higher.
+        /// This is the only natural source of Mythical treasures.
+        /// </summary>
+        private static void ApplyPrism(List<TreasureDef> offer, RunState run)
+        {
+            int prisms = TreasureInventory.CountOf(Effects.MetaTreasures.PrismId);
+            var upgraded = new HashSet<int>();
+            for (int p = 0; p < prisms && upgraded.Count < offer.Count; p++)
+            {
+                int idx;
+                do idx = Luck.RawRange(0, offer.Count); while (upgraded.Contains(idx));
+                upgraded.Add(idx);
+
+                TreasureDef current = offer[idx];
+                if (current.Rarity >= Rarity.Mythical) continue;
+                var others = offer.Where((t, i) => i != idx).ToList();
+                TreasureDef better = PickWeighted(Available(current.Rarity + 1, run, others));
+                if (better != null) offer[idx] = better;
+            }
         }
 
         public static Rarity RollRarity(int level, Rarity minimum)

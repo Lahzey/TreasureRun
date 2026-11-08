@@ -14,6 +14,9 @@ namespace TreasureRun.Core
         TreeChest,
         University,
         POI,
+        /// <summary>Chance-based treasure effects (chain lightning, extra levels, ...).</summary>
+        Proc,
+        GoldenGoblin,
     }
 
     /// <summary>

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using HarmonyLib;
 using TreasureRun.Core;
 using UnityEngine;
@@ -19,42 +19,18 @@ namespace TreasureRun.Cards
             if (mult != 1f) __instance.spawnChance = Mathf.Min(1f, __instance.spawnChance * mult);
         }
 
-        // ----- Bounty Hunters: remember which enemies are bosses / mini-bosses -----
-        private static readonly HashSet<Enemy> bosses = new HashSet<Enemy>();
-        private static int bossSpawnDepth;
-
+        // ----- Bounty Hunters (boss / mini-boss flags come from CombatPatches) -----
         internal static void Initialize()
         {
-            TreasureRunMode.RunStarted += _ => { bosses.Clear(); bossSpawnDepth = 0; };
-        }
-
-        [HarmonyPrefix, HarmonyPatch(typeof(SpawnManager), nameof(SpawnManager.SpawnBoss))]
-        private static void SpawnBossPrefix() => bossSpawnDepth++;
-
-        [HarmonyFinalizer, HarmonyPatch(typeof(SpawnManager), nameof(SpawnManager.SpawnBoss))]
-        private static void SpawnBossFinalizer() => bossSpawnDepth--;
-
-        [HarmonyPrefix, HarmonyPatch(typeof(SpawnManager), nameof(SpawnManager.SpawnMiniBoss))]
-        private static void SpawnMiniBossPrefix() => bossSpawnDepth++;
-
-        [HarmonyFinalizer, HarmonyPatch(typeof(SpawnManager), nameof(SpawnManager.SpawnMiniBoss))]
-        private static void SpawnMiniBossFinalizer() => bossSpawnDepth--;
-
-        [HarmonyPostfix, HarmonyPatch(typeof(SpawnManager), nameof(SpawnManager.SpawnEnemy))]
-        private static void SpawnEnemyPostfix(Enemy __result)
-        {
-            if (TreasureRunMode.Active && bossSpawnDepth > 0 && __result != null) bosses.Add(__result);
-        }
-
-        [HarmonyPrefix, HarmonyPatch(typeof(Enemy), nameof(Enemy.Die))]
-        private static void EnemyDiePrefix(Enemy __instance)
-        {
-            if (!TreasureRunMode.Active || __instance.dead || !bosses.Remove(__instance)) return;
-            int n = CardCounters.Get(Ids.BountyHunters);
-            if (n <= 0) return;
-            int gold = 10 * GameHelpers.Level * n;
-            ResourceManager.instance.AddMoney(gold);
-            GameHelpers.FloatingText(__instance.transform.position + Vector3.up, $"+{gold}g bounty", "Yellow", 1.5f);
+            Combat.EnemyKilled += k =>
+            {
+                if (!TreasureRunMode.Active || !(k.IsBoss || k.IsMiniBoss)) return;
+                int n = CardCounters.Get(Ids.BountyHunters);
+                if (n <= 0) return;
+                int gold = 10 * GameHelpers.Level * n;
+                ResourceManager.instance.AddMoney(gold);
+                GameHelpers.FloatingText(k.Position + Vector3.up, $"+{gold}g bounty", "Yellow", 1.5f);
+            };
         }
 
         // ----- Lumber Mill -----

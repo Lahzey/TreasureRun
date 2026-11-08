@@ -28,7 +28,7 @@ namespace TreasureRun.UI
 
             GUI.Label(new Rect(10f, Screen.height - 52f, 1400f, 48f),
                 $"Treasure Run  |  seed {run.Seed}  |  pity {run.OffersSinceEpicOrBetter}/{TreasureDraft.PityThreshold}" +
-                (ModConfig.DebugTools.Value ? $"  |  {ModConfig.DebugOfferKey.Value}: offer, {ModConfig.DebugGrantWindowKey.Value}: grant" : "") +
+                (ModConfig.DebugTools.Value ? $"  |  {ModConfig.DebugLevelUpKey.Value}: level-up, {ModConfig.DebugOfferKey.Value}: offer,{ModConfig.DebugGrantWindowKey.Value}: grant" : "") +
                 $"\n{(treasures.Length > 0 ? treasures : "no treasures yet")}", style);
         }
     }

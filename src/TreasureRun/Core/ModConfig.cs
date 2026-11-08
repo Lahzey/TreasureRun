@@ -7,6 +7,7 @@ namespace TreasureRun.Core
     {
         public static ConfigEntry<bool> ShowDevHud { get; private set; }
         public static ConfigEntry<bool> DebugTools { get; private set; }
+        public static ConfigEntry<UnityEngine.KeyCode> DebugLevelUpKey { get; private set; }
         public static ConfigEntry<UnityEngine.KeyCode> DebugOfferKey { get; private set; }
         public static ConfigEntry<UnityEngine.KeyCode> DebugGrantWindowKey { get; private set; }
         public static ConfigEntry<float> DebugMythicalWeight { get; private set; }
@@ -17,6 +18,8 @@ namespace TreasureRun.Core
                 "Show a small overlay with Treasure Run state while a run is active.");
             DebugTools = config.Bind("Debug", "DebugTools", true,
                 "Enable debug hotkeys during a Treasure Run.");
+            DebugLevelUpKey = config.Bind("Debug", "LevelUpDrawKey", UnityEngine.KeyCode.F7,
+                "Hotkey: show a level-up card draw right now (normal cards, slots can roll treasures).");
             DebugOfferKey = config.Bind("Debug", "OfferTreasureKey", UnityEngine.KeyCode.F8,
                 "Hotkey: show a treasure offer (pick 1 of 3) right now.");
             DebugGrantWindowKey = config.Bind("Debug", "GrantWindowKey", UnityEngine.KeyCode.F9,

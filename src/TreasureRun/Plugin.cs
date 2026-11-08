@@ -22,12 +22,17 @@ namespace TreasureRun
             Log = Logger;
             ModConfig.Bind(Config);
 
+            // Order matters for run-start handlers: TreasureInventory resets GameEvents first.
             Treasures.TreasureRegistry.RegisterAll();
             Treasures.TreasureInventory.Initialize();
+            Patches.CombatPatches.Initialize();
+            Patches.TowerStatPatches.Initialize();
+            Treasures.TreasureRegistry.HookAll();
             Cards.CustomCards.RegisterAll();
             Cards.CardEffectPatches.Initialize();
             CardPanel.Initialize();
             TreasureOfferUI.Initialize();
+            InventoryBar.Initialize();
 
             harmony = new Harmony(Guid);
             harmony.PatchAll(typeof(Plugin).Assembly);
@@ -38,6 +43,7 @@ namespace TreasureRun
             host.hideFlags = UnityEngine.HideFlags.HideAndDontSave;
             host.AddComponent<DevHud>();
             host.AddComponent<DebugTools>();
+            host.AddComponent<Treasures.Effects.TreasureTicker>();
 
             Log.LogInfo($"{Name} {Version} loaded, {System.Linq.Enumerable.Count(harmony.GetPatchedMethods())} methods patched.");
         }

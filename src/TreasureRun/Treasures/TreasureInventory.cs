@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using TreasureRun.Core;
 
 namespace TreasureRun.Treasures
@@ -9,19 +8,30 @@ namespace TreasureRun.Treasures
     public static class TreasureInventory
     {
         private static readonly List<TreasureEffect> active = new List<TreasureEffect>();
+        private static readonly Dictionary<string, int> counts = new Dictionary<string, int>();
 
         public static IReadOnlyList<TreasureEffect> Active => active;
 
         public static event Action<TreasureDef> TreasureGained;
 
-        public static bool Owns(string id) => TreasureRunMode.Run != null && TreasureRunMode.Run.OwnedTreasures.Contains(id);
+        /// <summary>Fast ownership check (called from hot combat paths). False outside a Treasure Run.</summary>
+        public static bool Owns(string id) => TreasureRunMode.Active && counts.ContainsKey(id);
 
-        public static int CountOf(string id) => TreasureRunMode.Run?.OwnedTreasures.Count(x => x == id) ?? 0;
+        public static int CountOf(string id) => TreasureRunMode.Active && counts.TryGetValue(id, out int n) ? n : 0;
+
+        public static int TotalOwned => TreasureRunMode.Run?.OwnedTreasures.Count ?? 0;
 
         internal static void Initialize()
         {
-            TreasureRunMode.RunStarted += _ => { active.Clear(); GameEvents.Reset(); };
-            TreasureRunMode.RunEnded += _ => { active.Clear(); GameEvents.Reset(); };
+            TreasureRunMode.RunStarted += _ => Reset();
+            TreasureRunMode.RunEnded += _ => Reset();
+        }
+
+        private static void Reset()
+        {
+            active.Clear();
+            counts.Clear();
+            GameEvents.Reset();
         }
 
         public static void Grant(TreasureDef def)
@@ -30,6 +40,8 @@ namespace TreasureRun.Treasures
             if (run == null || def == null) return;
 
             run.OwnedTreasures.Add(def.Id);
+            counts[def.Id] = CountOf(def.Id) + 1;
+
             TreasureEffect effect = def.CreateEffect?.Invoke();
             if (effect != null)
             {

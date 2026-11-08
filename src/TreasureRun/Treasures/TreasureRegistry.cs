@@ -27,10 +27,23 @@ namespace TreasureRun.Treasures
 
         internal static void RegisterAll()
         {
-            StarterTreasures.Register();
+            StarterTreasures.Register(); // M2 placeholders, to be reviewed in M9
+            EconomyTreasures.Register();
+            CombatTreasures.Register();
+            BuildTreasures.Register();
+            MetaTreasures.Register();
 
             string counts = string.Join(", ", all.GroupBy(d => d.Rarity).OrderBy(g => g.Key).Select(g => $"{g.Key} {g.Count()}"));
             Plugin.Log.LogInfo($"Registered {all.Count} treasures ({counts}).");
+        }
+
+        /// <summary>Attaches the permanent event handlers / stat providers of all treasure modules.</summary>
+        internal static void HookAll()
+        {
+            EconomyTreasures.Hook();
+            CombatTreasures.Hook();
+            BuildTreasures.Hook();
+            MetaTreasures.Hook();
         }
     }
 }
