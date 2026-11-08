@@ -66,12 +66,17 @@ namespace TreasureRun.Treasures.Effects
             // ---------- Epic ----------
             Add("hivemind", "Hivemind", Rarity.Epic,
                 "Every tower deals +1 damage for every 3 towers you own.",
+                (run, restoring) => TowerManager.instance.UpdateAllTowers(), // bonus applied in TowerStatPatches
+                "power", "many-towers");
+
+            Add("quick_study", "Quick Study", Rarity.Epic,
+                "Level-up card draws happen every 2 levels instead of every 3.",
                 (run, restoring) =>
                 {
-                    GameEvents.TowersChanged += _ => TowerManager.instance.UpdateAllTowers();
-                    TowerManager.instance.UpdateAllTowers();
+                    SpawnManager sm = SpawnManager.instance;
+                    sm.cardDrawFrequency = Mathf.Max(1, Mathf.Min(sm.cardDrawFrequency, 2));
                 },
-                "power", "many-towers");
+                "cards");
 
             // ---------- Legendary ----------
             Add("second_wind", "Second Wind", Rarity.Legendary,
@@ -113,15 +118,6 @@ namespace TreasureRun.Treasures.Effects
     [HarmonyPatch]
     internal static class StarterTreasurePatches
     {
-        // ----- Hivemind: +1 damage per 3 towers, applied on top of vanilla stat calculation -----
-        [HarmonyPostfix, HarmonyPatch(typeof(Tower), nameof(Tower.SetStats))]
-        private static void TowerSetStatsPostfix(Tower __instance)
-        {
-            if (!TreasureRunMode.Active) return;
-            int stacks = TreasureInventory.CountOf("hivemind");
-            if (stacks > 0) __instance.damage += stacks * (GameEvents.TowerCount / 3);
-        }
-
         // ----- Second Wind: survive one lethal hit -----
         [HarmonyPrefix, HarmonyPatch(typeof(GameManager), nameof(GameManager.TakeDamage))]
         private static bool TakeDamagePrefix(GameManager __instance, int damage)

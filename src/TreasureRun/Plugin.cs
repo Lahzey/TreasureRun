@@ -24,6 +24,9 @@ namespace TreasureRun
 
             Treasures.TreasureRegistry.RegisterAll();
             Treasures.TreasureInventory.Initialize();
+            Cards.CustomCards.RegisterAll();
+            Cards.CardEffectPatches.Initialize();
+            CardPanel.Initialize();
             TreasureOfferUI.Initialize();
 
             harmony = new Harmony(Guid);

@@ -1,27 +1,27 @@
 using System.Collections.Generic;
+using TreasureRun.Cards;
 using TreasureRun.Core;
 using TreasureRun.Treasures;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace TreasureRun.UI
 {
     /// <summary>
-    /// Shows "pick 1 of N" treasure offers in the vanilla card panel (CardManager's CardUI).
+    /// Shows "pick 1 of N" treasure offers (from chests) in the vanilla card panel.
     /// Integrates with CardManager's queueing: an offer waits while cards are being drawn, and vice versa.
-    /// The vanilla card select buttons call CardManager.ActivateCard(i), which CardManagerPatches routes here.
+    /// The vanilla card select buttons call CardManager.ActivateCard(i), which CardAndChestPatches routes here.
     /// </summary>
     internal static class TreasureOfferUI
     {
-        public const int DefaultOfferSize = 3;
+        public const int BaseOfferSize = 3;
 
         private static readonly Queue<int> pendingOffers = new Queue<int>();
         private static List<TreasureDef> current;
 
-        // Original card styles, captured once so vanilla card draws look untouched.
-        private static Color[] origTitleColor, origImageColor, origCardColor;
-
         public static bool IsShowing => current != null;
+
+        /// <summary>Offer size including Cartographer cards.</summary>
+        public static int OfferSize => Mathf.Clamp(BaseOfferSize + CardCounters.Get(CustomCardIds.Cartographer), 1, 6);
 
         internal static void Initialize()
         {
@@ -33,11 +33,10 @@ namespace TreasureRun.UI
         {
             pendingOffers.Clear();
             current = null;
-            origTitleColor = null; // scene objects are recreated on every GameScene load
         }
 
-        /// <summary>Queue a treasure offer. Shown immediately unless a card or treasure draw is open.</summary>
-        public static void RequestOffer(int size = DefaultOfferSize)
+        /// <summary>Queue a treasure offer (size &lt;= 0: default size). Shown immediately unless the card panel is busy.</summary>
+        public static void RequestOffer(int size = 0)
         {
             if (!TreasureRunMode.Active || CardManager.instance == null) return;
             pendingOffers.Enqueue(size);
@@ -53,7 +52,8 @@ namespace TreasureRun.UI
             while (pendingOffers.Count > 0)
             {
                 int size = pendingOffers.Dequeue();
-                var offer = TreasureDraft.RollOffer(Mathf.Clamp(size, 1, 6), SpawnManager.instance.level);
+                if (size <= 0) size = OfferSize;
+                var offer = TreasureDraft.RollOffer(Mathf.Clamp(size, 1, 6), GameHelpers.Level);
                 if (offer.Count == 0)
                 {
                     Plugin.Log.LogWarning("Treasure offer skipped: no treasures left in the pool.");
@@ -67,8 +67,8 @@ namespace TreasureRun.UI
 
         private static void Show(CardManager cm, List<TreasureDef> offer)
         {
-            CaptureOriginalStyles(cm);
             current = offer;
+            LevelUpTreasureSlots.Clear();
 
             cm.ArrangeCards(offer.Count);
             SFXManager.instance.PlaySound(Sound.Cards, MusicManager.instance.transform.position, MusicManager.instance.transform);
@@ -76,89 +76,19 @@ namespace TreasureRun.UI
             cm.ui.SetActive(true);
             cm.drawingCards = true;
 
-            for (int i = 0; i < offer.Count; i++)
-            {
-                TreasureDef t = offer[i];
-                Color text = RarityInfo.TextColor(t.Rarity);
-
-                cm.titles[i].text = t.Name;
-                cm.titles[i].color = text;
-                cm.images[i].sprite = TreasureIcons.Gem;
-                cm.images[i].color = RarityInfo.IconColor(t.Rarity);
-                cm.descriptions[i].text = $"<color={RarityInfo.Hex(text)}><b>{t.Rarity}</b></color>\n{t.Description}";
-
-                Image card = CardBackground(cm, i);
-                if (card != null) card.color = Color.Lerp(Color.white, RarityInfo.IconColor(t.Rarity), 0.3f);
-            }
+            for (int i = 0; i < offer.Count; i++) CardPanel.StyleAsTreasure(cm, i, offer[i]);
         }
 
         /// <summary>Called from the ActivateCard prefix while an offer is showing.</summary>
         public static void Choose(int index)
         {
-            CardManager cm = CardManager.instance;
             List<TreasureDef> offer = current;
             current = null;
 
             if (offer != null && index >= 0 && index < offer.Count)
                 TreasureInventory.Grant(offer[index]);
 
-            RestoreOriginalStyles(cm);
-            cm.drawingCards = false;
-
-            if (TryShowNext()) return;
-
-            // Mirror the tail of vanilla CardManager.ActivateCard: continue queued card draws or close the panel.
-            if (cm.queuedDraws.Count > 0)
-            {
-                int numb = cm.queuedDraws[0];
-                cm.queuedDraws.RemoveAt(0);
-                cm.DrawCards(numb);
-                return;
-            }
-            if (cm.monsterDrawCallQueued > 0)
-            {
-                cm.ui.SetActive(false);
-                cm.DrawMonsterCards();
-                return;
-            }
-            if (!SpawnManager.instance.combat) SpawnManager.instance.ShowSpawnUIs(state: true);
-            cm.ui.SetActive(false);
-            cm.monsterCardUI.SetActive(false);
-        }
-
-        private static Image CardBackground(CardManager cm, int i)
-        {
-            Transform parent = cm.titles[i].transform.parent; // "CardN" (button with the card sprite)
-            return parent != null ? parent.GetComponent<Image>() : null;
-        }
-
-        private static void CaptureOriginalStyles(CardManager cm)
-        {
-            if (origTitleColor != null) return;
-            int n = cm.titles.Length;
-            origTitleColor = new Color[n];
-            origImageColor = new Color[n];
-            origCardColor = new Color[n];
-            for (int i = 0; i < n; i++)
-            {
-                origTitleColor[i] = cm.titles[i].color;
-                origImageColor[i] = cm.images[i].color;
-                Image card = CardBackground(cm, i);
-                origCardColor[i] = card != null ? card.color : Color.white;
-            }
-        }
-
-        /// <summary>Restores vanilla card styling (also called before every vanilla DisplayCards).</summary>
-        public static void RestoreOriginalStyles(CardManager cm)
-        {
-            if (origTitleColor == null || cm == null) return;
-            for (int i = 0; i < origTitleColor.Length; i++)
-            {
-                cm.titles[i].color = origTitleColor[i];
-                cm.images[i].color = origImageColor[i];
-                Image card = CardBackground(cm, i);
-                if (card != null) card.color = origCardColor[i];
-            }
+            CardPanel.FinishPick(CardManager.instance);
         }
     }
 }

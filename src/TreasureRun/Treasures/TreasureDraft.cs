@@ -10,7 +10,11 @@ namespace TreasureRun.Treasures
         /// <summary>After this many offers without Epic+, the next offer guarantees one Epic+ slot.</summary>
         public const int PityThreshold = 4;
 
-        public static List<TreasureDef> RollOffer(int count, int level)
+        /// <summary>
+        /// Rolls <paramref name="count"/> distinct treasures. Used for chest offers, level-up treasure slots
+        /// and cards that grant treasures. <paramref name="minimumRarity"/> raises the floor for every slot.
+        /// </summary>
+        public static List<TreasureDef> RollOffer(int count, int level, Rarity minimumRarity = Rarity.Common)
         {
             RunState run = TreasureRunMode.Run;
             var offer = new List<TreasureDef>();
@@ -20,7 +24,7 @@ namespace TreasureRun.Treasures
 
             for (int i = 0; i < count; i++)
             {
-                Rarity minimum = pity && i == 0 ? Rarity.Epic : Rarity.Common;
+                Rarity minimum = pity && i == 0 && minimumRarity < Rarity.Epic ? Rarity.Epic : minimumRarity;
                 Rarity rolled = Luck.Best(LuckCategory.TreasureRarity, () => RollRarity(level, minimum), (a, b) => a.CompareTo(b));
                 TreasureDef pick = PickFromRarityOrNearest(rolled, run, offer);
                 if (pick == null) break;
