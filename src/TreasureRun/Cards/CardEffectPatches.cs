@@ -28,7 +28,10 @@ namespace TreasureRun.Cards
                 int n = CardCounters.Get(Ids.BountyHunters);
                 if (n <= 0) return;
                 int gold = 10 * GameHelpers.Level * n;
-                ResourceManager.instance.AddMoney(gold);
+                // Not kill gold: castles that suppress monster gold (Gilded Vault) keep boss bounties.
+                GoldEconomy.Push(GoldSource.Other);
+                try { ResourceManager.instance.AddMoney(gold); }
+                finally { GoldEconomy.Pop(); }
                 GameHelpers.FloatingText(k.Position + Vector3.up, $"+{gold}g bounty", "Yellow", 1.5f);
             };
         }

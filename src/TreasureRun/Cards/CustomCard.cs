@@ -11,6 +11,9 @@ namespace TreasureRun.Cards
     {
         public string Id;
         public Action OnPick;
+        public string[] Tags = Array.Empty<string>();
+        /// <summary>Max-health cost in displayed points (paid by the effect via HealthCost.Pay).</summary>
+        public int MaxHealthCost;
 
         public override void Upgrade()
         {

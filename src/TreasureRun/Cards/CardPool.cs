@@ -119,7 +119,7 @@ namespace TreasureRun.Cards
             }
 
             // Custom cards.
-            foreach (CustomCardSpec spec in CustomCards.All)
+            foreach (CustomCardSpec spec in CustomCards.All.Where(CardRules.SpecAllowed))
                 entries.Add(new Entry
                 {
                     Card = CustomCards.Create(cm, spec, sceneCards),
@@ -134,6 +134,19 @@ namespace TreasureRun.Cards
                     e.ParentTitles = overrideParents.ToList();
                     e.Start = false;
                 }
+
+            // Castle bans: banned cards leave the pool; cards that were only gated behind banned cards start unlocked.
+            var bannedTitles = new HashSet<string>(entries.Where(e => CardRules.IsBanned(e.Card)).Select(e => e.Title));
+            if (bannedTitles.Count > 0)
+            {
+                entries.RemoveAll(e => bannedTitles.Contains(e.Title));
+                foreach (Entry e in entries.Where(e => e.ParentTitles.Count > 0))
+                {
+                    e.ParentTitles.RemoveAll(bannedTitles.Contains);
+                    if (e.ParentTitles.Count == 0) e.Start = true;
+                }
+                Plugin.Log.LogInfo($"Castle bans removed from the card pool: {string.Join(", ", bannedTitles)}");
+            }
 
             // Rewrite chains: children keyed by parent title.
             var childrenByTitle = new Dictionary<string, List<UpgradeCard>>();

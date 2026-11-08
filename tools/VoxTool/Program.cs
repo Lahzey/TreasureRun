@@ -26,6 +26,7 @@ namespace VoxTool
                     case "extract": return Extract(args.Skip(1).ToArray());
                     case "preview": return PreviewCmd(args.Skip(1).ToArray());
                     case "info": return Info(args.Skip(1).ToArray());
+                    case "build": return Build(args.Skip(1).ToArray());
                     default: return Usage();
                 }
             }
@@ -112,6 +113,45 @@ namespace VoxTool
             string outPath = args.Length > 1 ? args[1] : Path.ChangeExtension(args[0], ".png");
             Preview.Render(models[0]).SavePng(outPath);
             Console.WriteLine($"Preview written: {outPath}{(models.Count > 1 ? $" (first of {models.Count} models)" : "")}");
+            return 0;
+        }
+
+        /// <summary>Procedural models: recipe name -> generator (see Recipes/).</summary>
+        private static readonly Dictionary<string, Func<VoxModel>> RecipeTable = new Dictionary<string, Func<VoxModel>>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "castles/castle_town", VoxTool.Recipes.CastleRecipes.CastleTown },
+            { "castles/arcane_spire", VoxTool.Recipes.CastleRecipes.ArcaneSpire },
+            { "castles/arcane_spire_crystal", VoxTool.Recipes.CastleRecipes.ArcaneCrystal },
+            { "castles/gilded_vault", VoxTool.Recipes.CastleRecipes2.GildedVault },
+            { "castles/siege_workshop", VoxTool.Recipes.CastleRecipes2.SiegeWorkshop },
+            { "castles/siege_cannon", VoxTool.Recipes.CastleRecipes2.SiegeCannon },
+            { "castles/siege_ball", VoxTool.Recipes.CastleRecipes2.SiegeBall },
+            { "castles/siege_wall_cannon", VoxTool.Recipes.CastleRecipes2.SiegeWallCannon },
+            { "castles/siege_catapult", VoxTool.Recipes.CastleRecipes2.SiegeCatapult },
+            { "castles/siege_catapult_arm", VoxTool.Recipes.CastleRecipes2.SiegeCatapultArm },
+            { "castles/necropolis", VoxTool.Recipes.CastleRecipes2.Necropolis },
+            { "castles/druid_grove", VoxTool.Recipes.CastleRecipes2.DruidGrove },
+            { "castles/colosseum", VoxTool.Recipes.CastleRecipes2.Colosseum },
+            { "castles/crows_nest", VoxTool.Recipes.CastleRecipes2.CrowsNest },
+            { "castles/glass_fortress", VoxTool.Recipes.CastleRecipes2.GlassFortress },
+        };
+
+        /// <summary>build &lt;modelsDir&gt; [recipe|all]: writes &lt;modelsDir&gt;/&lt;recipe&gt;.vox and a preview .png next to it.</summary>
+        private static int Build(string[] args)
+        {
+            if (args.Length < 1) return Usage();
+            string modelsDir = args[0];
+            string which = args.Length > 1 ? args[1] : "all";
+            foreach (var kv in RecipeTable)
+            {
+                if (which != "all" && !string.Equals(which, kv.Key, StringComparison.OrdinalIgnoreCase)) continue;
+                VoxModel m = kv.Value();
+                string path = Path.Combine(modelsDir, kv.Key.Replace('/', Path.DirectorySeparatorChar) + ".vox");
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
+                VoxFile.Write(path, m);
+                Preview.Render(m).SavePng(Path.ChangeExtension(path, ".png"));
+                Console.WriteLine($"{kv.Key,-30} {m.SizeX}x{m.SizeY}x{m.SizeZ}, {m.CountFilled()} voxels -> {path}");
+            }
             return 0;
         }
 

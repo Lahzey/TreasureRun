@@ -109,7 +109,17 @@ namespace TreasureRun.Treasures
                 && !(d.Unique && run.OwnedTreasures.Contains(d.Id))
                 && (d.ExclusionGroup == null || (!ownedGroups.Contains(d.ExclusionGroup) && !offeredGroups.Contains(d.ExclusionGroup)))
                 && (d.IsAvailable == null || d.IsAvailable(run))
+                && IsOfferable(d)
             ).ToList();
+        }
+
+        /// <summary>Global rules: castle-exclusive treasures, castle bans by tag, affordable max-health cost.</summary>
+        public static bool IsOfferable(TreasureDef d)
+        {
+            Castles.CastleBehaviour castle = Castles.CastleRuntime.Behaviour;
+            if (d.Castle != null && d.Castle != Castles.CastleRuntime.Active?.Id) return false;
+            if (castle != null && castle.BannedTagSet.Count > 0 && d.Tags.Any(castle.BannedTagSet.Contains)) return false;
+            return Cards.HealthCost.CanPay(Cards.HealthCost.Of(d));
         }
 
         private static TreasureDef PickWeighted(List<TreasureDef> candidates)

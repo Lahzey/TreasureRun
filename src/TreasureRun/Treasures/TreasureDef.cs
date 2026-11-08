@@ -25,6 +25,18 @@ namespace TreasureRun.Treasures
         public bool Unique = true;
 
         public Func<TreasureEffect> CreateEffect;
+
+        /// <summary>Source module (set at registration; for docs).</summary>
+        public string Module;
+
+        /// <summary>Castle id this treasure is exclusive to (null = every castle).</summary>
+        public string Castle;
+
+        /// <summary>
+        /// Max-health cost in displayed points, evaluated when offered (null = none). The treasure is only offered while
+        /// the cost can be paid; the effect must pay it via Cards.HealthCost.Pay (free for castles that ignore health).
+        /// </summary>
+        public Func<int> MaxHealthCost;
     }
 
     /// <summary>Runtime behaviour of an owned treasure. One instance per owned copy.</summary>

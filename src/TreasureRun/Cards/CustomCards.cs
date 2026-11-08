@@ -19,6 +19,12 @@ namespace TreasureRun.Cards
         /// <summary>Vanilla card whose image is reused (null = treasure gem).</summary>
         public string ImageFrom;
         public Action OnPick;
+        /// <summary>Content tags (see ContentTags), used by castle bans.</summary>
+        public string[] Tags = Array.Empty<string>();
+        /// <summary>Max-health cost in displayed points; the card is only offered while it can be paid.</summary>
+        public int MaxHealthCost;
+        /// <summary>Castle id this card is exclusive to (null = every castle). Exclusive cards also appear in normal mode.</summary>
+        public string Castle;
     }
 
     /// <summary>Custom level-up cards (docs/m3-card-design.md, section 4). Numbers are first drafts.</summary>
@@ -108,7 +114,40 @@ namespace TreasureRun.Cards
                 _ => "At the start of each wave, repair 1 castle health.",
                 () => { if (CardCounters.Get(Ids.FieldRepairs) == 1) GameEvents.WaveStarted += FieldRepair; });
 
+            // ---------- Content tags / costs (castle rules, see docs/content-rules.md) ----------
+            Configure(Ids.FieldRepairs, s => s.Tags = new[] { ContentTags.CastleHealth });
+            Configure(Ids.WarBonds, s => s.Tags = new[] { ContentTags.CastleHealth });
+            Configure(Ids.BloodPact, s => s.MaxHealthCost = BloodPactHealthCost);
+            Configure(Ids.RichVeins, s => s.Tags = new[] { ContentTags.NeedsOre });
+            Configure(Ids.RestlessDead, s => s.Tags = new[] { ContentTags.NeedsGraves });
+
+            Castles.CastleCards.RegisterAll();
+
             Plugin.Log.LogInfo($"Registered {all.Count} custom cards.");
+        }
+
+        private const int BloodPactHealthCost = 5;
+
+        /// <summary>Adjusts every spec (all tiers) of a card id.</summary>
+        internal static void Configure(string id, Action<CustomCardSpec> change)
+        {
+            foreach (CustomCardSpec s in all.Where(s => s.Id == id)) change(s);
+        }
+
+        /// <summary>Adds a castle-exclusive card chain (tiers I..N).</summary>
+        internal static void CastleChain(string castle, string id, string baseTitle, int tiers, string imageFrom,
+                                         Func<int, string> description, Action onPick)
+        {
+            int before = all.Count;
+            Chain(id, baseTitle, tiers, null, imageFrom, description, onPick);
+            for (int i = before; i < all.Count; i++) all[i].Castle = castle;
+        }
+
+        /// <summary>Adds a single castle-exclusive card.</summary>
+        internal static void CastleSingle(string castle, string id, string title, string parent, string imageFrom, string description, Action onPick)
+        {
+            Single(id, title, parent, imageFrom, description, onPick);
+            all[all.Count - 1].Castle = castle;
         }
 
         // ----- registration helpers -----
@@ -146,6 +185,8 @@ namespace TreasureRun.Cards
             var card = go.AddComponent<CustomCard>();
             card.Id = spec.Id;
             card.OnPick = spec.OnPick;
+            card.Tags = spec.Tags ?? Array.Empty<string>();
+            card.MaxHealthCost = spec.MaxHealthCost;
             card.title = spec.Title;
             card.description = spec.Description;
             card.unlockedByDefault = true;
@@ -185,11 +226,7 @@ namespace TreasureRun.Cards
                 TreasureInventory.Grant(t);
                 GameHelpers.FloatingText(PopupPos, t.Name, "Red", 1.5f, 2f);
             }
-            GameManager gm = GameManager.instance;
-            gm.maxHealth = Mathf.Max(10, gm.maxHealth - 50); // internal units are ×10
-            gm.health = Mathf.Min(gm.health, gm.maxHealth);
-            gm.healthLoss = Mathf.Min(gm.healthLoss, gm.maxHealth);
-            gm.SetHealthBar();
+            HealthCost.Pay(BloodPactHealthCost);
         }
 
         private static void TradeRouteIncome(int level) => GiveGold(3 * level * CardCounters.Get(Ids.TradeRoute));

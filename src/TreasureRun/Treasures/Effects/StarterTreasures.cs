@@ -138,33 +138,14 @@ namespace TreasureRun.Treasures.Effects
             return false;
         }
 
-        // ----- Midas Touch: double "earned" gold (not refunds), tracked via a context depth -----
-        private static int earnedGoldContext;
-
-        [HarmonyPrefix, HarmonyPatch(typeof(Enemy), nameof(Enemy.Die))]
-        private static void EnemyDiePrefix() => earnedGoldContext++;
-
-        [HarmonyFinalizer, HarmonyPatch(typeof(Enemy), nameof(Enemy.Die))]
-        private static void EnemyDieFinalizer() => earnedGoldContext--;
-
-        [HarmonyPrefix, HarmonyPatch(typeof(IncomeGenerator), nameof(IncomeGenerator.GenerateIncome))]
-        private static void IncomePrefix() => earnedGoldContext++;
-
-        [HarmonyFinalizer, HarmonyPatch(typeof(IncomeGenerator), nameof(IncomeGenerator.GenerateIncome))]
-        private static void IncomeFinalizer() => earnedGoldContext--;
-
-        [HarmonyPrefix, HarmonyPatch(typeof(TreeUI), nameof(TreeUI.Chop))]
-        private static void ChopPrefix() => earnedGoldContext++;
-
-        [HarmonyFinalizer, HarmonyPatch(typeof(TreeUI), nameof(TreeUI.Chop))]
-        private static void ChopFinalizer() => earnedGoldContext--;
-
-        [HarmonyPrefix, HarmonyPatch(typeof(ResourceManager), nameof(ResourceManager.AddMoney))]
-        private static void AddMoneyPrefix(ref int addedGold)
+        // ----- Midas Touch: double "earned" gold (kills, income, trees; not refunds) -----
+        internal static void Hook()
         {
-            if (earnedGoldContext <= 0 || addedGold <= 0 || !TreasureRunMode.Active) return;
-            int stacks = TreasureInventory.CountOf("midas_touch");
-            if (stacks > 0) addedGold *= 1 << Mathf.Min(stacks, 4);
+            GoldEconomy.Multipliers.Add(src =>
+            {
+                int stacks = TreasureInventory.CountOf("midas_touch");
+                return stacks > 0 && src != GoldSource.Other ? 1 << Mathf.Min(stacks, 4) : 1f;
+            });
         }
     }
 }

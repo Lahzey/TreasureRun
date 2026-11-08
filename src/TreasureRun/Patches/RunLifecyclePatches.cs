@@ -15,6 +15,7 @@ namespace TreasureRun.Patches
         private static void LoadLevelPrefix(string sceneName)
         {
             TreasureRunMode.OnSceneLoadRequested(sceneName);
+            Castles.CastleRuntime.OnSceneLoadRequested(sceneName);
         }
     }
 }

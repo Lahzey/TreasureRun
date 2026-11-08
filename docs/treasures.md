@@ -1,6 +1,6 @@
 # Treasures
 
-Generated from the source (`src/TreasureRun/Treasures/Effects`). Treasures in the `Starter` module are M2 placeholders and not representative of the intended design.
+Generated from the source (`src/TreasureRun/Treasures/Effects`, console command `treasuredoc`). Treasures in the `Starter` module are M2 placeholders and not representative of the intended design. Castle treasures only appear with their castle.
 
 
 ## Common
@@ -37,6 +37,8 @@ Generated from the source (`src/TreasureRun/Treasures/Effects`). Treasures in th
 | **Prodigy** (`prodigy`) | Newly built towers start at level 3. | Build |
 | **Seeker Rounds** (`seeker_rounds`) | Ballista bolts and biplane bullets home in on their target. | Build |
 | **Witch's Brew** (`witchs_brew`) | Direct hits on poisoned enemies also apply burn equal to 25% of the damage. | Combat |
+| **Sapling Seeds** (`sapling_seeds`) | 2 more trees sprout after every wave. | Castle (Druid Grove) |
+| **Wall Cannons** (`wall_cannons`) | Small cannons on the four corner towers take turns firing at monsters in range, dealing 40 % of the castle cannon's damage. | Castle (Siege Workshop) |
 
 ## Rare
 
@@ -58,6 +60,9 @@ Generated from the source (`src/TreasureRun/Treasures/Effects`). Treasures in th
 | **Thunderclap** (`thunderclap`) | All towers gain +6% stun chance. | Starter |
 | **Treasure Hoard** (`treasure_hoard`) | Gain gold worth three tree chops (3 × level²). | Starter |
 | **Veteran Training** (`veteran_training`) | Whenever a tower gains a level, it has a 30% chance to gain another one. | Build |
+| **Ironbark** (`ironbark`) | Chopping a tree also raises the grove's maximum health by 1 (up to +10). | Castle (Druid Grove) |
+| **Catapult** (`catapult`) | A catapult on the castle hurls a boulder every 6 seconds at the monster farthest from the castle (range 18), dealing 3x the cannon's damage in a large area. | Castle (Siege Workshop) |
+| **Grapeshot** (`grapeshot`) | Every castle cannon shot also fires 3 pellets at nearby monsters for 40 % damage each. | Castle (Siege Workshop) |
 
 ## Epic
 
@@ -74,6 +79,9 @@ Generated from the source (`src/TreasureRun/Treasures/Effects`). Treasures in th
 | **Triple Threat** (`triple_threat`) | Enemies suffering from bleed, burn and poison at the same time take double damage. | Combat |
 | **Volatile Corpses** (`volatile_corpses`) | Enemies explode on death, dealing 10% of their maximum health to enemies within 1.5 range. | Combat |
 | **Wingman** (`wingman`) | Each Radar tower launches a second biplane. | Build |
+| **Golden Sap** (`golden_sap`) | Chopping a tree gives double gold and heals 2 more health. | Castle (Druid Grove) |
+| **Incendiary Shells** (`incendiary_shells`) | Castle cannon shots set monsters on fire, applying burn equal to their damage. | Castle (Siege Workshop) |
+| **Siege Engineer** (`siege_engineer`) | The castle cannon deals +1 damage for every tower you own. | Castle (Siege Workshop) |
 
 ## Legendary
 
@@ -85,6 +93,8 @@ Generated from the source (`src/TreasureRun/Treasures/Effects`). Treasures in th
 | **Monolith** (`monolith`) | Towers deal 25% more damage and attack 5% faster for every tower fewer than 10 you own. | Build |
 | **Prism of Ascendance** (`prism_of_ascendance`) | In every treasure offer, one treasure is upgraded by one rarity. Legendaries become Mythical. | Meta |
 | **Second Wind** (`second_wind`) | Once per run, when your castle would be destroyed, it survives with 50% health instead. | Starter |
+| **Grand Bombard** (`grand_bombard`) | The castle cannon deals triple damage, but fires 30% slower. | Castle (Siege Workshop) |
+| **Trebuchet Battery** (`trebuchet_battery`) | The catapult throws three boulders at once, each at a different monster. | Castle (Siege Workshop) |
 
 ## Mythical
 
@@ -94,4 +104,4 @@ Generated from the source (`src/TreasureRun/Treasures/Effects`). Treasures in th
 | **Midas Touch** (`midas_touch`) | Gold from monsters, income buildings and trees is doubled. | Starter |
 | **Time Dilation** (`time_dilation`) | All enemies move 30% slower. | Meta |
 
-Total: 61
+Total: 71

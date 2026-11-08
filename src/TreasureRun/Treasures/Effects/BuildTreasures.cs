@@ -90,10 +90,11 @@ namespace TreasureRun.Treasures.Effects
         {
             if (!TreasureRunMode.Active) return;
 
-            if (Has("high_ground") && t.heightBonus > 0)
+            int height = Castles.CrowsNestBehaviour.EffectiveHeightBonus(t);
+            if (Has("high_ground") && height > 0)
             {
-                b.Flat(TowerStat.Damage, t.heightBonus);
-                b.Flat(TowerStat.Range, t.heightBonus / 2f);
+                b.Flat(TowerStat.Damage, height);
+                b.Flat(TowerStat.Range, height / 2f);
             }
 
             if (Has("hoarder")) b.Percent(TowerStat.Damage, 0.04f * TreasureInventory.TotalOwned);

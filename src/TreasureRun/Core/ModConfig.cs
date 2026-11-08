@@ -12,6 +12,9 @@ namespace TreasureRun.Core
         public static ConfigEntry<UnityEngine.KeyCode> DebugGrantWindowKey { get; private set; }
         public static ConfigEntry<float> DebugMythicalWeight { get; private set; }
         public static ConfigEntry<int> DebugAutoStartGameMode { get; private set; }
+        public static ConfigEntry<bool> DebugAutoOpenPlayMenu { get; private set; }
+        public static ConfigEntry<bool> DebugScreenshotTour { get; private set; }
+        public static ConfigEntry<string> DebugAutoStartCastle { get; private set; }
         public static ConfigEntry<UnityEngine.KeyCode> DebugModelKey { get; private set; }
         public static ConfigEntry<string> DebugPreviewModels { get; private set; }
 
@@ -29,6 +32,13 @@ namespace TreasureRun.Core
                 "Hotkey: open a window listing all treasures; click one to gain it.");
             DebugAutoStartGameMode = config.Bind("Debug", "AutoStartGameMode", 0,
                 "Development: 1-4 = load straight into a Treasure Run with that many lanes when the main menu appears (once per launch). 0 = off.");
+            DebugAutoOpenPlayMenu = config.Bind("Debug", "AutoOpenPlayMenu", false,
+                "Development: open the play menu automatically when the main menu appears.");
+            DebugScreenshotTour = config.Bind("Debug", "ScreenshotTour", false,
+                "Development: with AutoOpenPlayMenu, select every castle and save a screenshot of each to plugins/TreasureRun/screens.");
+            DebugAutoStartCastle = config.Bind("Debug", "AutoStartCastle", "",
+                "Development: castle id used by AutoStartGameMode (empty = current selection). With ScreenshotTour, the run starts " +
+                "a wave and saves screenshots of the game scene.");
             DebugModelKey = config.Bind("Debug", "ReloadModelsKey", UnityEngine.KeyCode.F6,
                 "Hotkey: reload all .vox models from disk, re-apply model overrides and spawn the preview models next to the castle.");
             DebugPreviewModels = config.Bind("Debug", "PreviewModels", "examples/castle",

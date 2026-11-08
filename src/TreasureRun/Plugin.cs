@@ -34,6 +34,8 @@ namespace TreasureRun
             TreasureOfferUI.Initialize();
             InventoryBar.Initialize();
             Voxels.ModelOverrides.Initialize();
+            Castles.CastleCatalog.RegisterAll();
+            Castles.CastlePatches.Initialize();
 
             harmony = new Harmony(Guid);
             harmony.PatchAll(typeof(Plugin).Assembly);
@@ -44,6 +46,7 @@ namespace TreasureRun
             host.hideFlags = UnityEngine.HideFlags.HideAndDontSave;
             host.AddComponent<DevHud>();
             host.AddComponent<DebugTools>();
+            host.AddComponent<DevConsole>();
             host.AddComponent<Treasures.Effects.TreasureTicker>();
 
             Log.LogInfo($"{Name} {Version} loaded, {System.Linq.Enumerable.Count(harmony.GetPatchedMethods())} methods patched.");

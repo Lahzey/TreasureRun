@@ -53,14 +53,10 @@ namespace TreasureRun.Treasures.Effects
                 "All towers deal 50% more damage. Your castle's maximum health is halved.",
                 (run, restoring) =>
                 {
-                    if (restoring) return;
-                    GameManager gm = GameManager.instance;
-                    gm.maxHealth = Mathf.Max(10, gm.maxHealth / 2);
-                    gm.health = Mathf.Min(gm.health, gm.maxHealth);
-                    gm.healthLoss = Mathf.Min(gm.healthLoss, gm.maxHealth);
-                    gm.SetHealthBar();
+                    if (!restoring) Cards.HealthCost.Pay(GlassCannonCost());
                 },
                 new[] { "damage", "risk" });
+            TreasureRegistry.Get("glass_cannon").MaxHealthCost = GlassCannonCost;
 
             // ----- Legendary -----
             Add("domino_effect", "Domino Effect", Rarity.Legendary,
@@ -70,6 +66,9 @@ namespace TreasureRun.Treasures.Effects
             Add("master_of_elements", "Master of Elements", Rarity.Legendary,
                 "Every direct hit also applies 10% bleed, burn and poison.", tags: new[] { "bleed", "burn", "poison" });
         }
+
+        /// <summary>Half the current max health (displayed points).</summary>
+        private static int GlassCannonCost() => GameManager.instance != null ? GameManager.instance.maxHealth / 20 : 0;
 
         private static readonly HashSet<Enemy> struck = new HashSet<Enemy>();
         private static readonly HashSet<Enemy> hexed = new HashSet<Enemy>();

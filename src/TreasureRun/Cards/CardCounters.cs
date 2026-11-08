@@ -2,18 +2,37 @@ using TreasureRun.Core;
 
 namespace TreasureRun.Cards
 {
-    /// <summary>How many copies of each custom card were picked this run (stored in RunState for save/resume).</summary>
+    /// <summary>
+    /// How many copies of each custom card were picked this game. Stored in RunState during a Treasure Run (for
+    /// save/resume); in normal mode (castle-exclusive cards) in a per-scene table.
+    /// </summary>
     public static class CardCounters
     {
+        private static readonly System.Collections.Generic.Dictionary<string, int> normalMode = new System.Collections.Generic.Dictionary<string, int>();
+
+        static CardCounters()
+        {
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded += (s, m) => normalMode.Clear();
+        }
+
         private static string Key(string id) => "card." + id;
 
-        public static int Get(string id) => TreasureRunMode.Run?.GetCounter(Key(id)) ?? 0;
+        public static int Get(string id)
+        {
+            RunState run = TreasureRunMode.Run;
+            if (run != null) return run.GetCounter(Key(id));
+            return normalMode.TryGetValue(id, out int n) ? n : 0;
+        }
 
         /// <summary>Increments and returns the new count.</summary>
         public static int Increment(string id)
         {
             RunState run = TreasureRunMode.Run;
-            if (run == null) return 0;
+            if (run == null)
+            {
+                normalMode[id] = Get(id) + 1;
+                return normalMode[id];
+            }
             int n = run.GetCounter(Key(id)) + 1;
             run.SetCounter(Key(id), n);
             return n;

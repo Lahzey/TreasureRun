@@ -102,6 +102,41 @@ enum Rarity { Common, Uncommon, Rare, Epic, Legendary, Mythical }
 - **Vanilla RNG checks** (crit/stun in `Enemy.TakeDamage`, chest checks, university) are rerouted to `Luck` with Harmony transpilers that replace those exact `Random.Range` calls.
 
 ## 6. Main tower (decided: replaces the castle)
+
+**Status (M6, in progress; second batch of castles implemented, awaiting review):**
+- **Castles work in every mode**, not only Treasure Run. The code lives in `src/TreasureRun/Castles`:
+  - `CastleDef`: name, description, starting health (or a health label such as "none"), voxel model, optional availability rule for later mode-exclusive castles.
+  - `CastleBehaviour` hooks:
+    - game start; before / after wave start; wave end
+    - enemy reaches castle; enemy killed
+    - starting developments (keep / remove), decoration spawn chances, spawn count
+    - gold multipliers per source, tower price multiplier, houses on/off, ignore health
+    - banned content tags, starting cards
+    - live info text for the click popup
+  - `CastleRuntime`: the selection is persisted (`TR_Castle`) and snapshotted when the game scene loads.
+  - `CastleVisuals`: swaps the `MainTower` mesh in the menu background and in the game scene.
+  - `CastleInfo`: click the castle to open the vanilla building popup with its description and live stats.
+  - `MapDecorations`: spawns vanilla trees, graves and iron veins, and finds free cells.
+- **Card/treasure rules** (`Cards/CardRules.cs`, `docs/content-rules.md`): castle bans by content tag, castle-exclusive cards (also in normal mode) and treasures, starting cards, max-health costs.
+- **Implemented castles** (balance notes in `docs/balance-todo.md`):
+  - **Rogue Tower** (default, vanilla)
+  - **Castle Town**: 1.5 × level gold per building next to the castle; 1.5× monsters, 2/3 kill gold.
+  - **Arcane Spire**: 1 health; leaking monsters are destroyed for 5 mana per damage point and still drop kill gold; full mana at start, +5 mana every 2.5 s during waves (each pulse is a lightning bolt from a corner crystal); keeps the corner mana crystals; Mana Siphon unlocked. Animated: floating crystal (also in the menu) and a rune circle across the base; on obliteration the crystal glows and lights up.
+  - **Gilded Vault** (bank): no monster gold; each wave pays 8 × level + level² plus 4% interest (cap 25 × level) as income; kill-gold content banned; vault cards (Vault Interest, Deeper Vaults, Royal Charter).
+  - **Siege Workshop**: the castle cannon is a hosted vanilla Cannon tower (tower menu, levels, upgrades, priorities, range 12; never counts as a built tower, cannot be demolished) with a voxel cannon turret on the roof; towers cost 2×; cards Heavier Shot, Quick Reload and Long Barrel; treasures Wall Cannons and Catapult (rotating weapons on the castle), Grapeshot, Incendiary Shells, Siege Engineer, Grand Bombard and Trebuchet Battery.
+  - **Necropolis**: 6 health; kills within 10.5 of the castle rise as blue ghosts (20% health; the monster's palette remapped to blue) that walk the path backwards and explode on contact; graves on the start tile; Haunted House unlocked; houses pay nothing.
+  - **Druid Grove**: 20 health; trees 1.5× more often, 6 at the start, regrowth after each wave; chopping heals 1; no houses, graves or iron veins (content that needs them is banned); card Heartwood I–III; treasures Sapling Seeds, Ironbark and Golden Sap.
+  - **Colosseum**: every 5th wave, one champion replaces the regular monsters (the wave's health × 1.2, heavy castle damage, drops a chest).
+  - **Crow's Nest**: a tall tower with one building cell on top that counts as +10 high ground (although it is visually higher); the start tile's free cells are filled with iron veins.
+  - **Glass Fortress**: no health (any leak is fatal, health changes have no effect, skull in the HUD); castle-health content banned; max-health costs are free; the model is drawn see-through (Standard shader in Fade mode).
+- **Play menu overhaul** (`UI/PlayMenuOverhaul.cs`):
+  - castle info on the left; Treasure Run, lane and challenge toggles on the right
+  - Back at the top left (also Esc)
+  - Start and the castle carousel at the bottom
+- Castle models come from code recipes (`tools/VoxTool/Recipes`, built with `VoxTool build models`), grounded above the grass layer. Moving parts are separate models (`CastleDef.Parts`), shown in the menu and in the game.
+- **Dev console** (`UI/DevConsole.cs`): in game or remote through `console/in.txt` (see `CLAUDE.md`).
+
+The original concept notes follow.
 - The castle is part of the start tile prefab, and castle HP is `GameManager.health`.
 - **At run start:** the player picks a Main Tower. The mod then:
   - hides the vanilla castle mesh on the start tile
@@ -152,7 +187,7 @@ enum Rarity { Common, Uncommon, Rare, Epic, Legendary, Mythical }
 | **M3 Level-up rework** | Card whitelist + treasure-per-slot chance |
 | **M4 Framework** | `GameEvents`, stat modifier layer, exclusion groups, pity, inventory bar with tooltips, ~50 treasures |
 | **M5 Voxel pipeline** | Mesh→vox converter, runtime vox loader |
-| **M6 Main tower** | Picker + castle replacement + 4 archetypes |
+| **M6 Main tower** | Play menu overhaul, castle framework, 10 castles (more to come) |
 | **M7 Ascensions** | Radar/BiPlane → Strike Fighter / Carpet Bomber / War Blimp, then other towers |
 | **M8 POIs** | Mage Tower first |
 | **M9 Content & balance** | 150+ treasures, Prism of Ascendance, Mythicals, release |

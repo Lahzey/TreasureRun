@@ -9,12 +9,15 @@ using UnityEngine.UI;
 namespace TreasureRun.UI
 {
     /// <summary>
-    /// Row of owned treasures at the top of the screen (uGUI, game font and panel sprite).
-    /// Hovering a slot shows name, rarity and description. Created per GameScene during a Treasure Run.
+    /// Owned treasures along the right screen edge (uGUI, game font and panel sprite), laid out like CSS
+    /// flex-direction: column + flex-wrap: wrap-reverse: top to bottom, then further columns to the left. The margin to
+    /// the screen edges equals the gap between slots. Hovering a slot shows name, rarity and description.
+    /// Created per GameScene during a Treasure Run.
     /// </summary>
     internal static class InventoryBar
     {
         private const float SlotSize = 44f;
+        private const float Gap = 6f;
         private const float TooltipWidth = 320f;
 
         private static GameObject root;
@@ -48,21 +51,14 @@ namespace TreasureRun.UI
             scaler.matchWidthOrHeight = 0.5f;
             root.AddComponent<GraphicRaycaster>();
 
+            // Full-screen container; slots are positioned by Layout() from the top-right corner.
             bar = NewRect("Bar", root.transform);
-            bar.anchorMin = bar.anchorMax = new Vector2(0.5f, 1f);
-            bar.pivot = new Vector2(0.5f, 1f);
-            bar.anchoredPosition = new Vector2(0f, -8f);
-            var layout = bar.gameObject.AddComponent<HorizontalLayoutGroup>();
-            layout.spacing = 4f;
-            layout.childControlWidth = layout.childControlHeight = false;
-            layout.childForceExpandWidth = layout.childForceExpandHeight = false;
-            var fitter = bar.gameObject.AddComponent<ContentSizeFitter>();
-            fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            Stretch(bar);
+            bar.gameObject.AddComponent<RelayoutOnResize>();
 
             tooltip = NewRect("Tooltip", root.transform);
-            tooltip.pivot = new Vector2(0.5f, 1f);
-            tooltip.anchorMin = tooltip.anchorMax = new Vector2(0.5f, 1f);
+            tooltip.pivot = new Vector2(1f, 1f);
+            tooltip.anchorMin = tooltip.anchorMax = new Vector2(1f, 1f);
             var tipBg = tooltip.gameObject.AddComponent<Image>();
             ApplyPanel(tipBg, Color.white);
             tipBg.raycastTarget = false;
@@ -86,7 +82,11 @@ namespace TreasureRun.UI
         public static void Refresh()
         {
             if (root == null || TreasureRunMode.Run == null) return;
-            foreach (Transform child in bar) Object.Destroy(child.gameObject);
+            foreach (Transform child in bar)
+            {
+                child.name = DestroyedMark; // Destroy is deferred; Layout skips these
+                Object.Destroy(child.gameObject);
+            }
 
             var order = new List<string>();
             var counts = new Dictionary<string, int>();
@@ -100,6 +100,32 @@ namespace TreasureRun.UI
                 TreasureDef def = TreasureRegistry.Get(id);
                 if (def != null) AddSlot(def, counts[id]);
             }
+            Layout();
+        }
+
+        /// <summary>Column-major from the top-right corner; wraps into a new column to the left when a column is full.</summary>
+        internal static void Layout()
+        {
+            if (bar == null) return;
+            float height = bar.rect.height;
+            int perColumn = Mathf.Max(1, Mathf.FloorToInt((height - Gap) / (SlotSize + Gap)));
+            int i = 0;
+            foreach (Transform child in bar)
+            {
+                if (child.name == DestroyedMark) continue;
+                var rt = (RectTransform)child;
+                int col = i / perColumn, row = i % perColumn;
+                rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(1f, 1f);
+                rt.anchoredPosition = new Vector2(-(Gap + col * (SlotSize + Gap)), -(Gap + row * (SlotSize + Gap)));
+                i++;
+            }
+        }
+
+        private const string DestroyedMark = "TR_Destroyed";
+
+        private sealed class RelayoutOnResize : MonoBehaviour
+        {
+            private void OnRectTransformDimensionsChange() => Layout();
         }
 
         private static void AddSlot(TreasureDef def, int count)
@@ -150,11 +176,11 @@ namespace TreasureRun.UI
                 tooltipText.text, tooltipText.GetGenerationSettings(new Vector2(TooltipWidth - 28f, 0f))) / tooltipText.pixelsPerUnit;
             tooltip.sizeDelta = new Vector2(TooltipWidth, textHeight + 24f);
 
-            // Place below the hovered slot (bar is anchored top-center).
-            Vector3 local = root.transform.InverseTransformPoint(slot.position);
+            // Left of the hovered slot, top-aligned with it, kept on screen.
+            var slotRt = slot;
             var canvasRect = (RectTransform)root.transform;
-            float x = Mathf.Clamp(local.x, -canvasRect.rect.width / 2f + TooltipWidth / 2f, canvasRect.rect.width / 2f - TooltipWidth / 2f);
-            tooltip.anchoredPosition = new Vector2(x, -(SlotSize + 18f));
+            float y = Mathf.Max(slotRt.anchoredPosition.y, -(canvasRect.rect.height - tooltip.sizeDelta.y - Gap));
+            tooltip.anchoredPosition = new Vector2(slotRt.anchoredPosition.x - SlotSize - Gap, y);
             tooltip.gameObject.SetActive(true);
             tooltip.SetAsLastSibling();
         }

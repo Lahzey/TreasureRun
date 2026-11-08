@@ -89,3 +89,42 @@ Meshes are built with greedy meshing (same-colour faces merged). The material is
 |---|---|
 | F6 | Reload `.vox` files, re-apply overrides, spawn `Debug.PreviewModels` next to the castle |
 | F7 / F8 / F9 | Level-up draw / treasure offer / grant window |
+
+## Grounding (grass layer)
+
+The tile's grass covers the lowest ~3.5 voxels around the castle: the grass top is at world y ≈ 0.333, and a voxel is 0.09375 world units after the castle's 0.9375 scale.
+
+- Castle recipes are designed from z = 0, then passed through `VoxCanvas.Grounded()`.
+- `Grounded()` lifts the model by 4 voxels and extends every ground-touching column down in its own colour.
+- Exception: models whose heights are mechanical. Crow's Nest's platform height is tied to its collider (CrowsNestBehaviour.PlatformY), so it is designed in final coordinates.
+
+## Animation and transparency (evaluated in M6)
+
+**Rigid-part animation works well.** Castle parts are declared in `CastleDef.Parts` (model, voxel position, scale, optional float animation) and appear in the menu background and in the game; game logic finds them with `CastleVisuals.FindPart`.
+- Split moving parts into separate models (e.g. `castles/arcane_spire_crystal`).
+- Parent them under the castle mesh at a voxel height and move them from a MonoBehaviour: bob, spin, open doors, recoil.
+- Cost: one extra mesh per part. Used by the Arcane Spire crystal.
+
+**Frame animation is possible.**
+- Several `.vox` frames swapped on a `MeshFilter` (MagicaVoxel supports frames).
+- Fine for small things such as flags or flickering flames. Every frame is a full mesh, so keep frames few and models small.
+
+**Glow and light effects work, with no new assets.**
+- `LineRenderer` + `Fx.GlowMaterial`: the built-in `Sprites/Default` shader, alpha-blended, colour from vertex/line colours. Used for the mana veins and floor runes.
+- Point `Light`s.
+- Procedural particle bursts: `Fx.Burst`, using a vanilla particle material.
+
+**Semi-transparent voxels work** (update after testing):
+- Glass Fortress: `CastleDef.ModelAlpha` / `Fx.FadeCopy`, the Standard shader in Fade mode (lit). The Fade variant turned out to be included in the build.
+- Necropolis ghosts: `Fx.RampTexture` remaps a palette texture to a blue ramp by brightness; drawn with `Fx.GhostMaterial` (unlit `Sprites/Default`, 80% opacity).
+- Real custom shaders would need an AssetBundle built in the Unity 2021.1 editor; shaders cannot be compiled at runtime.
+
+Original evaluation notes:
+- Shaders loaded at runtime (console `shaders`):
+  - `Standard`, used by all voxel meshes, opaque only. Its Fade/Transparent variants are most likely stripped from the build.
+  - `Sprites/Default` and `Particles/Standard Unlit`, both alpha-blended.
+- A voxel mesh can be drawn semi-transparent with `new Material(Sprites/Default) { mainTexture = palette }` plus an alpha colour.
+- It is **unlit**: no sun shading or shadows, so it looks flat next to lit voxels. It also doesn't write depth, so overlapping transparent parts can sort wrongly.
+- Good for small effect parts (crystals, ghosts, force fields), not for whole buildings.
+- A lit transparent look would need our own shader in an AssetBundle (Unity 2021.1 editor), which is possible but a bigger step.
+- Per-voxel alpha from the palette is not used yet. The mesher would have to split opaque and transparent voxels into two meshes.

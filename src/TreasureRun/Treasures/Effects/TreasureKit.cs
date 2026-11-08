@@ -53,19 +53,14 @@ namespace TreasureRun.Treasures.Effects
 
         // ----- VFX -----
 
-        private static Material lineMaterial;
         private static GameObject explosionPrefab;
         private static bool lookedUpExplosion;
 
         /// <summary>Short-lived line between two points (chain lightning, ricochets). Silently skipped if no material is found.</summary>
         public static void Zap(Vector3 from, Vector3 to, Color color, float duration = 0.15f)
         {
-            if (lineMaterial == null)
-            {
-                LineRenderer template = Resources.FindObjectsOfTypeAll<LineRenderer>().FirstOrDefault(l => l.sharedMaterial != null);
-                if (template == null) return;
-                lineMaterial = template.sharedMaterial;
-            }
+            Material lineMaterial = Fx.LineMaterial;
+            if (lineMaterial == null) return;
             var go = new GameObject("TR_Zap");
             var line = go.AddComponent<LineRenderer>();
             line.sharedMaterial = lineMaterial;
