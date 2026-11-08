@@ -37,9 +37,17 @@
     <Reference Include="Newtonsoft.Json" HintPath="$(ManagedPath)\Newtonsoft.Json.dll" Private="false" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\Shared\Vox\*.cs" Link="Shared\Vox\%(Filename)%(Extension)" />
+  </ItemGroup>
+
   <Target Name="DeployPlugin" AfterTargets="Build" Condition="Exists('$(BepInExPath)')">
     <MakeDir Directories="$(PluginDeployPath)" />
     <Copy SourceFiles="$(TargetPath);$(TargetDir)$(TargetName).pdb" DestinationFolder="$(PluginDeployPath)" SkipUnchangedFiles="true" />
+    <ItemGroup>
+      <ModelFiles Include="$(MSBuildProjectDirectory)\..\..\models\**\*.vox;$(MSBuildProjectDirectory)\..\..\models\**\*.json" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ModelFiles)" DestinationFiles="@(ModelFiles->'$(PluginDeployPath)\models\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
     <Message Importance="high" Text="Deployed $(TargetFileName) -> $(PluginDeployPath)" />
   </Target>
 

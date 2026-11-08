@@ -33,6 +33,7 @@ namespace TreasureRun
             CardPanel.Initialize();
             TreasureOfferUI.Initialize();
             InventoryBar.Initialize();
+            Voxels.ModelOverrides.Initialize();
 
             harmony = new Harmony(Guid);
             harmony.PatchAll(typeof(Plugin).Assembly);

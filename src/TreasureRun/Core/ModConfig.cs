@@ -11,6 +11,9 @@ namespace TreasureRun.Core
         public static ConfigEntry<UnityEngine.KeyCode> DebugOfferKey { get; private set; }
         public static ConfigEntry<UnityEngine.KeyCode> DebugGrantWindowKey { get; private set; }
         public static ConfigEntry<float> DebugMythicalWeight { get; private set; }
+        public static ConfigEntry<int> DebugAutoStartGameMode { get; private set; }
+        public static ConfigEntry<UnityEngine.KeyCode> DebugModelKey { get; private set; }
+        public static ConfigEntry<string> DebugPreviewModels { get; private set; }
 
         public static void Bind(ConfigFile config)
         {
@@ -24,6 +27,12 @@ namespace TreasureRun.Core
                 "Hotkey: show a treasure offer (pick 1 of 3) right now.");
             DebugGrantWindowKey = config.Bind("Debug", "GrantWindowKey", UnityEngine.KeyCode.F9,
                 "Hotkey: open a window listing all treasures; click one to gain it.");
+            DebugAutoStartGameMode = config.Bind("Debug", "AutoStartGameMode", 0,
+                "Development: 1-4 = load straight into a Treasure Run with that many lanes when the main menu appears (once per launch). 0 = off.");
+            DebugModelKey = config.Bind("Debug", "ReloadModelsKey", UnityEngine.KeyCode.F6,
+                "Hotkey: reload all .vox models from disk, re-apply model overrides and spawn the preview models next to the castle.");
+            DebugPreviewModels = config.Bind("Debug", "PreviewModels", "examples/castle",
+                "Comma-separated model names (path inside the models folder, without .vox) spawned next to the castle by the reload hotkey.");
             DebugMythicalWeight = config.Bind("Debug", "MythicalWeight", 0f,
                 "Draft weight of Mythical treasures (normal play: 0, they never roll). Other rarities weigh roughly 1-55.");
         }

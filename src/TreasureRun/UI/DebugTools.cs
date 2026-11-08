@@ -28,8 +28,33 @@ namespace TreasureRun.UI
         private bool hideUnavailable;
         private bool showDescriptions = true;
 
+        private bool autoStarted;
+        private float autoStartAt = -1f;
+
+        private void Awake()
+        {
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded += (scene, mode) =>
+            {
+                int lanes = ModConfig.DebugAutoStartGameMode.Value;
+                if (scene.name == "MainMenu" && !autoStarted && lanes >= 1 && lanes <= 4) autoStartAt = Time.realtimeSinceStartup + 2f;
+            };
+        }
+
+        private void AutoStartRun()
+        {
+            autoStartAt = -1f;
+            autoStarted = true;
+            if (LevelLoader.instance == null) return;
+            Plugin.Log.LogInfo($"[Debug] Auto-starting a Treasure Run ({ModConfig.DebugAutoStartGameMode.Value} lanes).");
+            TreasureRunMode.Selected = true;
+            PlayerPrefs.SetInt("GameMode", Mathf.Clamp(ModConfig.DebugAutoStartGameMode.Value, 1, 4));
+            LevelLoader.instance.LoadLevel("GameScene");
+        }
+
         private void Update()
         {
+            if (autoStartAt > 0f && Time.realtimeSinceStartup >= autoStartAt) AutoStartRun();
+
             if (!TreasureRunMode.Active || !ModConfig.DebugTools.Value)
             {
                 showGrantWindow = false;
@@ -46,6 +71,7 @@ namespace TreasureRun.UI
                 Plugin.Log.LogInfo("[Debug] Treasure offer requested.");
                 TreasureOfferUI.RequestOffer();
             }
+            if (Input.GetKeyDown(ModConfig.DebugModelKey.Value)) ReloadModels();
             if (Input.GetKeyDown(ModConfig.DebugGrantWindowKey.Value))
             {
                 showGrantWindow = !showGrantWindow;
@@ -123,6 +149,28 @@ namespace TreasureRun.UI
             GUILayout.EndScrollView();
             if (GUILayout.Button("Close")) showGrantWindow = false;
             GUI.DragWindow();
+        }
+
+        private readonly List<GameObject> previewObjects = new List<GameObject>();
+
+        /// <summary>Reload .vox files, re-apply overrides, respawn preview models in a row next to the castle.</summary>
+        private void ReloadModels()
+        {
+            foreach (GameObject go in previewObjects) if (go != null) Destroy(go);
+            previewObjects.Clear();
+            Voxels.ModelOverrides.RestoreAll();
+            Voxels.VoxelLibrary.ClearCache();
+            Voxels.ModelOverrides.ApplyAll();
+
+            string[] names = (ModConfig.DebugPreviewModels.Value ?? "")
+                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(n => n.Trim()).ToArray();
+            Vector3 basePos = GameHelpers.CastlePosition + new Vector3(4f, 0f, 0f);
+            for (int i = 0; i < names.Length; i++)
+            {
+                GameObject go = Voxels.VoxelLibrary.Spawn(names[i], basePos + new Vector3(2.5f * i, 0f, 0f), Quaternion.identity);
+                if (go != null) previewObjects.Add(go);
+            }
+            Plugin.Log.LogInfo($"[Debug] Models reloaded. Available: {string.Join(", ", Voxels.VoxelLibrary.AvailableNames())}");
         }
 
         private bool Matches(TreasureDef t)
