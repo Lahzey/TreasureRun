@@ -1,0 +1,6 @@
+ascensions/chain_crackle_3
+  duration 0.70 s | peak -1.0 dBFS | RMS -18.5 dBFS | loudest 50 ms -13.7 dBFS
+  attack 15 ms | decays to -30 dB at 0.56 s | brightness (spectral centroid) 9.8k
+  envelope per 50 ms (dBFS): -14 -15 -14 -16 -17 -18 -18 -22 -26 -34 -40 -44 -48 -51
+  brightness per 100 ms:    9.5k 10.0k 9.6k 10.2k 10.3k 6.0k 2.6k
+  dominant pitch per 100 ms: 237 237 431 129 129 129 129

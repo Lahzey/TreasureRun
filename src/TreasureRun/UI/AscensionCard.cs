@@ -76,15 +76,13 @@ namespace TreasureRun.UI
                 art.preserveAspect = true;
             }
 
-            // Description: first line "Rare · upgrades attack", excluded siblings at the end; shrinks to fit.
-            string excludes = string.Join(", ", AscensionRegistry.Siblings(def).Select(d => d.Name));
+            // Description: first line "Rare · upgrades attack"; shrinks to fit. Other ascensions of the tower are not listed (players discover them).
             Text desc = cm.descriptions[i];
             if (!s.DescCaptured) { s.DescBestFit = desc.resizeTextForBestFit; s.DescMin = desc.resizeTextMinSize; s.DescMax = desc.resizeTextMaxSize; s.DescCaptured = true; }
             desc.resizeTextForBestFit = true;
             desc.resizeTextMaxSize = desc.fontSize;
             desc.resizeTextMinSize = Mathf.RoundToInt(desc.fontSize * 0.6f);
-            desc.text = $"<color={RarityInfo.Hex(RarityInfo.TextColor(def.Rarity))}><b>{def.Rarity}</b> · {kind}</color>\n" + def.Description +
-                (excludes.Length > 0 ? $"\n<color=#{ColorUtility.ToHtmlStringRGB(Color.Lerp(banner, Color.black, 0.2f))}><i>Excludes: {excludes}</i></color>" : "");
+            desc.text = $"<color={RarityInfo.Hex(RarityInfo.TextColor(def.Rarity))}><b>{def.Rarity}</b> · {kind}</color>\n" + def.Description;
 
             s.Root.gameObject.SetActive(true);
             s.Frame.gameObject.SetActive(true);

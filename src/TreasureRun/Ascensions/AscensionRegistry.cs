@@ -24,6 +24,13 @@ namespace TreasureRun.Ascensions
     {
         public string Id;
         public string Name;
+
+        /// <summary>
+        /// Name of an ascended tower (popup title, build button). Null = <see cref="Name"/>; set where the ascension's
+        /// name does not work as a tower name (Chain Lightning → Storm Coil). List: docs/ascension-plan.md §3.
+        /// </summary>
+        public string TowerName;
+
         public string Description;
         public Rarity Rarity;
         public AscensionTarget Target;
@@ -41,6 +48,9 @@ namespace TreasureRun.Ascensions
         /// <summary>Extra content tags (castle bans), on top of "ascension" and "ascension:&lt;target&gt;".</summary>
         public string[] Tags = Array.Empty<string>();
 
+        /// <summary>Development-only ascension (never offered, not listed under "Excludes" on other cards).</summary>
+        public bool Hidden;
+
         /// <summary>Extra one-time effect on acquire (after components are attached).</summary>
         public Action<RunState, bool> OnAcquire;
 
@@ -48,6 +58,8 @@ namespace TreasureRun.Ascensions
         public TreasureDef Treasure { get; internal set; }
 
         public string TargetName => AscensionTargets.DisplayName(Target);
+        /// <summary>The ascended tower's name (<see cref="TowerName"/>, else the ascension's name).</summary>
+        public string BuiltName => string.IsNullOrEmpty(TowerName) ? Name : TowerName;
         public string TypeLine => TargetName + " Ascension";
     }
 
@@ -113,6 +125,24 @@ namespace TreasureRun.Ascensions
             byTreasure[def.Id] = def;
         }
 
+        /// <summary>
+        /// Takes an ascension away again (dev tools and scenarios: several ascensions of one tower in one launch).
+        /// Components are removed (restoring the vanilla models) and the build button gets its name back.
+        /// </summary>
+        public static void Revoke(AscensionDef def)
+        {
+            TreasureInventory.Revoke(def.Id);
+            if (def.Component != null)
+                foreach (GameObject go in PlacedObjects(def.Target).ToList())
+                {
+                    Component c = go.GetComponent(def.Component);
+                    if (c == null) continue;
+                    UnityEngine.Object.DestroyImmediate(c);
+                    go.GetComponent<Tower>()?.SetStats();
+                }
+            AscensionUi.RestoreBuildButton(def);
+        }
+
         // ------------------------------------------------------------------ components
 
         /// <summary>Adds the owned ascension's component of this object's target, if any (idempotent).</summary>
@@ -143,11 +173,17 @@ namespace TreasureRun.Ascensions
             return UnityEngine.Object.FindObjectsOfType(c).Cast<Component>().Select(x => x.gameObject);
         }
 
-        /// <summary>"Repeater (Ballista)" for an ascended object, else null.</summary>
-        public static string DisplayNameOf(GameObject go)
+        /// <summary>The ascended tower's name ("Storm Coil") for a tower or building of an owned ascension, else null.</summary>
+        public static string DisplayNameOf(GameObject go) => AscensionOf(go)?.BuiltName;
+
+        /// <summary>The owned ascension that applies to this object (also for ascensions without a component, like the Radar's).</summary>
+        public static AscensionDef AscensionOf(GameObject go)
         {
-            AscendedTower a = go != null ? go.GetComponent<AscendedTower>() : null;
-            return a != null && a.Def != null ? $"{a.Def.Name} ({a.Def.TargetName})" : null;
+            if (go == null) return null;
+            AscendedTower a = go.GetComponent<AscendedTower>();
+            if (a != null && a.Def != null) return a.Def;
+            AscensionTarget? target = AscensionTargets.Of(go);
+            return target.HasValue ? Owned(target.Value) : null;
         }
 
         // ------------------------------------------------------------------ patches (attach on build)

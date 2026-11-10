@@ -124,6 +124,7 @@ namespace TreasureRun.Cards
             Configure(Ids.RestlessDead, s => s.Tags = new[] { ContentTags.NeedsGraves });
 
             Castles.CastleCards.RegisterAll();
+            Ascensions.Phase1.Phase1Ascensions.RegisterCards();
 
             Plugin.Log.LogInfo($"Registered {all.Count} custom cards.");
         }

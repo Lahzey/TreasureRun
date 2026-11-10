@@ -22,6 +22,13 @@ Things known to need tuning, collected for M9 (content & balance). All numbers a
 |---|---|---|
 | **Strike Fighter** | A bit too powerful (playtest feedback). It is a pure stat boost on the vanilla AI, so tone down one of speed, fire rate or magazine. | `StrikeFighter.SpeedFactor` (2.2), `TurnTime` (0.55), `FireIntervalFactor` (0.6), `Magazine` (30) |
 | Carpet Bomber | Bomb rate (1 per 10 Radar shots) and 3× damage are guesses. Weak on short tracks early, possibly strong on long straights. | `CarpetBomber.BombIntervalFactor`, `BombDamageFactor`, `BlastRadius`, `MaxBombs` |
+| Repeater | Measured 57 DPS vs. 37 for a vanilla Ballista on a dummy (≈ 1.5×, as designed). Bursts waste bolts on low-health targets. | `RepeaterLogic.DpsFactor`, `BoltSpacing` |
+| Springald | Up to 3× a vanilla shot when 5 monsters line up (100+80+60+40+20%); 1× against single targets. | `SpringaldLogic.FalloffPerHit`, `MaxHits` |
+| Lone Scout | 3 ticks/s × (1 + Lookout damage) × (1 + its health multiplier): 18 DPS at level 1, scaling with Lookout levels. Swift Scouts +1 tick each. | `LoneScoutLogic.BaseTicksPerSecond` |
+| **Chain Lightning** | 20 full-damage hits per attack (vs. everything within range 2 in vanilla): very strong on dense waves. More Chains adds +5 each. | `ChainLightningLogic.BaseHits`, `HitsPerCard` |
+| Supercharge | +30% attack speed per coil for 1 s; several coils around one tower stack without limit. Tesla range is small, so it needs tight clusters. | `SuperchargeBuffs.BonusPerCoil`, `Duration` |
+| **Sealed Fate** | Swords never expire before the victim dies, so bosses collect a new sword every 5 s (5 swords after 25 s, each up to 3× damage). | `SealedFateLogic.MaxFactor` |
+| **Nest of Bats** | **Far too strong as specified:** 10 bats × the lair's full damage once a second measured 1270 DPS on one dummy, vs. 12 for the vanilla pulse. Probably needs a fraction of the lair's damage per bite (e.g. 10–20%) or longer bite intervals. | `NestOfBatsLogic.BiteInterval`, `BaseBats`, bite damage |
 | Ley Line Network (planned) | Income = siphons × crystals touched, quadratic by design (late-game infinite mana is intended). Tune if it arrives too early. | per-crystal rate |
 | Mega Mortar (planned) | Fused mortar: blast radius × side length, damage = sum of all members (incl. levels and upgrades), vanilla fire rate. Check whether one big shell outperforms the separate mortars too much. | radius factor |
 | Particle Accelerator (planned) | One core plus capacitors: capacitors add their damage to the black hole, charge stays 30 s; the Ley Line Network is the only way to charge faster. | charge time, capacitor share |

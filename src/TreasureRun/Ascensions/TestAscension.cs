@@ -19,7 +19,7 @@ namespace TreasureRun.Ascensions
             var def = new AscensionDef
             {
                 Id = Id, Name = "Proving Ground", Rarity = Rarity.Rare, Kind = AscensionKind.Upgrade,
-                Target = AscensionTarget.Ballista, Component = typeof(TestAscension), CardModel = "castles/siege_cannon",
+                Target = AscensionTarget.Ballista, Component = typeof(TestAscension), CardModel = "castles/siege_cannon", Hidden = true,
                 Description = "Development test ascension: Ballistas wear the Siege Workshop cannon and gain +5 base damage.",
             };
             AscensionRegistry.Register(def);

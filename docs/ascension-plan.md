@@ -2,7 +2,7 @@
 
 The design intent for every ascension is in [ascensions.txt](ascensions.txt). This document covers how they get built: shared infrastructure first, then each ascension with its approach, models, sounds, cards, tests and open questions. Vanilla mechanics referenced here are in [reference/vanilla-towers.md](reference/vanilla-towers.md).
 
-**Status:** Radar is done (Strike Fighter, Carpet Bomber, War Blimp; see `PLAN.md` §6b). **Phase 0 (infrastructure) is done** (see §4). Everything else is planned.
+**Status:** Radar is done (Strike Fighter, Carpet Bomber, War Blimp; see `PLAN.md` §6b). **Phase 0 (infrastructure) and phase 1 (Repeater, Springald, Lone Scout, Chain Lightning, Supercharge, Sealed Fate, Nest of Bats) are done** (see §4). Phases 2 and 3 are planned.
 
 ---
 
@@ -22,16 +22,45 @@ Code: `src/TreasureRun/Ascensions`.
   - `Kind`: **Replace** ("replaces attack"), **Augment** ("adds to attack") or **Upgrade** ("upgrades attack"), shown on the card.
   - `Component`: the `AscendedTower` subclass attached to every tower of the target (null when the ascension handles itself, like the Radar planes).
   - `CardModel`: voxel model used as card art. `OnAcquire`: extra one-time effect.
+  - `TowerName`: name of the ascended tower, shown as the popup title and on the build button (`BuiltName`; null = the ascension's name). Set where the ascension's name doesn't work as a tower name (Chain Lightning → Storm Coil). Every ascension's tower name is listed in §3 and in the table below.
 - **`AscensionRegistry`**: `ForTreasure(id)`, `Owned(target)`, `Siblings(def)`, `PlacedObjects(target)`, `DisplayNameOf(go)`. Register new families in `AscensionCatalog.RegisterAll` (and hooks in `HookAll`).
 - **Applying to towers:** an ascension applies to **every** tower of its type, already built and future ones:
   - On acquire, the component is added to all placed towers of the target (`AttachAll`).
   - Postfixes on `Tower.Start` and the building `Start`s (Mana Siphon, Mana Bank, Mine, University, Haunted House) add it to new ones.
   - The component owns the swapped model and the replaced/augmented behaviour; vanilla methods it replaces are skipped with prefixes that check for the component (the `CustomFlight` pattern of the planes).
 - **`AscendedTower`** (base component): `OnAscend()` runs once after attaching (the tower's own `Start` has already run), then `Tower.SetStats()` is re-run. Model swap helpers: `HideVanillaModel()` (hides every MeshRenderer whose mesh is a MagicaVoxel export, mesh name `default`; effect renderers stay), `ShowModel(name, parent, pos, rot, scale)` (e.g. under `Tower.turret` so it turns with it), `RestoreVanillaModel()`.
-- **Tower UI** (`AscensionUi.cs`): a title panel above the popup's level panel (a clone of it) reading `Repeater (Ballista)`, shrunk to one line; the build button label is renamed to the ascension. Ascension-specific buttons (Firing Line's aim button) will be added by the component.
+- **Tower UI** (`AscensionUi.cs`): a title panel above the popup's level panel (a clone of it) with the ascended tower's name (`Storm Coil`, no vanilla name in brackets), shrunk to one line; the build button label is renamed to the tower name too. Also for the Radar ascensions (Air Base, Bomb Depot, Airship Mast), which have no component. Ascension-specific buttons (Firing Line's aim button) will be added by the component.
 - **Follow-up cards** (More Bomblets, More Chains, Swift Scouts, More Bats): `CustomCards.AscensionChain(ascensionId, id, title, tiers, image, description, onPick)`, only drawable while the ascension is owned (`CustomCardSpec.Available`). They stay tame (content rules §3).
 - **Stats:** per-tower stat changes go through `StatLayer.Register(name, (tower, stats) => ...)`, checking `tower.GetComponent<MyAscension>()`. Ascensions that set a new base range (Icicle Cannon 6, Magma Lobber 8, Bladestorm 2) still need a `Tower.SetStats` prefix that swaps the prefab base value, so height, levels and cards keep stacking on top.
 - **Test ascension:** "Proving Ground" (`TestAscension.cs`, Ballista, only with `Debug.DebugTools`, never offered): Siege Workshop cannon on the turret and +5 base damage. Use it as the template for new ascensions.
+
+**Tower names** (ascension → ascended tower; implemented ones are set in code):
+
+| Tower | Ascension | Tower name |
+|---|---|---|
+| Ballista | Repeater | Repeater |
+| Ballista | Springald | Springald |
+| Mortar | Cluster Munitions | Cluster Mortar |
+| Mortar | Mega Mortar | Mortar Module |
+| Tesla Coil | Chain Lightning | Storm Coil |
+| Tesla Coil | Supercharge | Capacitor Coil |
+| Frost Keep | Icicle Cannon | Icicle Cannon |
+| Flame Thrower | Magma Lobber | Magma Lobber |
+| Shredder | The Saw Dimension | Saw Engine |
+| Shredder | Bladestorm | Bladestorm |
+| Encampment | Dead Man's Land | Permacamp |
+| Lookout | Lone Scout | Scout's Perch |
+| Vampire Lair | Nest of Bats | Nest of Bats |
+| Cannon | Firing Line | Line Cannon |
+| Cannon | Hwacha | Hwacha |
+| Monument | Sealed Fate | Sealed Monument |
+| Obelisk | Ritual of the Sun | Sun Obelisk |
+| Radar | Strike Fighter | Air Base |
+| Radar | Carpet Bomber | Bomb Depot |
+| Radar | War Blimp | Airship Mast |
+| Particle Cannon | Beam Cannon | Beam Cannon |
+| Particle Cannon | Particle Accelerator | Particle Accelerator |
+| Mana Siphon | Ley Line Network | Ley Siphon |
 
 ### 1.2 Ascension card presentation
 
@@ -44,7 +73,6 @@ Ascension treasures look different from normal treasures in the offer panel, the
 │   [ascended model render] │  instead of the gem icon
 │  Common · upgrades attack │  first description line: rarity + kind
 │  Fires 3-round bursts...  │  description (shrinks to fit)
-│  Excludes: Springald      │  other ascensions of the same tower
 └───────────────────────────┘
    (double frame behind the card: rarity colour outside, gold inside, shimmering)
 ```
@@ -55,7 +83,8 @@ As built (`UI/AscensionCard.cs`, called from `CardPanel.StyleAsTreasure`; verifi
 - **Card art:** a render of `AscensionDef.CardModel`, made at runtime by `UI/ModelIcons.cs` (temporary camera and light on an unused layer, fitted to the model's bounds, cached). No icon files.
 - **Frame:** a double border behind the card (outer: rarity colour, inner: gold); the outer one pulses brighter (unscaled time).
 - **Kind and rarity:** first line of the description ("Rare · upgrades attack"). A separate footer was tried and dropped: long descriptions overlapped it. The description uses best fit (down to 60% font size).
-- **Excludes:** the last line of the description lists the other ascensions of the same tower.
+- **No "Excludes" line** (removed after review): players discover the other ascensions of a tower themselves.
+- **Card size:** in a Treasure Run every card panel (level-up cards, treasure offers, monster cards) shows the cards 1.25× larger and spread out by the same factor (`UI/CardSize.cs`).
 - **Pick feedback:** the sound `ui/ascension_pick` plays when an ascension is gained (§1.5). The planned particle burst was skipped, because the panel closes on pick.
 - **Inventory bar:** ascensions get a gold rim and the crest as a badge (banner colour), are sorted first, and the tooltip shows "Rare · Ballista Ascension".
 - The extra objects are created once per card slot, only shown for ascensions, and hidden again by `CardPanel.Restore`.
@@ -71,7 +100,8 @@ All ascension models are code recipes in `tools/VoxTool/Recipes/AscensionRecipes
 - Split moving parts into their own models (turrets, barrels, rotating blades, launch racks), animated from the component, like the castle parts.
 - Projectiles and effects are small models at a finer voxel size (0.02–0.04, like vanilla projectiles).
 - Every model gets a preview PNG reviewed by me. Card art is rendered from the model at runtime (§1.2), so just set `AscensionDef.CardModel`.
-- Swap models in the component's `OnAscend` with `HideVanillaModel()` + `ShowModel(...)` (§1.1). VoxelLibrary places models centred on x/z and standing on y = 0; vanilla towers are split into `BaseArt` and `Turret/TurretArt`.
+- **Tower models built on the vanilla model** (`AscensionRecipes.cs`, phase 1): the recipe loads the extracted vanilla `.vox` (`FromVanilla`), keeps its x/y size and only adds or changes voxels; `build` writes a sidecar with the vanilla origin (`VanillaSidecars`). The component then calls `SwapVanillaMesh("TurretArt" | "BaseArt", model)`, which swaps the mesh on the vanilla renderer in place, so turrets keep turning and nothing needs positioning. `VoxTool slices <file.vox> [z0 z1]` prints a model layer by layer to find where parts are.
+- Swap models in the component's `OnAscend` with `SwapVanillaMesh` (above), or `HideVanillaModel()` + `ShowModel(...)` for new geometry (§1.1). VoxelLibrary places models centred on x/z and standing on y = 0; vanilla towers are split into `BaseArt` and `Turret/TurretArt`.
 - Glow and beams use `Fx.GlowMaterial` + `LineRenderer`, lights and `Fx.Burst`, as evaluated in M6.
 
 ### 1.5 Sound effects
@@ -113,22 +143,22 @@ All ascension models are code recipes in `tools/VoxTool/Recipes/AscensionRecipes
 
 | Ascension | Sounds |
 |---|---|
-| Repeater | ♻ Ballista shot ×3, slightly higher pitch per round |
-| Springald | ✚ heavy bolt launch; ♻ Ballista hit per pierce, falling pitch |
+| Repeater | ♻ Ballista shot ×3, slightly higher pitch per round. **Done** (`SoundLibrary.PlayVanilla`) |
+| Springald | ✚ heavy bolt launch; ♻ Ballista hit per pierce, falling pitch. **Done** (`ascensions/springald_launch`) |
 | Cluster Munitions | ✚ shell split "pop"; ♻ small explosions |
 | Mega Mortar | ✚ deep launch boom; ✚ huge explosion |
-| Chain Lightning | ✚ crackling arc that jumps |
-| Supercharge | ✚ rising charge hum on buffed towers |
+| Chain Lightning | ✚ crackling arc that jumps. **Done** (`ascensions/chain_crackle`, 3 variants) |
+| Supercharge | ✚ rising charge hum on buffed towers. **Done** (`ascensions/supercharge`) |
 | Icicle Cannon | ✚ ice shard launch; ✚ shatter |
 | Magma Lobber | ✚ heavy lob; ✚ sizzling impact |
 | Saw Dimension | ✚ low saw-hum loop (one global loop, louder with more saws) |
 | Bladestorm | ✚ whirring loop per tower |
 | Dead Man's Land | ♻ explosion |
-| Lone Scout | ✚ soft tick (quiet; it fires often) |
-| Nest of Bats | ✚ flutter loop; ✚ bite |
+| Lone Scout | ✚ soft tick (quiet; it fires often). **Done** (`ascensions/scout_tick`, 3 variants) |
+| Nest of Bats | ✚ flutter loop; ✚ bite. **Bite done** (`ascensions/bat_bite`, 3 variants); the flutter loop was skipped |
 | Firing Line | ♻ Cannon |
 | Hwacha | ✚ rocket whoosh (variants); ✚ small pops |
-| Sealed Fate | ✚ stab, rising pitch with stacks |
+| Sealed Fate | ✚ stab, rising pitch with stacks. Not done: uses the vanilla sword hit sound |
 | Ritual of the Sun | ✚ choir-like swell when the ring closes; ✚ beam roar loop |
 | Beam Cannon | ✚ continuous energy beam loop |
 | Particle Accelerator | ✚ charging whine (rising); ✚ black hole rumble; ✚ collapse |
@@ -212,11 +242,13 @@ Each entry: **effect**, **approach**, **models**, **cards**, **open questions**.
 ### Ballista
 
 #### Repeater (Common, Replace)
+- **Tower name:** Repeater (same as the ascension)
 - **Effect:** 3-round bursts on one target; effective DPS about 1.5×.
 - **Approach:** a `Fire` prefix starts a burst coroutine (3 bolts, about 0.15 s apart) and stretches the reload so DPS = 1.5× vanilla. Bolts carry a burst id; when the target dies, the remaining bolts fly to its last position and deal no damage (a non-homing "dud" projectile).
 - **Models:** ballista with a 3-bolt magazine on top of the turret.
 
 #### Springald (Rare, Replace)
+- **Tower name:** Springald (same as the ascension)
 - **Effect:** piercing bolts; 100% damage on the first hit, then −20% of the original per hit; gone after 5 hits.
 - **Approach:** own projectile (sphere cast like the vanilla `Cannonball`, but its own class, avoiding the vanilla Cannon's prefab-mutation bug). Flies straight after the first hit.
 - **Models:** heavier frame with torsion bundles; a longer bolt.
@@ -224,12 +256,14 @@ Each entry: **effect**, **approach**, **models**, **cards**, **open questions**.
 ### Mortar
 
 #### Cluster Munitions (Rare, Augment)
+- **Tower name:** Cluster Mortar
 - **Effect:** at 2/3 of the flight a shell splits into 5 bomblets with 50% damage and 50% area each; they spread so that the centre is usually hit by all of them.
 - **Approach:** a `MorterShell` postfix tracks flight time; at 2/3 it spawns bomblets with 50% damage and **50% blast radius**, whose landing points form a ring at radius ≈ 0.6 × bomblet blast radius around the target point, so the centre overlaps all of them. Each bomblet damages separately.
 - **Cards:** More Bomblets I–V (+1 bomblet each).
 - **Models:** mortar with a ribbed shell rack; small bomblet model.
 
 #### Mega Mortar (Legendary, Replace)
+- **Tower name:** Mortar Module
 - **Effect:** mortars in a full square (2×2, 3×3, …) fuse into one big mortar; the terrain is raised to the highest of the cells.
   - **Blast radius** × side length: 2×2 → 2×, 3×3 → 3×.
   - **Damage:** the sum of all fused mortars' base damage, including their levels and upgrades. The same for health, armor and shield damage.
@@ -244,12 +278,14 @@ Each entry: **effect**, **approach**, **models**, **cards**, **open questions**.
 ### Tesla Coil
 
 #### Chain Lightning (Uncommon, Replace)
+- **Tower name:** Storm Coil
 - **Effect:** single-target attack that chains 20 times to the nearest enemy within the coil's range (from the last hit enemy), may leave the coil's range, restarts from earlier victims when stuck, never hits an enemy twice.
 - **Approach:** `ChainLightningLogic.Plan(start, enemies, range, chains)` → hit list; the component deals vanilla `TakeDamage` per hit and draws the bolts with `LineRenderer` segments.
 - **Cards:** More Chains I–IV (+5 each).
 - **Models:** coil with a single focus tip instead of the ring.
 
 #### Supercharge (Rare, Augment)
+- **Tower name:** Capacitor Coil
 - **Effect:** each attack also gives towers in range +30% attack speed for 1 s; a coil only refreshes its own buff, separate coils stack.
 - **Approach:** a buff registry `towerId → {coilId: expiry}`; the stat layer multiplies `rps` (towers), drop rate (Frost Keep, Encampment) and plane fire interval.
 - **Models:** coil with conductor rods; a short arc to each buffed tower.
@@ -258,6 +294,7 @@ Each entry: **effect**, **approach**, **models**, **cards**, **open questions**.
 ### Frost Keep
 
 #### Icicle Cannon (Uncommon, Replace)
+- **Tower name:** Icicle Cannon (same as the ascension)
 - **Effect:** a cannon-like straight, piercing icicle shot with the Frost Keep's slow; base range 6.
 - **Approach:** turns the keep into a targeting tower (it is a `Dropper` without a turret): skip `Dropper.Update`, run its own fire loop with the cannon's straight-line piercing (own projectile, see Springald). Keeps the mana-per-second drain.
 - **Models:** keep with an ice ballista turret; icicle projectile; frost shards on impact.
@@ -265,6 +302,7 @@ Each entry: **effect**, **approach**, **models**, **cards**, **open questions**.
 ### Flame Thrower
 
 #### Magma Lobber (Epic, Replace)
+- **Tower name:** Magma Lobber (same as the ascension)
 - **Effect:** slow, big lobbed balls of magma with a large blast; sets enemies on fire; base range 8.
 - **Approach:** an arcing projectile reusing the Siege Workshop Catapult's lob code, exploding with a big radius and high burn %. Uses mana like the Flame Thrower.
 - **Models:** squat furnace catapult; glowing magma ball (emissive look via `Fx.GlowMaterial` overlay); scorch decal.
@@ -272,6 +310,7 @@ Each entry: **effect**, **approach**, **models**, **cards**, **open questions**.
 ### Shredder
 
 #### The Saw Dimension (Legendary, Replace)
+- **Tower name:** Saw Engine
 - **Effect:** the whole path is covered in saws: 5 ticks per second, damage per second = Σ(Shredder damage)/10. There is **no base damage**: with no Shredder built, the saws deal nothing. Shredders no longer attack. All Shredders gain XP centrally, split by which layer (shield/armor/health) the monsters on the map currently have.
 - **Approach:**
   - One global `SawField` ticks 5×/s over `SpawnManager.currentEnemies` (cheap; no physics).
@@ -282,6 +321,7 @@ Each entry: **effect**, **approach**, **models**, **cards**, **open questions**.
 - **Models:** small floor saw (plus its retracted slot); Shredder variant with a saw "generator" on top.
 
 #### Bladestorm (Epic, Replace)
+- **Tower name:** Bladestorm (same as the ascension)
 - **Effect:** blades orbit the Shredder flat side up and damage whatever they pass through; attack speed → rotation speed, range → number of blades (on more and wider rings); base range 2.
 - **Approach:** blades as transforms on rings; each frame, an overlap test per blade (`OverlapSphere` of blade size) with a per-blade/enemy hit cooldown so an enemy is hit once per pass.
 - **Models:** low Shredder hub with a spindle; flat blade.
@@ -289,6 +329,7 @@ Each entry: **effect**, **approach**, **models**, **cards**, **open questions**.
 ### Encampment
 
 #### Dead Man's Land (Epic, Augment)
+- **Tower name:** Permacamp
 - **Effect:** mines persist after the wave; mines landing near an existing mine merge into it as charges; a mine with N charges explodes N times (one per frame while an enemy is on it).
 - **Approach:** remove mines from `SpawnManager.destroyOnNewLevel`; a merge radius (≈ 0.3) checked on landing; charge counter on the mine; a charge label or stacked look.
 - **Finding:** vanilla has **no cap** on landmines. They are only removed at wave end. With merging, the count stays bounded by the path cells in range.
@@ -297,6 +338,7 @@ Each entry: **effect**, **approach**, **models**, **cards**, **open questions**.
 ### Lookout
 
 #### Lone Scout (Uncommon, Augment)
+- **Tower name:** Scout's Perch
 - **Effect:** the marked enemy takes 1 damage 3 times per second; Swift Scouts add a tick each.
 - **Approach:** a tick of `TakeDamage(TowerType.Lookout, 1, 1, 1, 1, …)` on the marked enemy. The vanilla mark bonus applies automatically (it adds the Lookout's damage and multipliers to every hit), which is exactly "triggers the Lookout damage".
 - **Cards:** Swift Scouts I–III.
@@ -305,6 +347,7 @@ Each entry: **effect**, **approach**, **models**, **cards**, **open questions**.
 ### Vampire Lair
 
 #### Nest of Bats (Rare, Augment)
+- **Tower name:** Nest of Bats (same as the ascension)
 - **Effect:** in addition to the pulse, 10 bats fly to enemies in range and deal the Lair's damage once per second each; they retarget (preferring nearby enemies) when the target dies or leaves range.
 - **Approach:** bats are light objects driven by the Lair component (no physics; steering with a little noise); weighted random target pick (`weight = 1/distance²`).
 - **Cards:** More Bats I–III (+3 each).
@@ -314,11 +357,13 @@ Each entry: **effect**, **approach**, **models**, **cards**, **open questions**.
 ### Cannon
 
 #### Firing Line (Uncommon, Augment)
+- **Tower name:** Line Cannon
 - **Effect:** set a fixed firing direction; the cannon fires that way non-stop during waves.
 - **Approach:** a "Set target" button in the tower popup; then the cursor becomes a big target marker (world-space voxel decal following the ground hit), click to confirm (like BTD6). The component overrides targeting: always "has a target" during combat, fires along the stored direction. Own cannonball (not the buggy vanilla one).
 - **Models:** cannon on a fixed emplacement with sandbags; target marker.
 
 #### Hwacha (Epic, Replace)
+- **Tower name:** Hwacha (same as the ascension)
 - **Effect:** a swarm of small rockets (20 by default, `ModConfig`) with a small blast, landing roughly around the target.
 - **Approach:** rockets launched over about 1 s from the rack slots (staggered), slight homing toward a random point within ~1.5 of the target, small blast each. Rack recoil and smoke animation; reload shows empty slots refilling.
 - **Models:** Hwacha cart with a launch rack (slot positions as model metadata), rocket.
@@ -326,6 +371,7 @@ Each entry: **effect**, **approach**, **models**, **cards**, **open questions**.
 ### Monument
 
 #### Sealed Fate (Epic, Replace)
+- **Tower name:** Sealed Monument
 - **Effect:** each stab does +1 damage instead of −1, up to 3× the original; the sword only leaves when the target dies.
 - **Approach:** a `SpiritSword.DealDamage` prefix counts up and clamps; disable the "damage ≤ 0" exit.
 - **Models:** Monument with a chained sword; glowing sword.
@@ -333,6 +379,7 @@ Each entry: **effect**, **approach**, **models**, **cards**, **open questions**.
 ### Obelisk
 
 #### Ritual of the Sun (Mythical, Augment)
+- **Tower name:** Sun Obelisk
 - **Effect:** each obelisk links to its nearest obelisk in range (not to one that already links to it); closed loops of 3+ obelisks call a huge sun beam at the loop's centre that deals the combined DPS of the loop's obelisks to monsters inside.
 - **Approach:**
   - `RitualLogic` builds the "nearest" graph and finds cycles ≥ 3 whenever an obelisk is built or demolished.
@@ -344,11 +391,13 @@ Each entry: **effect**, **approach**, **models**, **cards**, **open questions**.
 ### Particle Cannon
 
 #### Beam Cannon (Epic, Replace)
+- **Tower name:** Beam Cannon (same as the ascension)
 - **Effect:** a continuous straight beam while there is mana; higher DPS and higher mana per second than vanilla.
 - **Approach:** like the Obelisk beam but long-range: ticks 10×/s, about 1.3× vanilla DPS and about 1.6× mana per second (tunable). Hits the first enemy on the line (or all on the line? default: first).
 - **Models:** cannon with a focusing lens; beam built from two `LineRenderer`s.
 
 #### Particle Accelerator (Legendary, Replace)
+- **Tower name:** Particle Accelerator (same as the ascension)
 - **Effect:** drains mana fast while charging (pauses below 25% mana); fully charged after 30 s it fires a black hole at the target that sucks in all enemies for 5 s and deals heavy damage.
 - **One core, the rest are capacitors** (only one black hole source, and still only one per 30 s):
   - On pick, the highest-level Particle Cannon becomes the **Accelerator core**. A "Make core" button in the tower menu moves the role to another Particle Cannon (the charge carries over).
@@ -367,6 +416,7 @@ Each entry: **effect**, **approach**, **models**, **cards**, **open questions**.
 ### Mana Siphon (building)
 
 #### Ley Line Network (Legendary, Augment)
+- **Tower name:** Ley Siphon
 - **Effect:** adjacent siphons form a network; each siphon earns 1 mana/s per crystal touched by the network. Secret: a Particle Accelerator's drain (and so its charge rate) rises by the network's income.
 - **Approach:** flood fill over siphons (4-neighbour, same height as the vanilla checks); crystals adjacent to any siphon count; recomputed on build/demolish.
 - **Models:** arcane pipes that connect: a hub plus 4 arm parts shown per neighbour (siphon or crystal), and an intake that "pumps" from crystals. Parts instead of 16 full models. Glow flowing through the pipes.
@@ -389,7 +439,7 @@ Per ascension: logic + tests → component + models → sounds → one in-game s
 - **Framework** (`src/TreasureRun/Ascensions`): `AscensionTarget` (towers and buildings, banner colours, build buttons), `AscensionDef` + `AscensionRegistry` (treasure, exclusion group `ascension:<target>`, tags, attaching the component on acquire and on `Tower.Start`/building `Start`), `AscendedTower` (base component: `OnAscend`, `HideVanillaModel`, `ShowModel`), `AscensionUi` (popup title panel "Repeater (Ballista)", build button label), `AscensionCatalog` (registration). Radar's three ascensions are registered through it.
 - **Follow-up cards:** `CustomCards.AscensionChain(ascensionId, ...)` adds a card chain that is only drawable while the ascension is owned.
 - **Test ascension:** "Proving Ground" (Ballista, dev only, never offered; `TestAscension.cs`) exercises everything above.
-- **Card presentation** (`UI/AscensionCard.cs`, `UI/ModelIcons.cs`): type-line banner with the tower's crest, model render as card art (rendered at runtime from the voxel model, no icon files), rarity + gold double frame with shimmer, first description line "Rare · upgrades attack", "Excludes: …" line; inventory slots get a gold rim, a crest badge, and are sorted first. A separate footer was dropped: long descriptions overlapped it.
+- **Card presentation** (`UI/AscensionCard.cs`, `UI/ModelIcons.cs`): type-line banner with the tower's crest, model render as card art (rendered at runtime from the voxel model, no icon files), rarity + gold double frame with shimmer, first description line "Rare · upgrades attack"; inventory slots get a gold rim, a crest badge, and are sorted first. A separate footer was dropped: long descriptions overlapped it.
 - **Tests:** `tests/TreasureRun.Tests` (16 tests, under a second) and in-game `scenario all` (2 scenarios, 12 checks, about 25 s at 4× speed); `restart`, `offer <ids>`, `towerui`, `sound`, `config` console commands.
 - **Sound:** `tools/SfxTool`, `Audio/SoundLibrary.cs`, `SoundLoop`; first sound `ui/ascension_pick` (played when an ascension is gained). See `docs/sound-workflow.md`. Particles on the picked card were skipped: the panel closes on pick.
 - **Also in this session:** loading speed-up and "Loading animation" setting (§2.4), `docs/reference/vanilla-towers.md` (every vanilla tower and building, with stats and mechanics).
@@ -399,7 +449,18 @@ Per ascension: logic + tests → component + models → sounds → one in-game s
 - Clicking the "Loading animation" toggle in the Options panel is untested (setting it via config updates the toggle; the click path is the standard uGUI listener).
 - Nothing of phase 0 is committed yet.
 
-**Next: phase 1**, one ascension at a time with the per-ascension workflow above. Start from `TestAscension.cs` as the template: an `AscensionDef` registered in `AscensionCatalog.RegisterAll`, an `AscendedTower` subclass, a `…Logic.cs` with tests in `tests/TreasureRun.Tests`, models in `tools/VoxTool/Recipes`, sounds in `tools/SfxTool/Recipes`, and a scenario in `Debugging/Scenarios.cs`.
+**Phase 1, as built** (`src/TreasureRun/Ascensions/Phase1`):
+- **Logic:** `Phase1Logic.cs` (Repeater, Springald, Lone Scout, Chain Lightning, Supercharge buffs, Sealed Fate, Nest of Bats), 13 offline tests in `tests/TreasureRun.Tests/Phase1Tests.cs` (29 tests in total, all passing).
+- **Components:** `BallistaAscensions.cs` (Repeater bursts through the vanilla `Fire` with dud bolts; Springald's own piercing bolt), `TeslaAscensions.cs` (Chain Lightning replaces `TeslaCoil.Fire`; Supercharge buffs through the stat layer), `SupportAscensions.cs` (Lone Scout, Sealed Fate via a `SpiritSword.DealDamage` prefix, Nest of Bats). Cards: More Chains I–IV, Swift Scouts I–III, More Bats I–III.
+- **Models:** `tools/VoxTool/Recipes/AscensionRecipes.cs`, built on the vanilla models (§1.4). **Sounds:** `tools/SfxTool/Recipes/AscensionSounds.cs`, loudness matched to the vanilla references; not listened to yet.
+- **In-game scenarios** (`Debugging/Phase1Scenarios.cs`, one per ascension): `scenario all` runs 9 scenarios, 33 checks, all passing. Measured: Repeater 57 DPS (vanilla 37), Springald 110 through 5 stacked dummies, Chain Lightning exactly 20 of 25 dummies, Supercharge interval 3 → 2.31 s and back, Sealed Fate stabs 15 → 35, Nest of Bats 1270 DPS (balance note).
+- **Framework additions:** `AscendedTower.SwapVanillaMesh`, `AscensionRegistry.Revoke` / `TreasureInventory.Revoke` and `ScenarioContext.Ascend` (several ascensions of one tower in one launch), `SoundLibrary.PlayVanilla(sound, pos, pitch)`, `AscensionDef.Hidden`. Scenario dummies are registered in `SpawnManager.currentEnemies`, so effects that scan the wave see them.
+- **Chain reach (after playtest):** a jump reaches a monster once its collider touches the circle of the coil's full range (height bonus included) around the last victim, like vanilla range checks (monsters: 0.5 box collider, so range + 0.25). Centre-to-centre distance stopped chains at 2.2-unit gaps with the coil's range of 2. With `Debug.DebugTools`, every attack logs `[chain] hits of monsters, range, nearest unreached gap`.
+- **Nest of Bats (after playtest):** each bat idles on its own orbit (radius, speed, direction, height) with a noise wander.
+- **Renamed:** the M4 combat treasure "Chain Lightning" (12% arc proc) is now **Static Arc** (`static_arc`), freeing the name for the Tesla ascension.
+- **Open questions answered with the defaults:** Supercharge buffs other coils but not itself; Nest of Bats bites cost no mana.
+
+**Next: phase 2**, one ascension at a time with the per-ascension workflow above. Start from `TestAscension.cs` as the template: an `AscensionDef` registered in `AscensionCatalog.RegisterAll`, an `AscendedTower` subclass, a `…Logic.cs` with tests in `tests/TreasureRun.Tests`, models in `tools/VoxTool/Recipes`, sounds in `tools/SfxTool/Recipes`, and a scenario in `Debugging/Scenarios.cs`.
 
 ## 5. Open questions (summary)
 

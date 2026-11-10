@@ -75,9 +75,47 @@ namespace TreasureRun.Ascensions
             return go;
         }
 
+        private readonly List<(MeshFilter filter, Mesh mesh, MeshRenderer renderer, Material material)> swapped =
+            new List<(MeshFilter, Mesh, MeshRenderer, Material)>();
+
+        /// <summary>
+        /// Replaces the mesh of a vanilla voxel renderer in place. <paramref name="part"/> is a name on its transform
+        /// path (e.g. "TurretArt", "BaseArt"). The model must be built on the vanilla model with the vanilla sidecar
+        /// origin (VoxTool AscensionRecipes), so it sits exactly where the vanilla mesh was and turns with the turret.
+        /// </summary>
+        protected bool SwapVanillaMesh(string part, string modelName)
+        {
+            VoxAsset asset = VoxelLibrary.Get(modelName);
+            if (asset == null) return false;
+            foreach (MeshFilter f in GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (f.sharedMesh == null || f.sharedMesh.name != "default" || !OnPath(f.transform, part)) continue;
+                MeshRenderer r = f.GetComponent<MeshRenderer>();
+                swapped.Add((f, f.sharedMesh, r, r != null ? r.sharedMaterial : null));
+                f.sharedMesh = asset.Mesh;
+                if (r != null) r.sharedMaterial = asset.Material;
+                return true;
+            }
+            Plugin.Log.LogWarning($"{GetType().Name}: no vanilla mesh under '{part}' on {name}.");
+            return false;
+        }
+
+        private bool OnPath(Transform t, string part)
+        {
+            for (; t != null && t != transform.parent; t = t.parent)
+                if (t.name == part) return true;
+            return false;
+        }
+
         /// <summary>Removes added models and shows the vanilla art again.</summary>
         protected void RestoreVanillaModel()
         {
+            foreach (var s in swapped)
+            {
+                if (s.filter != null) s.filter.sharedMesh = s.mesh;
+                if (s.renderer != null) s.renderer.sharedMaterial = s.material;
+            }
+            swapped.Clear();
             foreach (GameObject go in addedModels) if (go != null) Destroy(go);
             addedModels.Clear();
             foreach (MeshRenderer r in hiddenRenderers) if (r != null) r.enabled = true;

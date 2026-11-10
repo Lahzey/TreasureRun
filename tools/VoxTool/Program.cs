@@ -26,6 +26,7 @@ namespace VoxTool
                     case "extract": return Extract(args.Skip(1).ToArray());
                     case "preview": return PreviewCmd(args.Skip(1).ToArray());
                     case "info": return Info(args.Skip(1).ToArray());
+                    case "slices": return Slices(args.Skip(1).ToArray());
                     case "build": return Build(args.Skip(1).ToArray());
                     default: return Usage();
                 }
@@ -149,15 +150,57 @@ namespace VoxTool
             if (args.Length < 1) return Usage();
             string modelsDir = args[0];
             string which = args.Length > 1 ? args[1] : "all";
+            VoxTool.Recipes.AscensionRecipes.VoxelsRoot = Path.GetFullPath(Path.Combine(modelsDir, "..", "..", "Voxels"));
+            foreach (var (name, recipe) in VoxTool.Recipes.AscensionRecipes.All())
+                if (!RecipeTable.ContainsKey(name)) RecipeTable[name] = recipe;
             foreach (var kv in RecipeTable)
             {
-                if (which != "all" && !string.Equals(which, kv.Key, StringComparison.OrdinalIgnoreCase)) continue;
+                if (which != "all" && !kv.Key.StartsWith(which, StringComparison.OrdinalIgnoreCase)) continue;
                 VoxModel m = kv.Value();
                 string path = Path.Combine(modelsDir, kv.Key.Replace('/', Path.DirectorySeparatorChar) + ".vox");
                 Directory.CreateDirectory(Path.GetDirectoryName(path));
                 VoxFile.Write(path, m);
                 Preview.Render(m).SavePng(Path.ChangeExtension(path, ".png"));
+                // Tower ascension models reuse the vanilla origin, so they can replace the vanilla mesh in place.
+                if (VoxTool.Recipes.AscensionRecipes.VanillaSidecars.TryGetValue(kv.Key, out string vanilla))
+                {
+                    string src = Path.Combine(VoxTool.Recipes.AscensionRecipes.VoxelsRoot, vanilla + ".json");
+                    string json = File.ReadAllText(src).Replace("\"Source\": \"", "\"Source\": \"ascension of ");
+                    File.WriteAllText(Path.ChangeExtension(path, ".json"), json);
+                }
                 Console.WriteLine($"{kv.Key,-30} {m.SizeX}x{m.SizeY}x{m.SizeZ}, {m.CountFilled()} voxels -> {path}");
+            }
+            return 0;
+        }
+
+        /// <summary>slices &lt;file.vox&gt; [z0] [z1]: prints each z layer as text (x right, y up; letters = palette slots).</summary>
+        private static int Slices(string[] args)
+        {
+            if (args.Length < 1) return Usage();
+            VoxModel m = VoxFile.Read(args[0])[0];
+            int z0 = args.Length > 1 ? int.Parse(args[1]) : 0, z1 = args.Length > 2 ? int.Parse(args[2]) : m.SizeZ - 1;
+            var letters = new Dictionary<byte, char>();
+            const string alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            for (int z = Math.Min(z1, m.SizeZ - 1); z >= Math.Max(0, z0); z--)
+            {
+                Console.WriteLine($"z={z}");
+                for (int y = m.SizeY - 1; y >= 0; y--)
+                {
+                    var sb = new StringBuilder($"{y,3} ");
+                    for (int x = 0; x < m.SizeX; x++)
+                    {
+                        byte b = m.Voxels[x, y, z];
+                        if (b == 0) { sb.Append('.'); continue; }
+                        if (!letters.TryGetValue(b, out char ch)) letters[b] = ch = alphabet[letters.Count % alphabet.Length];
+                        sb.Append(ch);
+                    }
+                    Console.WriteLine(sb);
+                }
+            }
+            foreach (var kv in letters)
+            {
+                uint c = m.Palette[kv.Key];
+                Console.WriteLine($"{kv.Value} = rgb({c & 0xFF},{(c >> 8) & 0xFF},{(c >> 16) & 0xFF})");
             }
             return 0;
         }

@@ -33,24 +33,24 @@ namespace TreasureRun.Ascensions
 
         public static void Register()
         {
-            Add(StrikeFighterId, "Strike Fighter", Rarity.Rare, AscensionKind.Upgrade, "planes/strike_fighter",
+            Add(StrikeFighterId, "Strike Fighter", "Air Base", Rarity.Rare, AscensionKind.Upgrade, "planes/strike_fighter",
                 $"Radar biplanes become jet fighters: {StrikeFighter.SpeedFactor:0.#}x flight speed, much tighter turns, " +
                 $"{1f / StrikeFighter.FireIntervalFactor - 1f:P0} faster fire, a bigger magazine and instant retargeting.");
-            Add(CarpetBomberId, "Carpet Bomber", Rarity.Epic, AscensionKind.Replace, "planes/carpet_bomber",
+            Add(CarpetBomberId, "Carpet Bomber", "Bomb Depot", Rarity.Epic, AscensionKind.Replace, "planes/carpet_bomber",
                 $"Radar biplanes become heavy bombers. Instead of shooting they store up to {CarpetBomber.MaxBombs} bombs " +
                 $"(built at the Radar's fire rate) and carpet-bomb the track along the line that hits the most monsters: " +
                 $"one bomb every {CarpetBomber.DropInterval:0.0} s, {CarpetBomber.BombDamageFactor:0}x damage in a small area.");
-            Add(WarBlimpId, "War Blimp", Rarity.Mythical, AscensionKind.Replace, "planes/war_blimp",
+            Add(WarBlimpId, "War Blimp", "Airship Mast", Rarity.Mythical, AscensionKind.Replace, "planes/war_blimp",
                 "Radar biplanes become huge, slow war blimps that hover over the thickest crowd, fire a gatling gun " +
                 "without pause and drop bombs on the track. Each blimp carries a tower slot on its deck: " +
                 $"build any tower there and it flies along (counts as +{WarBlimp.DeckHeightBonus} high ground).");
         }
 
-        private static void Add(string id, string name, Rarity rarity, AscensionKind kind, string model, string description)
+        private static void Add(string id, string name, string towerName, Rarity rarity, AscensionKind kind, string model, string description)
         {
             AscensionRegistry.Register(new AscensionDef
             {
-                Id = id, Name = name, Rarity = rarity, Kind = kind, Target = AscensionTarget.Radar,
+                Id = id, Name = name, TowerName = towerName, Rarity = rarity, Kind = kind, Target = AscensionTarget.Radar,
                 CardModel = model, Description = description, Tags = Tags,
                 OnAcquire = (run, restoring) => ApplyAll(),
             });

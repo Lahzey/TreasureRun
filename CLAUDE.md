@@ -25,7 +25,7 @@ BepInEx 5 + Harmony mod for Rogue Tower. The plan and roadmap are in `PLAN.md`; 
 - `help` lists commands. Useful ones:
   - `start <lanes> <castle> tr|normal`, `restart`, `state`, `wave`, `god`, `gold`, `treasure`, `card`
   - `offer [size | id id ...]` opens a treasure offer (exactly the given treasures with ids); `pick <slot>`
-  - `towerui <x> <z>` opens a tower's popup; `scenario [name|all]`; `sound <name>`
+  - `towerui <x> <z>` opens a tower's popup; `scenario [name|all]` (scenarios grant ascensions temporarily via `ScenarioContext.Ascend`); `sound <name>`
   - right after a launch, wait a few seconds before the first command: the console clears `in.txt` while starting
   - `config [key] [value]` lists or sets mod settings (bools accept 1/0/on/off)
   - `build <name> <x> <z>`, `shot <name>` (screenshots go to `plugins/TreasureRun/screens`)

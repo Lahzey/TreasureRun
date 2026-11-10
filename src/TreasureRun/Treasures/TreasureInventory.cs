@@ -34,6 +34,19 @@ namespace TreasureRun.Treasures
             GameEvents.Reset();
         }
 
+        /// <summary>
+        /// Removes every copy of a treasure (dev tools and scenarios only). Passive effects that check ownership stop at
+        /// once; one-time effects (gold, health) are not undone.
+        /// </summary>
+        public static void Revoke(string id)
+        {
+            RunState run = TreasureRunMode.Run;
+            if (run == null || !counts.Remove(id)) return;
+            run.OwnedTreasures.RemoveAll(x => x == id);
+            active.RemoveAll(e => e.Def != null && e.Def.Id == id);
+            Plugin.Log.LogInfo($"Treasure revoked: {id}");
+        }
+
         public static void Grant(TreasureDef def)
         {
             RunState run = TreasureRunMode.Run;

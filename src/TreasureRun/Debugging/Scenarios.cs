@@ -103,6 +103,8 @@ namespace TreasureRun.Debugging
             Waypoint nearest = UnityEngine.Object.FindObjectsOfType<Waypoint>().OrderBy(w => Vector3.SqrMagnitude(w.transform.position - at)).FirstOrDefault();
             if (nearest != null) e.SetFirstSpawnPoint(nearest);
             go.name = "TR_Dummy";
+            // Registered like a spawned monster, so code that scans the wave's monsters (chains, bats) sees it.
+            if (!SpawnManager.instance.currentEnemies.Contains(e)) SpawnManager.instance.currentEnemies.Add(e);
             spawned.Add(go);
             return e;
         }
@@ -115,6 +117,21 @@ namespace TreasureRun.Debugging
             return m;
         }
 
+        private readonly List<AscensionDef> ascended = new List<AscensionDef>();
+
+        /// <summary>Grants an ascension for this scenario; it is revoked again in <see cref="Cleanup"/>.</summary>
+        public AscensionDef Ascend(string id)
+        {
+            AscensionDef def = AscensionRegistry.ForTreasure(id);
+            if (def == null) { Info($"Unknown ascension '{id}'."); return null; }
+            // Another ascension of the same tower (e.g. the test ascension) would win: take it away for the scenario.
+            foreach (AscensionDef other in AscensionRegistry.Siblings(def).Where(d => TreasureInventory.Owns(d.Id)).ToList())
+                AscensionRegistry.Revoke(other);
+            if (!TreasureInventory.Owns(id)) TreasureInventory.Grant(def.Treasure);
+            ascended.Add(def);
+            return def;
+        }
+
         public void Shot(string name)
         {
             string file = $"scenario_{ScenarioName}_{name}";
@@ -123,11 +140,15 @@ namespace TreasureRun.Debugging
 
         public void Cleanup()
         {
+            foreach (AscensionDef def in ascended) AscensionRegistry.Revoke(def);
+            ascended.Clear();
             foreach (DamageMeter m in meters) m.Dispose();
             meters.Clear();
             foreach (GameObject go in spawned)
             {
                 if (go == null) continue;
+                Enemy enemy = go.GetComponent<Enemy>();
+                if (enemy != null) SpawnManager.instance.currentEnemies.Remove(enemy);
                 try { go.GetComponent<IBuildable>()?.Demolish(); } catch (Exception e) { Plugin.Log.LogWarning("Scenario cleanup: " + e.Message); }
                 if (go != null) UnityEngine.Object.Destroy(go);
             }
@@ -168,7 +189,7 @@ namespace TreasureRun.Debugging
         {
             new BallistaDpsScenario(),
             new AscensionAttachScenario(),
-        };
+        }.Concat(Phase1Scenarios.All).ToList();
 
         private static Runner runner;
 
@@ -290,7 +311,7 @@ namespace TreasureRun.Debugging
             BuildButtonUI button = AscensionTargets.BuildButton(AscensionTarget.Ballista);
             bool renamed = button != null && button.GetComponentsInChildren<UnityEngine.UI.Text>(true).Any(t => t.text == "Proving Ground");
             c.Expect(renamed, "build button renamed to Proving Ground");
-            c.Expect(AscensionRegistry.DisplayNameOf(after) == "Proving Ground (Ballista)", "display name");
+            c.Expect(AscensionRegistry.DisplayNameOf(after) == "Proving Ground", "display name");
         }
     }
 }

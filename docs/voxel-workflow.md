@@ -39,6 +39,8 @@ TreasureRun/tools/VoxTool/bin/Release/net8.0/VoxTool.exe preview path/to/model.v
   - `.png`: isometric front/back preview.
 - **`preview`** renders a `.png` for any `.vox`. That's how Claude checks models it generates.
 - **`info`** prints size, voxel count and colours.
+- **`slices <file.vox> [z0] [z1]`** prints the model layer by layer as text (letters = colours), to find where parts of a vanilla model are.
+- **`build <modelsDir> [prefix]`** renders the code recipes (`Recipes/`) whose name starts with the prefix. Ascension tower recipes (`AscensionRecipes.cs`) start from the extracted vanilla model and get a sidecar with the vanilla origin, so the game can swap the vanilla mesh in place (`AscendedTower.SwapVanillaMesh`).
 
 Notable extracted models:
 - `Voxels/GameScene/MainTower_default.vox`: the castle.

@@ -51,6 +51,50 @@ namespace TreasureRun.Audio
             source.PlayClip(clip, sfx.volume * volume, pitchVariance);
         }
 
+        /// <summary>
+        /// Plays a vanilla game sound at a fixed pitch (re-pitched variants: Repeater bursts, Springald pierces).
+        /// Goes through the same pool and volume as SFXManager.PlaySound.
+        /// </summary>
+        public static void PlayVanilla(Sound sound, Vector3 position, float pitch = 1f, float volume = 1f)
+        {
+            SFXManager sfx = SFXManager.instance;
+            if (sfx == null || sfx.volume <= 0f) return;
+            AudioClip clip = VanillaClip(sfx, sound);
+            if (clip == null) return;
+            AudioPoolSource source;
+            if (sfx.sources.Count < 1) source = UnityEngine.Object.Instantiate(sfx.sourceObject).GetComponent<AudioPoolSource>();
+            else
+            {
+                source = sfx.sources[0];
+                sfx.sources.Remove(source);
+            }
+            source.transform.position = position;
+            source.PlayClip(clip, sfx.volume * volume, 0f);
+            source.audioS.pitch = pitch;
+        }
+
+        private static AudioClip VanillaClip(SFXManager s, Sound sound)
+        {
+            AudioClip Pick(AudioClip[] a) => a != null && a.Length > 0 ? a[random.Next(a.Length)] : null;
+            switch (sound)
+            {
+                case Sound.Ballista: return s.ballistaClip;
+                case Sound.Mortar: return s.mortarClip;
+                case Sound.TeslaZap: return s.teslaClip;
+                case Sound.Explosion: return Pick(s.explosions);
+                case Sound.BiPlaneGun: return s.biPlaneGunClip;
+                case Sound.ParticleCannon: return s.particleCannonClip;
+                case Sound.Shredder: return s.shredderClip;
+                case Sound.BallistaHit: return Pick(s.ballistaHits);
+                case Sound.FrostHit: return s.frostHitClip;
+                case Sound.ShredderHit: return s.shredderHitClip;
+                case Sound.BulletHit: return Pick(s.bulletHits);
+                case Sound.ParticleHit: return s.particleHitClip;
+                case Sound.Cannon: return s.cannon;
+                default: return null;
+            }
+        }
+
         /// <summary>Plays a one-shot without position (UI): at the music manager, like vanilla button clicks.</summary>
         public static void PlayUi(string name, float volume = 1f)
         {

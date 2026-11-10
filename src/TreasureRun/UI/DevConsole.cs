@@ -592,6 +592,33 @@ namespace TreasureRun.UI
                 Print("Flash.");
             });
 
+            Add("uitree", "uitree <objectName> [depth=3]", "Dumps a UI hierarchy: rect size, position, scale, layout components and text sizes.", false, a =>
+            {
+                string q = Arg(a, 0, "");
+                int depth = int.Parse(Arg(a, 1, "3"));
+                Transform root = Resources.FindObjectsOfTypeAll<RectTransform>()
+                    .FirstOrDefault(t => t.gameObject.scene.IsValid() && t.name == q)?.transform;
+                if (root == null) { Print($"No UI object named '{q}'."); return; }
+                var chain = new List<string>();
+                for (Transform p = root.parent; p != null; p = p.parent) chain.Add(p.name);
+                if (chain.Count > 0) Print("parents: " + string.Join(" < ", chain));
+                void Dump(Transform t, int level)
+                {
+                    var rt = t as RectTransform;
+                    var parts = new List<string>();
+                    if (rt != null) parts.Add($"size {rt.rect.width:0}x{rt.rect.height:0} pos {rt.anchoredPosition.x:0},{rt.anchoredPosition.y:0} scale {rt.localScale.x:0.##}");
+                    foreach (Component c in t.GetComponents<Component>())
+                    {
+                        if (c is UnityEngine.UI.LayoutGroup lg) parts.Add(lg.GetType().Name + (lg is UnityEngine.UI.HorizontalOrVerticalLayoutGroup h ? $"(spacing {h.spacing:0})" : ""));
+                        else if (c is UnityEngine.UI.Text tx) parts.Add($"Text {tx.fontSize}{(tx.resizeTextForBestFit ? $" fit {tx.resizeTextMinSize}-{tx.resizeTextMaxSize}" : "")}");
+                        else if (c is UnityEngine.UI.LayoutElement || c is UnityEngine.UI.ContentSizeFitter || c is Canvas || c is UnityEngine.UI.CanvasScaler) parts.Add(c.GetType().Name);
+                    }
+                    Print($"{new string(' ', level * 2)}{t.name}{(t.gameObject.activeSelf ? "" : " (off)")}: {string.Join(", ", parts)}");
+                    if (level < depth) foreach (Transform child in t) Dump(child, level + 1);
+                }
+                Dump(root, 0);
+            });
+
             Add("bounds", "bounds <objectName>", "Renderer bounds of matching active objects (to check overlaps).", false, a =>
             {
                 string q = Rest(a, 0);

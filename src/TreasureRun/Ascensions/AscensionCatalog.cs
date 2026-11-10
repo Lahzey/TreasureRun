@@ -6,6 +6,7 @@ namespace TreasureRun.Ascensions
         public static void RegisterAll()
         {
             PlaneAscensions.Register();
+            Phase1.Phase1Ascensions.Register();
             TestAscension.Register();
         }
 

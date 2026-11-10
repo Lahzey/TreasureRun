@@ -1,0 +1,6 @@
+ascensions/supercharge
+  duration 0.45 s | peak -6.9 dBFS | RMS -17.8 dBFS | loudest 50 ms -16.4 dBFS
+  attack 45 ms | decays to -30 dB at 0.45 s | brightness (spectral centroid) 2.0k
+  envelope per 50 ms (dBFS): -20 -17 -16 -16 -17 -16 -17 -19 -27
+  brightness per 100 ms:    980 1.5k 2.3k 2.7k 2.9k
+  dominant pitch per 100 ms: 194 237 301 388 495

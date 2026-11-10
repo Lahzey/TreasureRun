@@ -12,6 +12,7 @@ Generated from the source (`src/TreasureRun/Treasures/Effects`, console command 
 | **Lucky Coin** (`lucky_coin`) | Treasure rarity is rolled one extra time, keeping the best result. | Meta |
 | **Permafrost** (`permafrost`) | Freezes last 50% longer and no longer get shorter when an enemy is frozen repeatedly. | Combat |
 | **Piggy Bank** (`piggy_bank`) | At the end of each wave, gain 5% of your unspent gold (max 10 × level). | Starter |
+| **Repeater** (`repeater`) | Fires 3-bolt bursts at one target: 50 % more damage per second. Bolts still in the air when their target dies are lost. | Ascension |
 | **Scavenger** (`scavenger`) | Enemies killed by a critical hit drop +3 gold. | Economy |
 | **Sturdy Walls** (`sturdy_walls`) | +5 maximum castle health. Also heals 5. | Starter |
 | **Tithe Box** (`tithe_box`) | At the start of each wave, gain 5 gold for every tower you own. | Economy |
@@ -26,12 +27,14 @@ Generated from the source (`src/TreasureRun/Treasures/Effects`, console command 
 | **Bloodthirst** (`bloodthirst`) | Towers gain +1% crit chance for every enemy killed this wave (max +30%). | Combat |
 | **Bounty Board** (`bounty_board`) | Monsters drop +1 gold. | Starter |
 | **Bulwark** (`bulwark`) | Each wave, your castle ignores the first 3 damage it would take. | Build |
+| **Chain Lightning** (`chain_lightning`) | Each attack strikes one monster and chains 20 times to the nearest monster within the coil's range of the last one, never hitting the same monster twice. Chains can leave the coil's range. | Ascension |
 | **Diverse Portfolio** (`diverse_portfolio`) | Enemies drop +1 extra gold for every different tower type that damaged them. | Economy |
 | **Hemorrhage** (`hemorrhage`) | Critical hits apply bleed equal to 50% of the damage they dealt. | Combat |
 | **High Ground** (`high_ground`) | Elevation bonuses to damage and range are doubled. | Build |
 | **Hoarder** (`hoarder`) | Towers deal 4% more damage for every treasure you own. | Build |
 | **Keen Eye** (`keen_eye`) | All towers gain +5% crit chance. | Starter |
 | **Loan Shark** (`loan_shark`) | Gain 1000 gold now. Repay 150 gold at the start of each of the next 10 waves (you can go into debt). | Economy |
+| **Lone Scout** (`lone_scout`) | A scout shoots the marked monster 3 times a second for 1 damage, which the mark turns into the Lookout's damage. | Ascension |
 | **Long Sight** (`long_sight`) | All towers gain +1 range. | Starter |
 | **Moat** (`moat`) | Enemies within 6 range of your castle are always slowed by at least 20%. | Build |
 | **Prodigy** (`prodigy`) | Newly built towers start at level 3. | Build |
@@ -47,17 +50,21 @@ Generated from the source (`src/TreasureRun/Treasures/Effects`, console command 
 | **Alchemist's Furnace** (`alchemists_furnace`) | Burning enemies drop +4 gold on death. Poisoned enemies restore 2 mana on death. | Economy |
 | **Arcane Overflow** (`arcane_overflow`) | While your mana is above 90%, mana-using towers deal 50% more damage. | Combat |
 | **Bigger Bombs** (`bigger_bombs`) | Mortars gain +50% blast radius and deal 25% more damage. | Build |
-| **Chain Lightning** (`chain_lightning`) | Direct hits have a 12% chance to arc to 2 nearby enemies, repeating the hit on them. | Combat |
 | **Executioner** (`executioner`) | Enemies below 20% health take double damage from everything. | Combat |
 | **Frost Nova** (`frost_nova`) | Freezing an enemy slows all enemies within 2 range by 25%. | Combat |
 | **Golden Goblin** (`golden_goblin`) | Each wave has a 35% chance to contain a golden goblin: a fast enemy that drops a treasure chest when killed. | Economy |
 | **Jackpot** (`jackpot`) | Every 40th enemy killed drops 15 × level gold. | Economy |
 | **Lightning Rod** (`lightning_rod`) | Towers within 2.5 range of a Tesla Coil attack 25% faster. | Build |
+| **Nest of Bats** (`nest_of_bats`) | 10 bats fly out to monsters in range and bite each once a second for the lair's damage, causing bleed equal to 100 % of it. They prefer nearby monsters. | Ascension |
 | **Overkill** (`overkill`) | Excess damage from a killing blow hits the nearest enemy within 3 range. | Combat |
+| **Proving Ground** (`test_ascension`) | Development test ascension: Ballistas wear the Siege Workshop cannon and gain +5 base damage. | Ascension |
 | **Ricochet Bolts** (`ricochet_bolts`) | Ballista hits bounce to the nearest other enemy within 3 range for 75% damage. | Build |
 | **Shatter** (`shatter`) | Frozen enemies take triple damage from direct hits. | Combat |
+| **Springald** (`springald`) | Fires heavy bolts that pierce up to 5 monsters: full damage to the first, 20 % less of it to each one after. | Ascension |
+| **Static Arc** (`static_arc`) | Direct hits have a 12% chance to arc to 2 nearby enemies, repeating the hit on them. | Combat |
 | **Strike Fighter** (`strike_fighter`) | Radar biplanes become jet fighters: 2.2x flight speed, much tighter turns, 67 % faster fire, a bigger magazine and instant retargeting. | Ascension |
 | **Supercapacitor** (`supercapacitor`) | Tesla Coils attack 40% slower but deal triple damage. | Build |
+| **Supercharge** (`supercharge`) | Each attack also gives the other towers in the coil's range +30 % attack speed for 1 s. Buffs from different coils stack. | Ascension |
 | **Thunderclap** (`thunderclap`) | All towers gain +6% stun chance. | Starter |
 | **Treasure Hoard** (`treasure_hoard`) | Gain gold worth three tree chops (3 × level²). | Starter |
 | **Veteran Training** (`veteran_training`) | Whenever a tower gains a level, it has a 30% chance to gain another one. | Build |
@@ -78,6 +85,7 @@ Generated from the source (`src/TreasureRun/Treasures/Effects`, console command 
 | **Hivemind** (`hivemind`) | Every tower deals +1 damage for every 3 towers you own. | Starter |
 | **Quick Study** (`quick_study`) | Level-up card draws happen every 2 levels instead of every 3. | Starter |
 | **Retribution** (`retribution`) | Whenever your castle takes damage, all enemies within 5 range of it take 15% of their maximum health. | Build |
+| **Sealed Fate** (`sealed_fate`) | Each stab of a spirit sword does 1 more damage than the last instead of 1 less, up to 3× the first. Swords never let go before their victim dies. | Ascension |
 | **Triple Threat** (`triple_threat`) | Enemies suffering from bleed, burn and poison at the same time take double damage. | Combat |
 | **Volatile Corpses** (`volatile_corpses`) | Enemies explode on death, dealing 10% of their maximum health to enemies within 1.5 range. | Combat |
 | **Wingman** (`wingman`) | Each Radar tower launches a second biplane. | Build |
@@ -107,4 +115,4 @@ Generated from the source (`src/TreasureRun/Treasures/Effects`, console command 
 | **Time Dilation** (`time_dilation`) | All enemies move 30% slower. | Meta |
 | **War Blimp** (`war_blimp`) | Radar biplanes become huge, slow war blimps that hover over the thickest crowd, fire a gatling gun without pause and drop bombs on the track. Each blimp carries a tower slot on its deck: build any tower there and it flies along (counts as +3 high ground). | Ascension |
 
-Total: 74
+Total: 82

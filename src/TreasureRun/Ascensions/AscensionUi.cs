@@ -6,8 +6,8 @@ using UnityEngine.UI;
 namespace TreasureRun.Ascensions
 {
     /// <summary>
-    /// World UI for ascended towers: a title line above the tower popup ("Repeater (Ballista)") and the build button
-    /// label renamed to the ascension ("Repeater"). Only for ascensions that change the tower itself (have a component).
+    /// World UI for ascended towers: a title line above the tower popup and the build button label, both showing the
+    /// ascended tower's name (<see cref="AscensionDef.BuiltName"/>, e.g. "Storm Coil").
     /// </summary>
     [HarmonyPatch]
     internal static class AscensionUi
@@ -17,7 +17,8 @@ namespace TreasureRun.Ascensions
         [HarmonyPostfix, HarmonyPatch(typeof(TowerUI), nameof(TowerUI.SetStats))]
         private static void TowerUiSetStats(TowerUI __instance, Tower _myTower)
         {
-            string title = AscensionRegistry.DisplayNameOf(_myTower != null ? _myTower.gameObject : null);
+            AscensionDef def = AscensionRegistry.AscensionOf(_myTower != null ? _myTower.gameObject : null);
+            string title = def?.BuiltName;
             if (title == null || __instance.levelText == null) return;
 
             // Clone the whole "Level" panel (background + text) and put the copy right above it.
@@ -41,9 +42,8 @@ namespace TreasureRun.Ascensions
                 text.verticalOverflow = VerticalWrapMode.Overflow;
                 FitOneLine(text, title, rt.rect.width * 0.9f);
             }
-            AscendedTower asc = _myTower.GetComponent<AscendedTower>();
             text.text = title;
-            text.color = Color.Lerp(AscensionTargets.BannerColor(asc.Target), Color.black, 0.25f);
+            text.color = Color.Lerp(AscensionTargets.BannerColor(def.Target), Color.black, 0.25f);
         }
 
         /// <summary>Shrinks the font so the text fits on one line within <paramref name="width"/> (in the panel's units).</summary>
@@ -55,17 +55,24 @@ namespace TreasureRun.Ascensions
             if (preferred > width) text.fontSize = Mathf.Max(1, Mathf.FloorToInt(text.fontSize * width / preferred));
         }
 
+        /// <summary>Gives the build button its vanilla name back (after <see cref="AscensionRegistry.Revoke"/>).</summary>
+        public static void RestoreBuildButton(AscensionDef def)
+        {
+            BuildButtonUI button = AscensionTargets.BuildButton(def.Target);
+            Text label = button != null ? button.GetComponentsInChildren<Text>(true).FirstOrDefault(t => t.text == def.BuiltName) : null;
+            if (label != null) label.text = def.TargetName;
+        }
+
         /// <summary>Renames the target's build button to the ascension (e.g. "Ballista" → "Repeater").</summary>
         public static void RenameBuildButton(AscensionDef def)
         {
-            if (def.Component == null) return;
             BuildButtonUI button = AscensionTargets.BuildButton(def.Target);
             if (button == null) return;
             Text label = button.GetComponentsInChildren<Text>(true)
                 .FirstOrDefault(t => t != button.priceTag && t != button.modifiersText && t.text == def.TargetName)
                 ?? button.GetComponentsInChildren<Text>(true).FirstOrDefault(t => t != button.priceTag && t != button.modifiersText);
             if (label == null) return;
-            label.text = def.Name;
+            label.text = def.BuiltName;
             label.horizontalOverflow = HorizontalWrapMode.Overflow;
         }
     }

@@ -31,7 +31,7 @@ namespace TreasureRun.Treasures.Effects
                 "Enemies below 20% health take double damage from everything.", tags: new[] { "damage" });
             Add("shatter", "Shatter", Rarity.Rare,
                 "Frozen enemies take triple damage from direct hits.", tags: new[] { "freeze", "damage" });
-            Add("chain_lightning", "Chain Lightning", Rarity.Rare,
+            Add("static_arc", "Static Arc", Rarity.Rare,
                 "Direct hits have a 12% chance to arc to 2 nearby enemies, repeating the hit on them.", tags: new[] { "proc", "chain" });
             Add("overkill", "Overkill", Rarity.Rare,
                 "Excess damage from a killing blow hits the nearest enemy within 3 range.", tags: new[] { "on-death", "chain" });
@@ -125,7 +125,7 @@ namespace TreasureRun.Treasures.Effects
             if (r.WasCrit && !r.Killed && Has("hemorrhage") && !e.bleedImmune && r.DamageDealt > 0)
                 e.bleed += r.DamageDealt / 2;
 
-            if (r.CanProc && Has("chain_lightning") && Luck.Check(LuckCategory.Proc, 0.12f))
+            if (r.CanProc && Has("static_arc") && Luck.Check(LuckCategory.Proc, 0.12f))
             {
                 Vector3 from = e.transform.position;
                 foreach (Enemy target in Combat.NearestEnemies(from, 2.5f, 2, e))
