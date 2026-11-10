@@ -25,6 +25,8 @@ namespace TreasureRun.Cards
         public int MaxHealthCost;
         /// <summary>Castle id this card is exclusive to (null = every castle). Exclusive cards also appear in normal mode.</summary>
         public string Castle;
+        /// <summary>Extra availability check at draw time (null = always), e.g. "the ascension is owned".</summary>
+        public Func<bool> Available;
     }
 
     /// <summary>Custom level-up cards (docs/m3-card-design.md, section 4). Numbers are first drafts.</summary>
@@ -150,6 +152,18 @@ namespace TreasureRun.Cards
             all[all.Count - 1].Castle = castle;
         }
 
+        /// <summary>
+        /// Adds a follow-up card chain of an ascension (More Bomblets, More Chains, ...): only drawable while the
+        /// ascension treasure is owned.
+        /// </summary>
+        internal static void AscensionChain(string ascensionId, string id, string baseTitle, int tiers, string imageFrom,
+                                            Func<int, string> description, Action onPick)
+        {
+            int before = all.Count;
+            Chain(id, baseTitle, tiers, null, imageFrom, description, onPick);
+            for (int i = before; i < all.Count; i++) all[i].Available = () => TreasureInventory.Owns(ascensionId);
+        }
+
         // ----- registration helpers -----
 
         private static void Single(string id, string title, string parent, string imageFrom, string description, Action onPick)
@@ -187,6 +201,7 @@ namespace TreasureRun.Cards
             card.OnPick = spec.OnPick;
             card.Tags = spec.Tags ?? Array.Empty<string>();
             card.MaxHealthCost = spec.MaxHealthCost;
+            card.Available = spec.Available;
             card.title = spec.Title;
             card.description = spec.Description;
             card.unlockedByDefault = true;

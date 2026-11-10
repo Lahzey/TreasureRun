@@ -56,18 +56,20 @@ Generated from the source (`src/TreasureRun/Treasures/Effects`, console command 
 | **Overkill** (`overkill`) | Excess damage from a killing blow hits the nearest enemy within 3 range. | Combat |
 | **Ricochet Bolts** (`ricochet_bolts`) | Ballista hits bounce to the nearest other enemy within 3 range for 75% damage. | Build |
 | **Shatter** (`shatter`) | Frozen enemies take triple damage from direct hits. | Combat |
+| **Strike Fighter** (`strike_fighter`) | Radar biplanes become jet fighters: 2.2x flight speed, much tighter turns, 67 % faster fire, a bigger magazine and instant retargeting. | Ascension |
 | **Supercapacitor** (`supercapacitor`) | Tesla Coils attack 40% slower but deal triple damage. | Build |
 | **Thunderclap** (`thunderclap`) | All towers gain +6% stun chance. | Starter |
 | **Treasure Hoard** (`treasure_hoard`) | Gain gold worth three tree chops (3 × level²). | Starter |
 | **Veteran Training** (`veteran_training`) | Whenever a tower gains a level, it has a 30% chance to gain another one. | Build |
 | **Ironbark** (`ironbark`) | Chopping a tree also raises the grove's maximum health by 1 (up to +10). | Castle (Druid Grove) |
-| **Catapult** (`catapult`) | A catapult on the castle hurls a boulder every 6 seconds at the monster farthest from the castle (range 18), dealing 3x the cannon's damage in a large area. | Castle (Siege Workshop) |
+| **Catapult** (`catapult`) | A catapult on the castle hurls a boulder every 6 seconds at the monster farthest from the castle (range 18), dealing 2x the cannon's damage in a large area. | Castle (Siege Workshop) |
 | **Grapeshot** (`grapeshot`) | Every castle cannon shot also fires 3 pellets at nearby monsters for 40 % damage each. | Castle (Siege Workshop) |
 
 ## Epic
 
 | Treasure | Effect | Module |
 |---|---|---|
+| **Carpet Bomber** (`carpet_bomber`) | Radar biplanes become heavy bombers. Instead of shooting they store up to 20 bombs (built at the Radar's fire rate) and carpet-bomb the track along the line that hits the most monsters: one bomb every 0.2 s, 3x damage in a small area. | Ascension |
 | **Contagion** (`contagion`) | When an enemy dies, its bleed, burn and poison spread to up to 2 nearby enemies. | Combat |
 | **Four-Leaf Clover** (`four_leaf_clover`) | Every luck roll is made one extra time, keeping the best result: crits, stuns, treasure slots and rarities, chests and more. | Meta |
 | **Fragmentation** (`fragmentation`) | Mortar shells burst into 3 extra blasts around the impact, each dealing half damage. | Build |
@@ -103,5 +105,6 @@ Generated from the source (`src/TreasureRun/Treasures/Effects`, console command 
 | **Infinity Engine** (`infinity_engine`) | All towers attack twice as fast and use half as much mana. | Meta |
 | **Midas Touch** (`midas_touch`) | Gold from monsters, income buildings and trees is doubled. | Starter |
 | **Time Dilation** (`time_dilation`) | All enemies move 30% slower. | Meta |
+| **War Blimp** (`war_blimp`) | Radar biplanes become huge, slow war blimps that hover over the thickest crowd, fire a gatling gun without pause and drop bombs on the track. Each blimp carries a tower slot on its deck: build any tower there and it flies along (counts as +3 high ground). | Ascension |
 
-Total: 71
+Total: 74

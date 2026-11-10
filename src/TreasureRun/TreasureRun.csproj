@@ -30,6 +30,7 @@
     <Reference Include="UnityEngine.CoreModule" HintPath="$(ManagedPath)\UnityEngine.CoreModule.dll" Private="false" />
     <Reference Include="UnityEngine.ParticleSystemModule" HintPath="$(ManagedPath)\UnityEngine.ParticleSystemModule.dll" Private="false" />
     <Reference Include="UnityEngine.ScreenCaptureModule" HintPath="$(ManagedPath)\UnityEngine.ScreenCaptureModule.dll" Private="false" />
+    <Reference Include="UnityEngine.AudioModule" HintPath="$(ManagedPath)\UnityEngine.AudioModule.dll" Private="false" />
     <Reference Include="UnityEngine.PhysicsModule" HintPath="$(ManagedPath)\UnityEngine.PhysicsModule.dll" Private="false" />
     <Reference Include="UnityEngine.IMGUIModule" HintPath="$(ManagedPath)\UnityEngine.IMGUIModule.dll" Private="false" />
     <Reference Include="UnityEngine.InputLegacyModule" HintPath="$(ManagedPath)\UnityEngine.InputLegacyModule.dll" Private="false" />
@@ -50,6 +51,10 @@
       <ModelFiles Include="$(MSBuildProjectDirectory)\..\..\models\**\*.vox;$(MSBuildProjectDirectory)\..\..\models\**\*.json" />
     </ItemGroup>
     <Copy SourceFiles="@(ModelFiles)" DestinationFiles="@(ModelFiles->'$(PluginDeployPath)\models\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <ItemGroup>
+      <SoundFiles Include="$(MSBuildProjectDirectory)\..\..\sounds\**\*.wav" />
+    </ItemGroup>
+    <Copy SourceFiles="@(SoundFiles)" DestinationFiles="@(SoundFiles->'$(PluginDeployPath)\sounds\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
     <Message Importance="high" Text="Deployed $(TargetFileName) -> $(PluginDeployPath)" />
   </Target>
 

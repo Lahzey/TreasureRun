@@ -16,6 +16,17 @@ Things known to need tuning, collected for M9 (content & balance). All numbers a
 | Glass Fortress | Free max-health costs are the only upside. Probably needs more, e.g. a damage bonus or extra treasure choices. | — |
 | Castle Town | 1.5× spawns at 2/3 gold each; income 1.5 × level per adjacent building. | `CastleTownBehaviour` constants |
 
+## Ascensions
+
+| Ascension | Concern | Knobs |
+|---|---|---|
+| **Strike Fighter** | A bit too powerful (playtest feedback). It is a pure stat boost on the vanilla AI, so tone down one of speed, fire rate or magazine. | `StrikeFighter.SpeedFactor` (2.2), `TurnTime` (0.55), `FireIntervalFactor` (0.6), `Magazine` (30) |
+| Carpet Bomber | Bomb rate (1 per 10 Radar shots) and 3× damage are guesses. Weak on short tracks early, possibly strong on long straights. | `CarpetBomber.BombIntervalFactor`, `BombDamageFactor`, `BlastRadius`, `MaxBombs` |
+| Ley Line Network (planned) | Income = siphons × crystals touched, quadratic by design (late-game infinite mana is intended). Tune if it arrives too early. | per-crystal rate |
+| Mega Mortar (planned) | Fused mortar: blast radius × side length, damage = sum of all members (incl. levels and upgrades), vanilla fire rate. Check whether one big shell outperforms the separate mortars too much. | radius factor |
+| Particle Accelerator (planned) | One core plus capacitors: capacitors add their damage to the black hole, charge stays 30 s; the Ley Line Network is the only way to charge faster. | charge time, capacitor share |
+| **War Blimp** | **Far too strong** (playtest feedback), even for a Mythical. Continuous gatling (about 3× the biplane's average fire) + bombs + a flying tower. The deck tower's +3 high ground and altitude-extended range are arbitrary. Mythical, so only via Prism/debug for now. | `WarBlimp` constants, `DeckHeightBonus` |
+
 ## Treasures and cards
 
 - Starter treasures are M2 placeholders. Review all of them in M9 (see `docs/treasures.md`).

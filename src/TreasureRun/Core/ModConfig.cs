@@ -17,9 +17,17 @@ namespace TreasureRun.Core
         public static ConfigEntry<string> DebugAutoStartCastle { get; private set; }
         public static ConfigEntry<UnityEngine.KeyCode> DebugModelKey { get; private set; }
         public static ConfigEntry<string> DebugPreviewModels { get; private set; }
+        public static ConfigEntry<bool> LoadingAnimation { get; private set; }
+
+        /// <summary>The plugin's config file (for the dev console's <c>config</c> command).</summary>
+        public static ConfigFile File { get; private set; }
 
         public static void Bind(ConfigFile config)
         {
+            File = config;
+            LoadingAnimation = config.Bind("General", "LoadingAnimation", true,
+                "Play the circle wipe when switching between menu and game. Off: the loading screen appears and disappears " +
+                "instantly. (The vanilla 3-second minimum loading time is always removed.) Also in the in-game Options menu.");
             ShowDevHud = config.Bind("Debug", "ShowDevHud", true,
                 "Show a small overlay with Treasure Run state while a run is active.");
             DebugTools = config.Bind("Debug", "DebugTools", true,

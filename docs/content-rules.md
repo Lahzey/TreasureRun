@@ -61,3 +61,14 @@ Castles remove content by **tag** (`CastleBehaviour.BannedTags`), so new content
 
 - Gold is tagged by source (`GoldEconomy`: Kill, Income, Tree, Other). Castles and treasures multiply per source.
 - Gold that must not count as kill gold, although it is paid while a monster dies, is wrapped in `GoldEconomy.Push(GoldSource.Other)`. Example: Bounty Hunters' boss bounty.
+
+## 6. Ascensions
+
+Ascensions are treasures with extra rules (`docs/ascension-plan.md`, code `src/TreasureRun/Ascensions`).
+
+- **Register through `AscensionRegistry.Register`** (from `AscensionCatalog.RegisterAll`), never directly as a treasure. It sets:
+  - the exclusion group `ascension:<target>`: at most one ascension per tower or building per run
+  - the tags `ascension`, `ascension:<target>` and `<target>`, plus the def's own `Tags` (content tags for castle bans still apply)
+  - availability: the target tower was built in this run (buildings: unlocked)
+- **Follow-up cards** of an ascension (More Bomblets, More Chains, …) use `CustomCards.AscensionChain(ascensionId, ...)`, so they are only drawable while the ascension is owned. They stay tame (§3).
+- The other content rules (max-health costs, tags, castle exclusivity) apply to ascensions like to any treasure.

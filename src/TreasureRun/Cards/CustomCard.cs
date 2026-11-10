@@ -14,6 +14,8 @@ namespace TreasureRun.Cards
         public string[] Tags = Array.Empty<string>();
         /// <summary>Max-health cost in displayed points (paid by the effect via HealthCost.Pay).</summary>
         public int MaxHealthCost;
+        /// <summary>Extra availability check at draw time (null = always).</summary>
+        public Func<bool> Available;
 
         public override void Upgrade()
         {

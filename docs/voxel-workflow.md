@@ -128,3 +128,8 @@ Original evaluation notes:
 - Good for small effect parts (crystals, ghosts, force fields), not for whole buildings.
 - A lit transparent look would need our own shader in an AssetBundle (Unity 2021.1 editor), which is possible but a bigger step.
 - Per-voxel alpha from the palette is not used yet. The mesher would have to split opaque and transparent voxels into two meshes.
+
+## Ascension models (M7)
+
+- Ascended towers swap their model in their `AscendedTower` component: `HideVanillaModel()` hides the vanilla voxel renderers (mesh name `default`), `ShowModel(name, parent, …)` adds ours, e.g. under `Tower.turret` so it turns with it.
+- Card art is rendered from the model at runtime (`UI/ModelIcons.cs`: temporary camera on an unused layer, isometric angle, fitted to the bounds, transparent background, cached; F6 clears the cache). Set `AscensionDef.CardModel`; no icon files are needed.

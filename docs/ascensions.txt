@@ -1,0 +1,154 @@
+Ballista
+	Repeater
+		Description: Fires shots in 3-round bursts
+		Rarity: Common
+		Notes for implementation: Adjust reload time so that the effective dps is around 1.5x higher. All shots go on the same target. If the target dies before the last shot lands, it is lost (flies to the last known location, but does not deal damage to any enemy)
+		
+	Springald
+		Description: Shots pierce enemies hit, dealing reduced damage with each hit
+		Rarity: Rare
+		Notes for implementation: 100% damage on first hit, reduced by 20% of the original value. If it hits zero (after 5 pierces) it despawns.
+
+	
+Mortar
+	Cluster Munitions
+		Description: Shells split into 5 smaller bomblets midair
+		Rarity: Rare
+		Notes for implementation: 50% damage and area each. They should split at 2/3 of their flight path and usually land in a way where there is some overlap in the center, so it is possible for a monster to get hit by all 5 bomblets. Each bomblet can damage individually, so getting hit by multiple means taking damage multiple times.
+		Additional cards: More Bomblets I-V (+1 bomblet each)
+		
+	Mega Mortar
+		Description: How big is too big?
+		Rarity: Legendary
+		Notes for implementation: Adjacent Mortars in square grids (2x2, 3x3, 4x4 etc) fuse together into one big mortar, combining their experience and upgrades. Terrain should be raised to the biggest height among all tiles of the mega mortar. The explosion radius should scale with the amount of mortars fused (2x2 = 4x the radius).
+	
+
+Tesla Coil
+	Chain Lightning
+		Description: Single target attacks that chain
+		Rarity: Uncommon
+		Notes for implementation: Chains jump to the closest enemy, with a limited range (same as the tower itself, including its height bonuses). Chains can travel outside the range of the tower, as long as there is always an enemy to jump to. If no target is left before all chains are used up, it should also check if it can chain to new targets from previously hit enemies. An enemy can only be hit by a single attack (chain) once. 20 chains.
+		Additional cards: More Chains I-IV (+5 chains each)
+		
+	Supercharge
+		Description: Speeds up nearby towers with its attack
+		Rarity: Rare
+		Notes for implementation: In addition to damaging enemies as normal, it also increases the attack speed of towers in range by 30% for 1 second on attack. If the Tesla Coil attacks more than once per second, it only refreshes its buff, but buffs from separate Tesla Coils can stack.
+
+
+Frost Keep
+	Icicle Cannon
+		Description: Throws sharp icicles in a straight line instead
+		Rarity: Uncommon
+		Notes for implementation: Replaces its attack with a new attack that works like a cannon, but with the slowing effect of the Frost Keep. Set base range to 6.
+		
+		
+Flame Thrower
+	Magma Lobber
+		Description: Throws big balls of molten rock instead
+		Rarity: Epic
+		Notes for implementation: Should work similarly to the cannon of the Siege Workshop. Shoots big balls of magma with big area of effect and damage. Lights enemies on fire. Slow firing. Set base range to 8.
+		
+		
+Poison Sprayer
+	No ascension for now
+	
+	
+Shredder
+	The Saw Dimension
+		Description: The floor is saw
+		Rarity: Legendary
+		Notes for implementation: The entire path where the monsters walk is covered in saws while this treasure is held. By default, they do 1 damage 5 times per second, but add the damage/10 of each Shredder on the map to the dps. Shredders no longer attack on their own. XP gain should be calculated centrally depending on the top-most HP layer (shield, armor or health) of all monsters on the map, e.g.: ShieldXpGain = (ShieldMonsterCount / AllMonsterCount) * ShredderCount, then divided among the shredders. It does not have to be exactly like this, but all shredders should be gaining XP as if they always had a target, but proportional to what the whole machinery is currently damaging.
+		
+	Bladestorm
+		Description: Blades instead surround the shredders
+		Rarity: Epic
+		Notes for implementation: Blades fly around the shredder with their flat side up, dealing their damage to any enemies they pass through. Attack speed increases the rotations per minute of each blade, range increases the number of blades (note that with a higher range, enemies close to the tower will not be damaged as they need to be hit by the blade). Set base range to 2.
+		
+		
+Encampment
+	Dead Man's Land
+		Description: Mines are not removed after wave ends
+		Rarity: Epic
+		Notes for implementation: To avoid lagging the game, implement some merging mechanic, where mines thrown very close to another mine "merge with it". When that mine explodes, it is not removed but instead has its counter reduced by 1 and can explode again the next physics frame (or render frame, you choose which is wiser) if the enemy on top of it is still alive. Also check if there is currently some hard cap on how many landmines can exist at the same time and potentially remove, modify or work around that cap
+		
+		
+Lookout
+	Lone Scout
+		Description: Damages enemies all on its own
+		Rarity: Uncommon
+		Notes for implementation: Enemies marked by this should take 1 damage 3 times per second, which should trigger the lookout damage (or if triggering it from within the lookout is difficult, just make it deal the lookout damage 3x per second)
+		Additional cards: Swift Scouts I-III (adds an additional damage tick per second each)
+		
+		
+Vampire Lair
+	Nest of Bats
+		Description: Bats attack monsters in range
+		Rarity: Rare
+		Notes for implementation: In addition to the standard attack, 10 small bats fly to random enemies, dealing the Lair's damage once per second. Once the target is dead or leaves range, they choose another target (weighted to prefer nearby monsters).
+		Additional cards: More Bats I-III (+3 bats each)
+	
+	
+Cannon
+	Fixed Installation (maybe find a better name here)
+		Description: Shoots in a fixed direction
+		Rarity: Uncommon
+		Notes for implementation: A new button in the tower's UI (just for Cannons when this treasure is owned) to set a target. When clicked, cursor should be replaced with a big target marker. When clicked again, the cannon shoots in that direction (should work like aim selection in BTD6). Cannon should always shoot as long as a wave is ongoing.
+	
+	Hwacha
+		Description: Instead fires a swarm of rockets
+		Rarity: Epic
+		Notes for implementation: Replace the normal attack with a swarm attack of many small rockets, like a real Hwacha or Nest of Bees. The rockets should have a small AOE and land roughly around their current target. This definitely needs to be animated when shooting. Make the rocket count a variable that I can tweak (it does not need to match the slot count in the model), set it to 20 by default.
+
+
+Monument
+	Sealed Fate
+		Description: Stabbing never stops
+		Rarity: Epic
+		Notes for implementation: The damage increases instead of decreasing, up to 3x the original damage. This means it only ends once the target dies. Also note that currently, the Monument does not seem to work at all. Not sure if that's because of the mod or the game itself. This will need to be fixed.
+		
+	
+Obelisk
+	Ritual of the Sun
+		Description: Show your devotion and be rewarded
+		Rarity: Mythical
+		Notes for implementation: Obelisks should connect to their closest obelisk in range (except ones that are already connected to it). When they form a complete circle (connecting back to the start, can be a triangle or other shape too), a huge beam of light from the sky should appear at their centre, dealing the combined DPS of each of the contributing obelisks to any monsters caught in the beam. Invest a lot in making the animations, particles and models look sophisticated and epic. Sun-themed of course.
+		
+		
+Radar
+	Already done
+	
+	
+Particle Cannon
+	Beam Cannon
+		Description: Continuous beam of pure energy
+		Rarity: Epic
+		Notes for implementation: Should be a straight beam now (visually), firing non-stop, as long as there is mana. Both effective dps as well as mana cost per second should be higher than the standard Particle Cannon.
+		
+	Particle Accelerator
+		Description: Bends the fabric of space itself
+		Rarity: Legendary
+		Notes for implementation: Should drain mana at a high rate while charging up (with a safety mechanism to stop charging when mana is below 25%). When fully charged (30 seconds) it unleashes a large black hole on the target, sucking all enemies in for 5 seconds and dealing high damage.
+		
+		
+Mana Siphon
+	Ley Line Network
+		Description: Connect your siphons into one large network
+		Rarity: Legendary
+		Notes for implementation: Any adjacent mana siphons are considered part of the same network. Each siphon in the network earns 1 mana per second for each mana crystal touched by the network. This will need some good model work and logic to tie it together. It should look like arcane pipes connected to each other, with models adjusting based on which neighbouring tiles also have a mana siphon or a mana crystal (it should look like the mana is being piped out of the crystal). Also add a secret interaction with the Particle Accelerator: Its mana drain speed should be increased by the network's generation speed. Its shot depends on mana being charged, so higher drain means faster charging.
+		
+		
+Mana Bank
+	No ascension for now
+	
+		
+Mine
+	No ascension for now
+	
+		
+University
+	No ascension for now
+	
+		
+Haunted House
+	No ascension for now

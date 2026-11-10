@@ -181,6 +181,11 @@ namespace TreasureRun.UI
                 capture?.AppendLine(l);
             }
             Plugin.Log.LogInfo("[Console] " + text);
+            // Output outside a file command (e.g. from a running scenario) goes to out.txt directly.
+            if (capture == null)
+            {
+                try { File.AppendAllText(Path.Combine(Dir, "out.txt"), text + Environment.NewLine); } catch { /* ignore */ }
+            }
             if (lines.Count > 1000) lines.RemoveRange(0, lines.Count - 1000);
         }
 
@@ -252,6 +257,22 @@ namespace TreasureRun.UI
             });
 
             Add("state", "state", "Dumps the current game state.", false, a => Print(StateText()));
+
+            Add("config", "config [key] [value]", "Lists mod settings, or shows/sets one (key: name or part of it).", false, a =>
+            {
+                var entries = ModConfig.File.Keys.Select(k => ModConfig.File[k])
+                    .Where(e => a.Length == 0 || Matches(e.Definition.Key, a[0])).ToList();
+                if (a.Length >= 2)
+                {
+                    if (entries.Count != 1) { Print($"{entries.Count} settings match '{a[0]}'; be more specific."); return; }
+                    string value = Rest(a, 1);
+                    if (entries[0].SettingType == typeof(bool))
+                        value = value == "1" || value.Equals("on", StringComparison.OrdinalIgnoreCase) ? "true"
+                              : value == "0" || value.Equals("off", StringComparison.OrdinalIgnoreCase) ? "false" : value;
+                    entries[0].SetSerializedValue(value);
+                }
+                foreach (var e in entries) Print($"{e.Definition.Section}.{e.Definition.Key} = {e.GetSerializedValue()}");
+            });
 
             Add("gold", "gold <n|+n|-n>", "Sets or changes gold (bypasses gold multipliers).", true, a =>
             {
@@ -389,11 +410,19 @@ namespace TreasureRun.UI
                 Print("Drawing cards.");
             });
 
-            Add("offer", "offer [size]", "Opens a treasure offer (Treasure Run).", true, a =>
+            Add("offer", "offer [size | id id ...]", "Opens a treasure offer (Treasure Run): rolled, or exactly the given treasures.", true, a =>
             {
                 if (!TreasureRunMode.Active) { Print("Not a Treasure Run."); return; }
-                TreasureOfferUI.RequestOffer(int.Parse(Arg(a, 0, "0")));
-                Print("Treasure offer requested.");
+                if (a.Length == 0 || int.TryParse(a[0], out _))
+                {
+                    TreasureOfferUI.RequestOffer(int.Parse(Arg(a, 0, "0")));
+                    Print("Treasure offer requested.");
+                    return;
+                }
+                var defs = a.Select(FindTreasure).Where(d => d != null).ToList();
+                if (defs.Count == 0) { Print("No treasure matches."); return; }
+                TreasureOfferUI.RequestFixed(defs);
+                Print("Offer: " + string.Join(", ", defs.Select(d => d.Name)));
             });
 
             Add("pick", "pick <slot>", "Clicks card slot n (0-based) of the open card panel.", true, a =>
@@ -409,21 +438,34 @@ namespace TreasureRun.UI
 
             Add("build", "build <name> <x> <z> [free=1]", "Builds at a grid cell (world x/z, castle = 0,0). Free unless free=0.", true, a =>
             {
-                var prefabs = BuildPrefabs();
-                string q = Arg(a, 0, "");
-                var match = prefabs.FirstOrDefault(p => string.Equals(p.Key, q, StringComparison.OrdinalIgnoreCase));
-                if (match.Value.Key == null) match = prefabs.FirstOrDefault(p => Matches(p.Key, q));
-                if (match.Value.Key == null) { Print($"No building matches '{q}'. See 'buildings'."); return; }
                 int x = int.Parse(Arg(a, 1, "2")), z = int.Parse(Arg(a, 2, "0"));
-                if (!Physics.Raycast(new Vector3(x, 40f, z), Vector3.down, out RaycastHit hit, 80f, BuildingManager.instance.buildableMask, QueryTriggerInteraction.Ignore))
-                { Print("Nothing below that cell."); return; }
-                if (hit.collider.gameObject.layer != LayerMask.NameToLayer("Grass"))
-                { Print($"Cell blocked by {hit.collider.name} (layer {LayerMask.LayerToName(hit.collider.gameObject.layer)})."); return; }
-                Vector3 pos = new Vector3(x, Mathf.Round(3f * hit.point.y) / 3f, z);
-                GameObject go = UnityEngine.Object.Instantiate(match.Value.Key, pos, Quaternion.identity);
-                go.GetComponent<IBuildable>()?.SetStats();
-                if (Arg(a, 3, "1") == "0") ResourceManager.instance.Spend(match.Value.Value.currentPrice);
-                Print($"Built {match.Key} at {x},{z} (height +{Mathf.RoundToInt(pos.y * 3f) - 1}).");
+                BuildAt(Arg(a, 0, ""), x, z, Arg(a, 3, "1") == "0", out string message);
+                Print(message);
+            });
+
+            Add("scenario", "scenario [name|all]", "Runs in-game test scenarios (results in out.txt); no name lists them.", true, a =>
+            {
+                if (a.Length == 0)
+                {
+                    foreach (Debugging.Scenario sc in Debugging.Scenarios.All) Print($"{sc.Name,-24} {sc.Description}");
+                    return;
+                }
+                Debugging.Scenarios.Start(a[0]);
+            });
+
+            Add("sound", "sound <name> [volume]", "Plays a mod sound (sounds folder, e.g. ui/ascension_pick) at the camera target.", false, a =>
+            {
+                Audio.SoundLibrary.ClearCache();
+                Audio.SoundLibrary.PlayUi(Arg(a, 0, "ui/ascension_pick"), float.Parse(Arg(a, 1, "1"), System.Globalization.CultureInfo.InvariantCulture));
+                AudioClip clip = Audio.SoundLibrary.Get(Arg(a, 0, "ui/ascension_pick"));
+                Print(clip != null ? $"Playing {clip.name}: {clip.length:0.00} s, {clip.channels} ch, {clip.frequency} Hz." : "Sound not found.");
+            });
+
+            Add("restart", "restart", "Reloads the game scene with the current settings (castle, lanes, mode).", false, a =>
+            {
+                Time.timeScale = 1f;
+                Print("Restarting.");
+                LevelLoader.instance.LoadLevel("GameScene");
             });
 
             Add("castle", "castle [id]", "Lists castles or selects one for the next game.", false, a =>
@@ -528,6 +570,16 @@ namespace TreasureRun.UI
                 Print($"{PathOf(go.transform)} {(on ? "shown" : "hidden")}.");
             });
 
+            Add("towerui", "towerui <x> <z>", "Opens the popup of the tower or building nearest to a grid cell (like a click).", true, a =>
+            {
+                var at = new Vector3(float.Parse(Arg(a, 0, "0")), 0f, float.Parse(Arg(a, 1, "0")));
+                MonoBehaviour target = FindObjectsOfType<MonoBehaviour>().Where(m => m is IBuildable)
+                    .OrderBy(m => Vector3.SqrMagnitude(new Vector3(m.transform.position.x, 0f, m.transform.position.z) - at)).FirstOrDefault();
+                if (target == null) { Print("No tower or building."); return; }
+                ((IBuildable)target).SpawnUI();
+                Print($"Opened {target.name} at {target.transform.position}.");
+            });
+
             Add("click", "click", "Clicks the castle (opens its info popup like a mouse click).", true, a =>
             {
                 CastleInfo.Show();
@@ -614,6 +666,33 @@ namespace TreasureRun.UI
                 Print($"muzzle {from} target {e.transform.position} aim {aim}\nno lead: pitch {pitch(v0):0} speed {v0.magnitude:0.0} t {t0:0.00}\nlead: pitch {pitch(v1):0} speed {v1.magnitude:0.0}");
             });
 
+            Add("planes", "planes", "Lists Radar planes: ascension, position, target, bomber/blimp state.", true, a =>
+            {
+                foreach (BiPlane p in UnityEngine.Object.FindObjectsOfType<BiPlane>())
+                {
+                    var asc = p.GetComponent<Ascensions.AscendedPlane>();
+                    string extra = asc is Ascensions.CarpetBomber b ? $" bombs {b.Bombs} phase {b.PhaseName}"
+                                 : asc is Ascensions.WarBlimp w ? " " + w.Status : "";
+                    Print($"{(asc != null ? asc.GetType().Name : "BiPlane")} at {p.transform.position} target {(p.target != null ? p.target.name : "-")} " +
+                          $"owner {(asc?.Owner != null ? asc.Owner.transform.position.ToString() : "?")} rps {p.rps:0.000} speed {p.speed:0.0}{extra}");
+                }
+            });
+
+            Add("deckbuild", "deckbuild <name>", "War Blimp: builds a tower on the first free blimp deck (free).", true, a =>
+            {
+                var prefabs = BuildPrefabs();
+                string q = Arg(a, 0, "");
+                var match = prefabs.FirstOrDefault(p => string.Equals(p.Key, q, StringComparison.OrdinalIgnoreCase));
+                if (match.Value.Key == null) match = prefabs.FirstOrDefault(p => Matches(p.Key, q));
+                if (match.Value.Key == null) { Print($"No building matches '{q}'."); return; }
+                var deck = Ascensions.BlimpDeck.All.FirstOrDefault(d => d.IsFree);
+                if (deck == null) { Print("No free blimp deck."); return; }
+                if (!Ascensions.BlimpDeck.CanCarry(match.Value.Key)) { Print($"{match.Key} cannot go on a deck."); return; }
+                GameObject go = deck.Build(match.Value.Key);
+                Tower t = go.GetComponent<Tower>();
+                Print($"Built {match.Key} on the blimp deck at {go.transform.position} (damage {t?.damage}, range {t?.range:0.0}).");
+            });
+
             Add("castleinfo", "castleinfo", "Opens the castle info panel (same as clicking the castle).", true, a =>
             {
                 CastleInfo.Show();
@@ -628,6 +707,28 @@ namespace TreasureRun.UI
             TreasureRegistry.Get(q)
             ?? TreasureRegistry.All.FirstOrDefault(d => string.Equals(d.Name, q, StringComparison.OrdinalIgnoreCase))
             ?? TreasureRegistry.All.FirstOrDefault(d => Matches(d.Id, q) || Matches(d.Name, q));
+
+        /// <summary>
+        /// Places a building from the build buttons (name or part of it) at a grid cell like the build menu would.
+        /// Returns null (with the reason in <paramref name="message"/>) if the cell is not free grass.
+        /// </summary>
+        internal static GameObject BuildAt(string name, int x, int z, bool pay, out string message)
+        {
+            var prefabs = BuildPrefabs();
+            var match = prefabs.FirstOrDefault(p => string.Equals(p.Key, name, StringComparison.OrdinalIgnoreCase));
+            if (match.Value.Key == null) match = prefabs.FirstOrDefault(p => Matches(p.Key, name));
+            if (match.Value.Key == null) { message = $"No building matches '{name}'. See 'buildings'."; return null; }
+            if (!Physics.Raycast(new Vector3(x, 40f, z), Vector3.down, out RaycastHit hit, 80f, BuildingManager.instance.buildableMask, QueryTriggerInteraction.Ignore))
+            { message = "Nothing below that cell."; return null; }
+            if (hit.collider.gameObject.layer != LayerMask.NameToLayer("Grass"))
+            { message = $"Cell blocked by {hit.collider.name} (layer {LayerMask.LayerToName(hit.collider.gameObject.layer)})."; return null; }
+            Vector3 pos = new Vector3(x, Mathf.Round(3f * hit.point.y) / 3f, z);
+            GameObject go = UnityEngine.Object.Instantiate(match.Value.Key, pos, Quaternion.identity);
+            go.GetComponent<IBuildable>()?.SetStats();
+            if (pay) ResourceManager.instance.Spend(match.Value.Value.currentPrice);
+            message = $"Built {match.Key} at {x},{z} (height +{Mathf.RoundToInt(pos.y * 3f) - 1}).";
+            return go;
+        }
 
         /// <summary>Build button prefab per name (key = prefab name), with its flyweight for the price.</summary>
         private static List<KeyValuePair<string, KeyValuePair<GameObject, TowerFlyweight>>> BuildPrefabs()

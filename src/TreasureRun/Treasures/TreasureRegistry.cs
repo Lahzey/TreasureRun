@@ -34,6 +34,7 @@ namespace TreasureRun.Treasures
             Module("Build", BuildTreasures.Register);
             Module("Meta", MetaTreasures.Register);
             Module("Castle", CastleTreasures.Register);
+            Module("Ascension", Ascensions.AscensionCatalog.RegisterAll);
 
             // Content tags used by castle bans (docs/content-rules.md).
             AddTags(Cards.ContentTags.KillGold, "scavenger", "bounty_board", "diverse_portfolio", "alchemists_furnace", "jackpot");
@@ -71,6 +72,7 @@ namespace TreasureRun.Treasures
             BuildTreasures.Hook();
             MetaTreasures.Hook();
             CastleTreasures.Hook();
+            Ascensions.AscensionCatalog.HookAll();
         }
     }
 }

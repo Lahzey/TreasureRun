@@ -16,6 +16,7 @@ namespace TreasureRun.UI
         public const int BaseOfferSize = 3;
 
         private static readonly Queue<int> pendingOffers = new Queue<int>();
+        private static readonly Queue<List<TreasureDef>> pendingFixed = new Queue<List<TreasureDef>>();
         private static List<TreasureDef> current;
 
         public static bool IsShowing => current != null;
@@ -32,6 +33,7 @@ namespace TreasureRun.UI
         private static void ResetState()
         {
             pendingOffers.Clear();
+            pendingFixed.Clear();
             current = null;
         }
 
@@ -43,11 +45,25 @@ namespace TreasureRun.UI
             TryShowNext();
         }
 
+        /// <summary>Queues an offer of exactly these treasures (dev console; no draft, no pity).</summary>
+        public static void RequestFixed(List<TreasureDef> treasures)
+        {
+            if (!TreasureRunMode.Active || CardManager.instance == null || treasures.Count == 0) return;
+            pendingFixed.Enqueue(treasures.GetRange(0, Mathf.Min(6, treasures.Count)));
+            TryShowNext();
+        }
+
         /// <summary>Shows the next queued offer if the card panel is free. Returns true if an offer is now showing.</summary>
         public static bool TryShowNext()
         {
             CardManager cm = CardManager.instance;
             if (cm == null || cm.drawingCards || current != null) return current != null;
+
+            if (pendingFixed.Count > 0)
+            {
+                Show(cm, pendingFixed.Dequeue());
+                return true;
+            }
 
             while (pendingOffers.Count > 0)
             {

@@ -100,9 +100,10 @@ The full list (554 cards) is in [reference/vanilla-cards.md](reference/vanilla-c
 - **The plane:**
   - `RadarTower` spawns a **`BiPlane`**: free-flying AI with ammo and reload, and its own projectile.
   - The radar passes its target and stats to the plane.
-  - Plane ascensions (fighter jet / bomber / blimp) are a different prefab plus behaviour for `RadarTower.biPlanePrefab`.
+  - Plane ascensions (fighter jet / bomber / blimp) keep the vanilla `BiPlane` and add an `AscendedPlane` component that swaps the model and tunes or replaces the flight (see `PLAN.md` §6b).
 - **Building:** `BuildButtonUI` → `BuildingManager.EnterBuildMode(prefab, cost, priceIncrease, type)`. Placement snaps to integer x/z, and y in steps of 1/3. Height gives +damage and +range.
 - **Non-tower buildings** implement `IBuildable`: `House`, `ManaBank`, `Mine`, `University`, `HauntedHouse`.
+- Every tower and building, with stats, prices and mechanics: [reference/vanilla-towers.md](reference/vanilla-towers.md).
 
 ## 5. Enemies, damage and RNG
 - **`Enemy`:**
@@ -151,3 +152,16 @@ Keys include:
   - the standard shader
 - **Scale:** buildings use roughly **0.1 world units per voxel** (a tower footprint is about 16×16 voxels = 1.6 units). Small objects and enemies use smaller voxel sizes, between 0.02 and 0.04.
 - Prefabs: `Ripped/ExportedProject/Assets/GameObject/*.prefab`, e.g. `CrossbowTower`, `RadarTower`, `BiPlane`, `TreasureChest`, tile prefabs `L1`, `T3`, `LTR1`, `TCastle`. Textures are named after the model: `MainTower.png`, `BiPlane.png`, etc.
+
+## 10. Findings from M7 (ascension infrastructure)
+- **Scene loading:** `LevelLoader.LoadAsyncronously` wipes in for 1.5 s, holds "Loading…" for at least 3 s (`waitFill`) regardless of the real load, and the new scene's `CircleExitStart` wipes out for 1.5 s. The game scene itself loads in about 3 s. The mod removes the minimum and can skip the wipes (`Patches/LoadingPatches.cs`).
+- **Options panel:** the toggles are anchored to the top of the panel, the sliders and Back button to its bottom; mod rows are clones of the last toggle with the panel grown by one row (`UI/OptionsMenuExtras.cs`). Labels are lower case ("Projectile D.O.T. FX", "Show damage numbers").
+- **Tower popup (`TowerUI`):** one shared prefab for all towers, with no title; texts are big rects scaled down (offsets in the parent's units need `localScale`).
+- **Card holders:** `Card N Holder/CardN` is 174 × 230; title at y 94, image 100 × 100 at y 22, description at y −69. The texts are scaled-down big rects too.
+- **Tower art:** towers are split into `BaseArt/...` and `Turret/TurretArt/...`; every voxel renderer's mesh is named `default`.
+- **Sound:** `SFXManager.PlaySound` takes an `AudioPoolSource` from `sources` (or instantiates `sourceObject`) and calls `PlayClip(clip, volume, pitchVariance)`; `SFXManager.volume` = master × SFX volume. Vanilla clips are `.ogg` (analysis: `SoundReference/reference.md`).
+- **Enemies:** spawned by `SpawnManager.SpawnEnemy` (prefab arrays `tier1` … `tier4`, `SetStats`, `SetFirstSpawnPoint`). `Pathfinder` walks straight from its current position to `currentWaypoint`, so an enemy pushed off the path walks back on its own. Speed 0 = stationary.
+- **Landmines:** no cap on their number; they are removed at wave end (`SpawnManager.destroyOnNewLevel`).
+- **Monument:** works, but needs `0.25 × damage` mana per shot and does nothing without mana.
+- **Mana-cost cards:** the Tesla Coil, Obelisk, Flame Thrower, Poison Sprayer, Vampire Lair, Frost Keep and Encampment use the base `manaConsumptionRate`, so mana-cost cards don't change their cost (e.g. "Mana Cycling" does nothing). Full list of vanilla quirks: [reference/vanilla-towers.md](reference/vanilla-towers.md).
+- **Outside the game:** `Vector3`/`Mathf`/`Color` and game enums work in a plain .NET process; anything native (Random, Time, Debug.Log, Quaternion.Euler, GameObject, Physics) throws `SecurityException: ECall methods must be packaged into a system module`.

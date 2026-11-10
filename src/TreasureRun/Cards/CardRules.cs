@@ -64,7 +64,8 @@ namespace TreasureRun.Cards
 
         /// <summary>Not banned and affordable right now.</summary>
         public static bool IsDrawable(UpgradeCard card) =>
-            card != null && !IsBanned(card) && (!(card is CustomCard c) || HealthCost.CanPay(c.MaxHealthCost));
+            card != null && !IsBanned(card) &&
+            (!(card is CustomCard c) || (HealthCost.CanPay(c.MaxHealthCost) && (c.Available == null || c.Available())));
 
         /// <summary>Custom card specs that belong in this game (castle-exclusive ones only for their castle).</summary>
         public static bool SpecAllowed(CustomCardSpec spec) =>

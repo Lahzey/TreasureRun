@@ -1,3 +1,4 @@
+using TreasureRun.Ascensions;
 using TreasureRun.Core;
 using TreasureRun.Treasures;
 using UnityEngine;
@@ -45,6 +46,7 @@ namespace TreasureRun.UI
                 cm.images[i].color = origImageColor[i];
                 Image card = CardBackground(cm, i);
                 if (card != null) card.color = origCardColor[i];
+                AscensionCard.Hide(cm, i);
             }
         }
 
@@ -52,6 +54,8 @@ namespace TreasureRun.UI
         public static void StyleAsTreasure(CardManager cm, int i, TreasureDef t)
         {
             if (origTitleColor == null) Capture(cm);
+            AscensionDef asc = AscensionRegistry.ForTreasure(t);
+            if (asc == null) AscensionCard.Hide(cm, i);
             Color text = RarityInfo.TextColor(t.Rarity);
 
             cm.titles[i].text = t.Name;
@@ -62,6 +66,8 @@ namespace TreasureRun.UI
 
             Image card = CardBackground(cm, i);
             if (card != null) card.color = Color.Lerp(Color.white, RarityInfo.IconColor(t.Rarity), 0.3f);
+
+            if (asc != null) AscensionCard.Show(cm, i, asc, card);
         }
 
         /// <summary>
@@ -93,7 +99,7 @@ namespace TreasureRun.UI
             cm.monsterCardUI.SetActive(false);
         }
 
-        private static Image CardBackground(CardManager cm, int i)
+        internal static Image CardBackground(CardManager cm, int i)
         {
             Transform parent = cm.titles[i].transform.parent; // "CardN" (button with the card sprite)
             return parent != null ? parent.GetComponent<Image>() : null;

@@ -134,6 +134,13 @@ namespace VoxTool
             { "castles/colosseum", VoxTool.Recipes.CastleRecipes2.Colosseum },
             { "castles/crows_nest", VoxTool.Recipes.CastleRecipes2.CrowsNest },
             { "castles/glass_fortress", VoxTool.Recipes.CastleRecipes2.GlassFortress },
+            { "planes/strike_fighter", VoxTool.Recipes.PlaneRecipes.StrikeFighter },
+            { "planes/carpet_bomber", VoxTool.Recipes.PlaneRecipes.CarpetBomber },
+            { "planes/propeller", VoxTool.Recipes.PlaneRecipes.Propeller },
+            { "planes/bomb", VoxTool.Recipes.PlaneRecipes.Bomb },
+            { "planes/war_blimp", VoxTool.Recipes.PlaneRecipes.WarBlimp },
+            { "planes/gatling_mount", VoxTool.Recipes.PlaneRecipes.GatlingMount },
+            { "planes/gatling_barrels", VoxTool.Recipes.PlaneRecipes.GatlingBarrels },
         };
 
         /// <summary>build &lt;modelsDir&gt; [recipe|all]: writes &lt;modelsDir&gt;/&lt;recipe&gt;.vox and a preview .png next to it.</summary>

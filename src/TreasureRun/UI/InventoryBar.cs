@@ -95,6 +95,8 @@ namespace TreasureRun.UI
                 if (!counts.ContainsKey(id)) { order.Add(id); counts[id] = 0; }
                 counts[id]++;
             }
+            // Ascensions first: they define the run.
+            order = order.OrderBy(id => Ascensions.AscensionRegistry.ForTreasure(id) == null ? 1 : 0).ToList();
             foreach (string id in order)
             {
                 TreasureDef def = TreasureRegistry.Get(id);
@@ -142,6 +144,26 @@ namespace TreasureRun.UI
             gemImg.color = RarityInfo.IconColor(def.Rarity);
             gemImg.raycastTarget = false;
 
+            Ascensions.AscensionDef asc = Ascensions.AscensionRegistry.ForTreasure(def);
+            if (asc != null)
+            {
+                // Ascension: a gold rim and the tower's crest as a badge in the lower left corner.
+                slot.gameObject.AddComponent<Outline>().effectColor = new Color(0.95f, 0.78f, 0.3f, 1f);
+                Sprite crest = AscensionCard.CrestOf(asc.Target);
+                if (crest != null)
+                {
+                    RectTransform badgeRt = NewRect("Crest", slot);
+                    badgeRt.anchorMin = badgeRt.anchorMax = badgeRt.pivot = new Vector2(0f, 0f);
+                    badgeRt.anchoredPosition = new Vector2(1f, 1f);
+                    badgeRt.sizeDelta = new Vector2(SlotSize * 0.42f, SlotSize * 0.42f);
+                    var badge = badgeRt.gameObject.AddComponent<Image>();
+                    badge.sprite = crest;
+                    badge.preserveAspect = true;
+                    badge.color = Ascensions.AscensionTargets.BannerColor(asc.Target);
+                    badge.raycastTarget = false;
+                }
+            }
+
             Text initials = NewText("Initials", slot, 15, TextAnchor.MiddleCenter);
             initials.text = Initials(def.Name);
             initials.fontStyle = FontStyle.Bold;
@@ -170,7 +192,7 @@ namespace TreasureRun.UI
         {
             string name = RarityInfo.Hex(RarityInfo.TextColor(def.Rarity));
             tooltipText.text = $"<b><color={name}>{def.Name}</color></b>{(count > 1 ? $"  x{count}" : "")}\n" +
-                               $"<color={name}><i>{def.Rarity}</i></color>\n{def.Description}";
+                               $"<color={name}><i>{def.Rarity}{TypeLineOf(def)}</i></color>\n{def.Description}";
             tooltip.sizeDelta = new Vector2(TooltipWidth, 0f);
             float textHeight = tooltipText.cachedTextGeneratorForLayout.GetPreferredHeight(
                 tooltipText.text, tooltipText.GetGenerationSettings(new Vector2(TooltipWidth - 28f, 0f))) / tooltipText.pixelsPerUnit;
@@ -183,6 +205,12 @@ namespace TreasureRun.UI
             tooltip.anchoredPosition = new Vector2(slotRt.anchoredPosition.x - SlotSize - Gap, y);
             tooltip.gameObject.SetActive(true);
             tooltip.SetAsLastSibling();
+        }
+
+        private static string TypeLineOf(TreasureDef def)
+        {
+            Ascensions.AscensionDef asc = Ascensions.AscensionRegistry.ForTreasure(def);
+            return asc != null ? "  ·  " + asc.TypeLine : "";
         }
 
         // ----- helpers -----

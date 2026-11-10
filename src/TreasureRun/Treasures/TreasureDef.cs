@@ -12,7 +12,7 @@ namespace TreasureRun.Treasures
         public Rarity Rarity;
         public string[] Tags = Array.Empty<string>();
 
-        /// <summary>Owning any treasure of a group removes the other members from the pool (e.g. "plane-ascension").</summary>
+        /// <summary>Owning any treasure of a group removes the other members from the pool (e.g. "ascension:radar").</summary>
         public string ExclusionGroup;
 
         /// <summary>Extra availability condition (e.g. "Radar unlocked"). Null = always available.</summary>

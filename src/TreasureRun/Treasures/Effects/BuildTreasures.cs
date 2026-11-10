@@ -250,6 +250,17 @@ namespace TreasureRun.Treasures.Effects
 
         internal static void ResetWingmen() => wingmen.Clear();
 
+        /// <summary>The Radar tower whose wingman this plane is (null if it is no wingman).</summary>
+        internal static RadarTower WingmanOwner(BiPlane plane)
+        {
+            foreach (var kv in wingmen)
+                if (kv.Value == plane) return kv.Key;
+            return null;
+        }
+
+        /// <summary>The wingman of a Radar tower (null if none).</summary>
+        internal static BiPlane WingmanOf(RadarTower radar) => wingmen.TryGetValue(radar, out BiPlane wing) ? wing : null;
+
         // ----- Fragmentation -----
         internal static void Fragment(MorterShell shell)
         {

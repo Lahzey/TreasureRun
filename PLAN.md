@@ -149,6 +149,29 @@ The original concept notes follow.
   - **War Forge:** the first bought level on every tower is free.
 - The picker UI goes into the PlayMenu flow, or appears as a modal at the start of `GameScene`.
 
+## 6b. Ascensions (M7, in progress)
+Treasures that turn a tower into something new. They share an exclusion group per tower (`ascension:<target>`), so a run gets at most one of each family. Code: `src/TreasureRun/Ascensions`, models: `tools/VoxTool/Recipes/PlaneRecipes.cs`. Plan, framework and status: [docs/ascension-plan.md](docs/ascension-plan.md).
+
+**Phase 0 (infrastructure), done:** `AscensionRegistry`/`AscensionDef`/`AscendedTower` framework, ascension card look (type-line banner, crest, model art, frame), tower model swap and popup title, offline tests (`tests/TreasureRun.Tests`: `SimDamage`, `SimWorld`), in-game `scenario` runner, SfxTool + `SoundLibrary` (`docs/sound-workflow.md`), and a dev-only test ascension (Proving Ground). Not committed yet.
+
+**Radar (`ascension:radar`), implemented:**
+- The vanilla `BiPlane` stays in place, so the Radar keeps feeding it target and stats and Wingman still works. An `AscendedPlane` component swaps the model and retargets instantly.
+- **Strike Fighter** (Rare): the vanilla dogfight AI with jet numbers: 2.2× speed, tighter turns (turn time 0.55 s instead of 1.5), fire interval ×0.6, 30-round magazine, shorter breakaway. Delta-wing jet with an afterburner trail.
+- **Carpet Bomber** (Epic): replaces the flight (`BiPlane.Update` skipped).
+  - Stores up to 20 bombs, building one per 10 Radar shot intervals.
+  - Flies straight runs and drops a bomb every 0.2 s while above the track (`Path` layer) inside the run, or while monsters are below.
+  - Run planner: monster positions predicted for the landing time. Candidate lines are each monster's walking direction plus the line through every pair of monsters. A sliding window over the projections onto each line finds the best segment, and the direction is chosen by approach cost.
+  - Four-engine bomber with spinning propellers.
+- **War Blimp** (Mythical): huge, slow (1.5 speed, 40°/s turns).
+  - Hovers over the densest crowd in Radar range.
+  - Fires a gatling gun continuously (vanilla bullets at the Radar's fire rate, no magazine) and drops bombs onto monsters on the track.
+  - **Tower deck:** an invisible trigger on an unused layer. A `BuildingManager.SamplePoint` / `Build` prefix shows the ghost on the deck and parents the built tower to it, so it flies along.
+    - Deck towers count as +3 high ground; their range is extended for their altitude.
+    - Radars and Shredder/Encampment can't go on the deck.
+    - Demolishing the Radar demolishes the deck tower.
+
+Next: phase 1 (Repeater, Springald, Lone Scout, Chain Lightning, Supercharge, Sealed Fate, Nest of Bats). Design intent: [docs/ascensions.txt](docs/ascensions.txt); implementation plan (framework, card presentation, models, sounds, offline tests): [docs/ascension-plan.md](docs/ascension-plan.md).
+
 ## 7. Points of interest
 - Tiles are placed by the player during the run, so POIs come along with new tiles:
   - postfix on `TileManager.SpawnNewTile`
@@ -188,7 +211,7 @@ The original concept notes follow.
 | **M4 Framework** | `GameEvents`, stat modifier layer, exclusion groups, pity, inventory bar with tooltips, ~50 treasures |
 | **M5 Voxel pipeline** | Mesh→vox converter, runtime vox loader |
 | **M6 Main tower** | Play menu overhaul, castle framework, 10 castles (more to come) |
-| **M7 Ascensions** | Radar/BiPlane → Strike Fighter / Carpet Bomber / War Blimp, then other towers |
+| **M7 Ascensions** | Radar/BiPlane → Strike Fighter / Carpet Bomber / War Blimp (done); infrastructure (done); then the other towers in three phases ([docs/ascension-plan.md](docs/ascension-plan.md)) |
 | **M8 POIs** | Mage Tower first |
 | **M9 Content & balance** | 150+ treasures, Prism of Ascendance, Mythicals, release |
 | **M10 Save/resume** | Between-wave save and load for Treasure Run, then optionally for vanilla mode |
