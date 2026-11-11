@@ -125,6 +125,7 @@ namespace TreasureRun.Cards
 
             Castles.CastleCards.RegisterAll();
             Ascensions.Phase1.Phase1Ascensions.RegisterCards();
+            Ascensions.Phase2.Phase2Ascensions.RegisterCards();
 
             Plugin.Log.LogInfo($"Registered {all.Count} custom cards.");
         }

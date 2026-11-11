@@ -189,7 +189,7 @@ namespace TreasureRun.Debugging
         {
             new BallistaDpsScenario(),
             new AscensionAttachScenario(),
-        }.Concat(Phase1Scenarios.All).ToList();
+        }.Concat(Phase1Scenarios.All).Concat(Phase2Scenarios.All).ToList();
 
         private static Runner runner;
 

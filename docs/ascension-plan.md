@@ -2,7 +2,7 @@
 
 The design intent for every ascension is in [ascensions.txt](ascensions.txt). This document covers how they get built: shared infrastructure first, then each ascension with its approach, models, sounds, cards, tests and open questions. Vanilla mechanics referenced here are in [reference/vanilla-towers.md](reference/vanilla-towers.md).
 
-**Status:** Radar is done (Strike Fighter, Carpet Bomber, War Blimp; see `PLAN.md` §6b). **Phase 0 (infrastructure) and phase 1 (Repeater, Springald, Lone Scout, Chain Lightning, Supercharge, Sealed Fate, Nest of Bats) are done** (see §4). Phases 2 and 3 are planned.
+**Status:** Radar is done (Strike Fighter, Carpet Bomber, War Blimp; see `PLAN.md` §6b). The Radar tower itself gets its own base and dish per ascension (`AscendedRadar`: Air Base with runway and control tower, Bomb Depot with bomb stacks, Airship Mast with a turning mooring mast). **Phase 0 (infrastructure), phase 1 (Repeater, Springald, Lone Scout, Chain Lightning, Supercharge, Sealed Fate, Nest of Bats) and phase 2 (Icicle Cannon, Cluster Munitions, Firing Line, Hwacha, Magma Lobber, Bladestorm, Beam Cannon, Dead Man's Land) are done** (see §4). Phase 3 is planned.
 
 ---
 
@@ -145,22 +145,22 @@ All ascension models are code recipes in `tools/VoxTool/Recipes/AscensionRecipes
 |---|---|
 | Repeater | ♻ Ballista shot ×3, slightly higher pitch per round. **Done** (`SoundLibrary.PlayVanilla`) |
 | Springald | ✚ heavy bolt launch; ♻ Ballista hit per pierce, falling pitch. **Done** (`ascensions/springald_launch`) |
-| Cluster Munitions | ✚ shell split "pop"; ♻ small explosions |
+| Cluster Munitions | ✚ shell split "pop"; ♻ small explosions. **Done** (`ascensions/cluster_pop`; bomblets use the vanilla explosion at half size) |
 | Mega Mortar | ✚ deep launch boom; ✚ huge explosion |
 | Chain Lightning | ✚ crackling arc that jumps. **Done** (`ascensions/chain_crackle`, 3 variants) |
 | Supercharge | ✚ rising charge hum on buffed towers. **Done** (`ascensions/supercharge`) |
-| Icicle Cannon | ✚ ice shard launch; ✚ shatter |
-| Magma Lobber | ✚ heavy lob; ✚ sizzling impact |
+| Icicle Cannon | ✚ ice shard launch; ✚ shatter. **Done** (`ascensions/icicle_launch`, `ascensions/icicle_shatter` with 3 variants) |
+| Magma Lobber | ✚ heavy lob; ✚ sizzling impact. **Done** (`ascensions/magma_lob`, `ascensions/magma_impact`) |
 | Saw Dimension | ✚ low saw-hum loop (one global loop, louder with more saws) |
-| Bladestorm | ✚ whirring loop per tower |
-| Dead Man's Land | ♻ explosion |
+| Bladestorm | ✚ whirring loop per tower. **Done** (`ascensions/blade_whirr`, seamless 2 s loop; hits re-pitch the vanilla ShredderHit) |
+| Dead Man's Land | ♻ explosion. **Done** (the mine's own vanilla explosion, once per charge) |
 | Lone Scout | ✚ soft tick (quiet; it fires often). **Done** (`ascensions/scout_tick`, 3 variants) |
 | Nest of Bats | ✚ flutter loop; ✚ bite. **Bite done** (`ascensions/bat_bite`, 3 variants); the flutter loop was skipped |
-| Firing Line | ♻ Cannon |
-| Hwacha | ✚ rocket whoosh (variants); ✚ small pops |
+| Firing Line | ♻ Cannon. **Done** (vanilla cannonballs) |
+| Hwacha | ✚ rocket whoosh (variants); ✚ small pops. **Done** (`ascensions/rocket_whoosh` with 4 variants, `ascensions/rocket_pop` with 3) |
 | Sealed Fate | ✚ stab, rising pitch with stacks. Not done: uses the vanilla sword hit sound |
 | Ritual of the Sun | ✚ choir-like swell when the ring closes; ✚ beam roar loop |
-| Beam Cannon | ✚ continuous energy beam loop |
+| Beam Cannon | ✚ continuous energy beam loop. **Done** (`ascensions/beam_hum`, seamless 2 s loop) |
 | Particle Accelerator | ✚ charging whine (rising); ✚ black hole rumble; ✚ collapse |
 | Ley Line Network | ✚ quiet arcane flow loop |
 | Ascension pick | ✚ special pick chime. **Done:** `ui/ascension_pick` (rising bell arpeggio + shimmer, 1.6 s, loudness like the vanilla card sound); not yet listened to |
@@ -460,13 +460,89 @@ Per ascension: logic + tests → component + models → sounds → one in-game s
 - **Renamed:** the M4 combat treasure "Chain Lightning" (12% arc proc) is now **Static Arc** (`static_arc`), freeing the name for the Tesla ascension.
 - **Open questions answered with the defaults:** Supercharge buffs other coils but not itself; Nest of Bats bites cost no mana.
 
-**Next: phase 2**, one ascension at a time with the per-ascension workflow above. Start from `TestAscension.cs` as the template: an `AscensionDef` registered in `AscensionCatalog.RegisterAll`, an `AscendedTower` subclass, a `…Logic.cs` with tests in `tests/TreasureRun.Tests`, models in `tools/VoxTool/Recipes`, sounds in `tools/SfxTool/Recipes`, and a scenario in `Debugging/Scenarios.cs`.
+**Phase 2, as built** (`src/TreasureRun/Ascensions/Phase2`):
+- **Logic:** `Phase2Logic.cs` covers:
+  - Icicle Cannon;
+  - the Cluster Munitions landing ring;
+  - the Firing Line direction;
+  - Hwacha volley timing and scatter;
+  - Magma Lobber;
+  - Bladestorm rings and blade sweep;
+  - Beam Cannon ticks with carried fractions;
+  - Dead Man's Land merging and charges.
+
+  It has 10 offline tests in `tests/TreasureRun.Tests/Phase2Tests.cs` (40 tests in total, all passing).
+- **`FrostFlameAscensions.cs`:**
+  - Icicle Cannon replaces `Dropper.Update`: mana per second, aiming, its own fire loop, and straight piercing `LineShot` icicles. The keep's inactive vanilla turret is switched on, raised onto the tower top and becomes the ice ballista.
+  - Magma Lobber replaces `FlameThrower.Update`: catapult-style lobs (`LobShot` with the Siege Workshop's `Ballistics`), a 1.4 blast, extra burn and a scorch mark.
+- **`MortarCannonAscensions.cs`:**
+  - Cluster Munitions rides on the vanilla shell (`ClusterShell`, tagged in a `Projectile.SetStats` postfix during `Morter.Fire`) and splits it into timed `LobShot` bomblets.
+  - Firing Line replaces `Tower.Update` once aimed. It calls the vanilla `Cannon.Fire` with no target, so Ricochet and Collateral still work.
+    - It adds a **Set Target** button to the popup (a copy of the demolish button).
+    - Aim mode shows a target marker and an aim line. Left click sets it; right click or Esc cancels. `UIManager.Update` is skipped while aiming.
+  - Hwacha replaces `Cannon.Fire` with a volley coroutine: rockets on Bézier curves with smoke trails, rack recoil, and an empty-rack model until it is half reloaded. The rocket count is the config value `Ascensions.HwachaRockets` (20).
+- **`BladeBeamMineAscensions.cs`:**
+  - Bladestorm skips the Shredder's `Fire`, lays out rings of blade models, and hits monsters whose angle a blade swept this frame (no physics).
+  - Beam Cannon skips the Particle Cannon's `Fire`. While powered it shows two `LineRenderer`s and a point light and plays a hum loop. It ticks 10 times a second on the first monster on the line.
+  - Dead Man's Land tags the camp's mines (`PersistentMine`):
+    - they leave `destroyOnNewLevel` and merge on landing;
+    - `Landmine.Explode` becomes one blast per charge, with a re-check on the next physics step;
+    - mines of a demolished camp are cleared at the next wave end again.
+- **`Phase2Kit.cs`:** base range override (`IBaseRangeOverride`, swapped in a `Tower.SetStats` prefix and restored once the component is gone), attack speed factor, blasts, `LineShot`, `LobShot`.
+- **Vanilla bug fixed (Treasure Run only):** `Enemy.GetFuturePosition` returns (0, 0, 0) for a monster that stands still (frozen, stunned, speed 0), so Mortar shells flew to the map origin. It now returns the monster's position.
+- **Siege Workshop:** ascensions are never attached to the castle's own cannon (`AscensionRegistry.Attach` skips `SiegeCastleTower`).
+- **Models:** `tools/VoxTool/Recipes/AscensionRecipes2.cs`:
+  - Frost Keep: ice keep, ice ballista, icicle.
+  - Mortar: cluster mortar, bomblet.
+  - Cannon: line cannon with gun shield, Hwacha cart (loaded and empty), rocket, target marker, aim flag.
+  - Flame Thrower: basalt base, furnace catapult, magma ball, scorch mark.
+  - Shredder: Bladestorm base, hub and blade.
+  - Particle Cannon: violet beam cannon.
+  - Encampment: Permacamp with mine stacks, 2- and 4-charge mines.
+- **Sounds:** `tools/SfxTool/Recipes/AscensionSounds2.cs`, levels matched to the vanilla references; not listened to yet.
+- **Cards:** More Bomblets I–V.
+- **In-game scenarios** (`Debugging/Phase2Scenarios.cs`, one per ascension, all passing):
+  - Icicle Cannon: 16 shots through 4 stacked dummies, 56% slow.
+  - Cluster Munitions: 68 DPS with all bomblets on the centre dummy.
+  - Firing Line: hits a dummy at 1.5x its range with no target in range.
+  - Hwacha: 20-rocket volleys, an empty rack between them.
+  - Magma Lobber: hits and burns 3 dummies.
+  - Bladestorm: 2.9 hits/s on the middle ring, nothing inside the inner ring.
+  - Beam Cannon: 1.13x the measured vanilla DPS for 1.6x the mana.
+  - Dead Man's Land: a 3-charge Permacamp mine explodes 3 times.
+
+  Firing Line and Dead Man's Land switch `SpawnManager.combat` on for the test.
+- **Open question answered with the default:** Beam Cannon hits the first monster on the line.
+
+**Phase 2, after the first playtest:**
+- **Line Cannon:**
+  - the target can be set on the track too;
+  - the aim flag only shows while that cannon is selected (or being aimed);
+  - its balls fly 1.75x faster and 3x its range (vanilla: 2x).
+- **Icicle Cannon:** a round range circle in the popup (the Frost Keep draws a square for its drop area).
+- **Magma Lobber:** the scorch mark is now a magma pool that cools from glowing orange to a black crust (three models over about 3.5 s). Monsters standing in it take 20% of the shot's damage per second and get burn worth the same (to their current layer).
+- **Bladestorm:** reworked into whole saw blades, 1.5 across.
+  - They sit on one ring whose outer edge is the tower's range, at a fixed spacing (base range 2: 3 blades), so more range means more blades.
+  - Each blade spins fast on its own axis, the other way round from the ring.
+  - A blade hits a monster once per pass, on entry, for 75% damage.
+  - Monsters right next to the tower are safe.
+- **Beam Cannon:** when its target dies it re-detects at once (every 0.05 s at most) instead of waiting for the vanilla 0.25–1 s target update.
+- **Hwacha:**
+  - rockets add 30% burn;
+  - the blast radius is 0.6 around the landing point, plus the monster's collider;
+  - a bigger, more colourful impact burst;
+  - **minimum range 2**.
+- **Minimum range (new mechanic, `Phase2/MinRange.cs`):** a component implementing `IMinRange` makes its tower skip monsters closer than that (a `Tower.SelectEnemy` prefix filters the candidates). While the tower is selected, a red, semi-transparent circle with diagonal hatching shows the blocked zone. `TowerSelection` tracks the selected tower (the open `TowerUI`).
+- **Permacamp white mine (playtest bug):** when a 2-charge mine exploded down to 1 charge, it went back to the vanilla mine mesh but kept the stack model's material, so the vanilla mesh rendered with the wrong palette. The vanilla material is now restored too. This is the most likely cause of the white leftover on the path, but it was not reproduced.
+- Dev console: `gold`, `mana` and `health` accept `10k`, `1.5m`.
+
+**Next: phase 3** (The Saw Dimension, Mega Mortar, Ley Line Network, Particle Accelerator, Ritual of the Sun), one ascension at a time with the per-ascension workflow above.
 
 ## 5. Open questions (summary)
 
 1. Supercharge: does a coil buff other coils, itself? (default: others yes, itself no)
 2. Nest of Bats: do bites cost mana? (default: no)
 3. Ritual of the Sun: do linked obelisks keep their normal beams? (default: yes)
-4. Beam Cannon: hit the first enemy on the line, or all of them? (default: first)
+4. Beam Cannon: hit the first enemy on the line, or all of them? (default: first, as built)
 
 **Decided:** Particle Accelerator uses one core plus capacitors (only one black hole source, fixed 30 s charge). Cluster Munitions bomblets have 50% radius; Mega Mortar radius × side length, damage = sum of all members' damage incl. levels and upgrades, vanilla fire rate; Magma Lobber lobs like the Catapult; Saw Dimension has no base damage and retracts without Shredders; the Cannon ascension is called Firing Line; Ley Line Network keeps quadratic income for now.

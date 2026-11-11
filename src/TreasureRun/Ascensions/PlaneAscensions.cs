@@ -51,6 +51,7 @@ namespace TreasureRun.Ascensions
             AscensionRegistry.Register(new AscensionDef
             {
                 Id = id, Name = name, TowerName = towerName, Rarity = rarity, Kind = kind, Target = AscensionTarget.Radar,
+                Component = typeof(AscendedRadar), // the Radar tower's own models (Air Base, Bomb Depot, Airship Mast)
                 CardModel = model, Description = description, Tags = Tags,
                 OnAcquire = (run, restoring) => ApplyAll(),
             });

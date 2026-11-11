@@ -1,0 +1,6 @@
+ascensions/rocket_pop_1
+  duration 0.25 s | peak -10.4 dBFS | RMS -20.0 dBFS | loudest 50 ms -14.5 dBFS
+  attack 0 ms | decays to -30 dB at 0.25 s | brightness (spectral centroid) 1.0k
+  envelope per 50 ms (dBFS): -15 -20 -26 -33 -40
+  brightness per 100 ms:    1.0k 703 1.1k
+  dominant pitch per 100 ms: 129 86 65

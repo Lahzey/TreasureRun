@@ -29,9 +29,11 @@ Generated from the source (`src/TreasureRun/Treasures/Effects`, console command 
 | **Bulwark** (`bulwark`) | Each wave, your castle ignores the first 3 damage it would take. | Build |
 | **Chain Lightning** (`chain_lightning`) | Each attack strikes one monster and chains 20 times to the nearest monster within the coil's range of the last one, never hitting the same monster twice. Chains can leave the coil's range. | Ascension |
 | **Diverse Portfolio** (`diverse_portfolio`) | Enemies drop +1 extra gold for every different tower type that damaged them. | Economy |
+| **Firing Line** (`firing_line`) | Adds a "Set Target" button to the Cannon: pick a spot on the map and the cannon fires in that direction non-stop while a wave is on, whether or not a monster is in range. Its balls fly faster and further. | Ascension |
 | **Hemorrhage** (`hemorrhage`) | Critical hits apply bleed equal to 50% of the damage they dealt. | Combat |
 | **High Ground** (`high_ground`) | Elevation bonuses to damage and range are doubled. | Build |
 | **Hoarder** (`hoarder`) | Towers deal 4% more damage for every treasure you own. | Build |
+| **Icicle Cannon** (`icicle_cannon`) | Instead of dropping snowflakes, the keep fires icicles in a straight line that pierce every monster they pass (3x damage) and slow them. Base range 6. | Ascension |
 | **Keen Eye** (`keen_eye`) | All towers gain +5% crit chance. | Starter |
 | **Loan Shark** (`loan_shark`) | Gain 1000 gold now. Repay 150 gold at the start of each of the next 10 waves (you can go into debt). | Economy |
 | **Lone Scout** (`lone_scout`) | A scout shoots the marked monster 3 times a second for 1 damage, which the mark turns into the Lookout's damage. | Ascension |
@@ -50,6 +52,7 @@ Generated from the source (`src/TreasureRun/Treasures/Effects`, console command 
 | **Alchemist's Furnace** (`alchemists_furnace`) | Burning enemies drop +4 gold on death. Poisoned enemies restore 2 mana on death. | Economy |
 | **Arcane Overflow** (`arcane_overflow`) | While your mana is above 90%, mana-using towers deal 50% more damage. | Combat |
 | **Bigger Bombs** (`bigger_bombs`) | Mortars gain +50% blast radius and deal 25% more damage. | Build |
+| **Cluster Munitions** (`cluster_munitions`) | Shells split into 5 bomblets in mid-air, each with 50 % of the damage and blast radius. They land close together: a monster in the middle can be hit by all of them. | Ascension |
 | **Executioner** (`executioner`) | Enemies below 20% health take double damage from everything. | Combat |
 | **Frost Nova** (`frost_nova`) | Freezing an enemy slows all enemies within 2 range by 25%. | Combat |
 | **Golden Goblin** (`golden_goblin`) | Each wave has a 35% chance to contain a golden goblin: a fast enemy that drops a treasure chest when killed. | Economy |
@@ -76,13 +79,18 @@ Generated from the source (`src/TreasureRun/Treasures/Effects`, console command 
 
 | Treasure | Effect | Module |
 |---|---|---|
+| **Beam Cannon** (`beam_cannon`) | Fires a continuous beam at its target while there is mana: 1.3x the damage per second for 1.6x the mana. The beam hits the first monster in its way. | Ascension |
+| **Bladestorm** (`bladestorm`) | Big saw blades circle the Shredder at the edge of its range and cut every monster they pass (75 % damage per pass, with bleed). More range means a bigger circle with more blades, more attack speed spins them faster. Monsters right next to it are safe. Base range 2. | Ascension |
 | **Carpet Bomber** (`carpet_bomber`) | Radar biplanes become heavy bombers. Instead of shooting they store up to 20 bombs (built at the Radar's fire rate) and carpet-bomb the track along the line that hits the most monsters: one bomb every 0.2 s, 3x damage in a small area. | Ascension |
 | **Contagion** (`contagion`) | When an enemy dies, its bleed, burn and poison spread to up to 2 nearby enemies. | Combat |
+| **Dead Man's Land** (`dead_mans_land`) | Mines stay on the path after the wave ends. A mine thrown onto another one adds a charge to it: a mine with several charges explodes again and again while monsters stand on it. | Ascension |
 | **Four-Leaf Clover** (`four_leaf_clover`) | Every luck roll is made one extra time, keeping the best result: crits, stuns, treasure slots and rarities, chests and more. | Meta |
 | **Fragmentation** (`fragmentation`) | Mortar shells burst into 3 extra blasts around the impact, each dealing half damage. | Build |
 | **Glass Cannon** (`glass_cannon`) | All towers deal 50% more damage. Your castle's maximum health is halved. | Combat |
 | **Hex of Frailty** (`hex_of_frailty`) | Your first hit on an enemy hexes it. Hexed enemies take +1 to every damage multiplier. | Combat |
 | **Hivemind** (`hivemind`) | Every tower deals +1 damage for every 3 towers you own. | Starter |
+| **Hwacha** (`hwacha`) | Instead of cannonballs, fires a volley of 20 rockets that land around the target, each with a small blast (30 % damage, 30 % burn). Reloads 2x as long and cannot target monsters within 2 of the cart. | Ascension |
+| **Magma Lobber** (`magma_lobber`) | Instead of flames, slowly lobs big balls of magma: 4x damage to every monster in a large blast, which also catch fire (+100 % burn). The magma pool left behind keeps hurting and burning monsters in it (20 % of the damage per second each). Base range 8. | Ascension |
 | **Quick Study** (`quick_study`) | Level-up card draws happen every 2 levels instead of every 3. | Starter |
 | **Retribution** (`retribution`) | Whenever your castle takes damage, all enemies within 5 range of it take 15% of their maximum health. | Build |
 | **Sealed Fate** (`sealed_fate`) | Each stab of a spirit sword does 1 more damage than the last instead of 1 less, up to 3× the first. Swords never let go before their victim dies. | Ascension |
@@ -115,4 +123,4 @@ Generated from the source (`src/TreasureRun/Treasures/Effects`, console command 
 | **Time Dilation** (`time_dilation`) | All enemies move 30% slower. | Meta |
 | **War Blimp** (`war_blimp`) | Radar biplanes become huge, slow war blimps that hover over the thickest crowd, fire a gatling gun without pause and drop bombs on the track. Each blimp carries a tower slot on its deck: build any tower there and it flies along (counts as +3 high ground). | Ascension |
 
-Total: 82
+Total: 90

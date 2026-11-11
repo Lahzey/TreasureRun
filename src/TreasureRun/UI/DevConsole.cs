@@ -235,8 +235,21 @@ namespace TreasureRun.UI
         /// <summary>"+5" / "-5" are relative to current, "5" absolute.</summary>
         private static int Amount(string arg, int current)
         {
-            if (arg.StartsWith("+") || arg.StartsWith("-")) return current + int.Parse(arg);
-            return int.Parse(arg);
+            if (arg.StartsWith("+") || arg.StartsWith("-")) return current + Number(arg);
+            return Number(arg);
+        }
+
+        /// <summary>An integer with an optional k (thousand) or m (million) suffix: "10k", "-2.5k", "1m".</summary>
+        private static int Number(string arg)
+        {
+            arg = arg.Trim();
+            double factor = 1;
+            char last = char.ToLowerInvariant(arg[arg.Length - 1]);
+            if (last == 'k') factor = 1_000;
+            else if (last == 'm') factor = 1_000_000;
+            if (factor > 1) arg = arg.Substring(0, arg.Length - 1);
+            double v = double.Parse(arg, System.Globalization.CultureInfo.InvariantCulture) * factor;
+            return (int)System.Math.Round(System.Math.Max(int.MinValue, System.Math.Min(int.MaxValue, v)));
         }
 
         private static string Arg(string[] a, int i, string fallback = null) => i < a.Length ? a[i] : fallback;
@@ -274,7 +287,7 @@ namespace TreasureRun.UI
                 foreach (var e in entries) Print($"{e.Definition.Section}.{e.Definition.Key} = {e.GetSerializedValue()}");
             });
 
-            Add("gold", "gold <n|+n|-n>", "Sets or changes gold (bypasses gold multipliers).", true, a =>
+            Add("gold", "gold <n|+n|-n> (10k, 1.5m)", "Sets or changes gold (bypasses gold multipliers).", true, a =>
             {
                 ResourceManager rm = ResourceManager.instance;
                 rm.gold = Amount(Arg(a, 0, "+1000"), rm.gold);

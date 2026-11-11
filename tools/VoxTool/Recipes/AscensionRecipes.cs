@@ -11,8 +11,13 @@ namespace VoxTool.Recipes
     /// (<c>RogueTower/Voxels/…</c>) and keep its x/y size; their sidecar copies the vanilla origin, so the runtime can
     /// swap the mesh of the vanilla renderer in place (same position, same turret rotation).
     /// </summary>
-    public static class AscensionRecipes
+    public static partial class AscensionRecipes
     {
+        static AscensionRecipes()
+        {
+            foreach (var kv in Phase2Sidecars) VanillaSidecars[kv.Key] = kv.Value;
+        }
+
         /// <summary>Folder of the extracted vanilla models (set by <c>build</c>: models/../../Voxels).</summary>
         public static string VoxelsRoot = Path.Combine("..", "..", "..", "Voxels");
 
@@ -21,6 +26,8 @@ namespace VoxTool.Recipes
         private const string LookoutBase = "Lookout/Lookout_BaseArt_Lookout_default";
         private const string MonumentBase = "Monument/Monument_BaseArt_SwordTower_default";
         private const string LairBase = "VampireLair/VampireLair_BaseArt_default";
+        private const string RadarBase = "RadarTower/RadarTower_BaseArt_RadarBase_default";
+        private const string RadarDish = "RadarTower/RadarTower_Turret_TurretArt_RadarDish_default";
 
         /// <summary>Recipe name → vanilla model whose sidecar (origin) it reuses.</summary>
         public static readonly Dictionary<string, string> VanillaSidecars = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -32,6 +39,12 @@ namespace VoxTool.Recipes
             { "ascensions/lookout/lone_scout", LookoutBase },
             { "ascensions/monument/sealed_fate", MonumentBase },
             { "ascensions/vampire_lair/nest_of_bats", LairBase },
+            { "ascensions/radar/air_base", RadarBase },
+            { "ascensions/radar/air_base_dish", RadarDish },
+            { "ascensions/radar/bomb_depot", RadarBase },
+            { "ascensions/radar/bomb_depot_dish", RadarDish },
+            { "ascensions/radar/airship_mast", RadarBase },
+            { "ascensions/radar/airship_mast_dish", RadarDish },
         };
 
         public static IEnumerable<(string, Func<VoxModel>)> All()
@@ -47,6 +60,13 @@ namespace VoxTool.Recipes
             yield return ("ascensions/vampire_lair/nest_of_bats", NestOfBats);
             yield return ("ascensions/vampire_lair/bat_up", () => Bat(true));
             yield return ("ascensions/vampire_lair/bat_down", () => Bat(false));
+            yield return ("ascensions/radar/air_base", AirBase);
+            yield return ("ascensions/radar/air_base_dish", AirBaseDish);
+            yield return ("ascensions/radar/bomb_depot", BombDepot);
+            yield return ("ascensions/radar/bomb_depot_dish", BombDepotDish);
+            yield return ("ascensions/radar/airship_mast", AirshipMast);
+            yield return ("ascensions/radar/airship_mast_dish", AirshipMastDish);
+            foreach (var r in Phase2All()) yield return r;
         }
 
         private static readonly uint Wood = C(128, 92, 21), WoodDark = C(85, 57, 0), Cream = C(255, 227, 170), Steel = C(128, 124, 105);
@@ -219,6 +239,122 @@ namespace VoxTool.Recipes
             c.Recolor((x, y, z, col) => z == 16, C(120, 20, 28));    // grip wrap
             return c.ToModel("sealed_fate");
         }
+
+
+        // ------------------------------------------------------------------ Radar (one base + dish per plane ascension)
+        // Vanilla base: plate z 4-5 over x/y 3..12, a pyramid of pins z 6-10 rising to a 2x2 column at x/y 7-8 (the dish
+        // turret sits on top of it), corner pads x/y 0-2 / 13-15 up to z 2, teal stripes. Vanilla dish: a 14-voxel grid
+        // frame at x 1-2 on a short arm (pivot near x 2, y 7).
+
+        private static readonly uint Asphalt = C(58, 58, 62), Paint = C(235, 235, 225), RadarGlass = C(90, 170, 210), RadarSteel = C(150, 156, 165);
+        private static readonly uint PanelBlue = C(60, 110, 170), Olive = C(96, 104, 60), OliveDark = C(72, 78, 44), Hazard = C(220, 180, 40);
+        private static readonly uint MastRed = C(170, 40, 40), MastWhite = C(225, 222, 210), MooringRope = C(168, 136, 82);
+
+        /// <summary>Clears the pin pyramid of the vanilla base, keeping the central column that carries the dish.</summary>
+        private static void ClearPins(VoxCanvas c)
+        {
+            for (int x = 0; x < 16; x++)
+                for (int y = 0; y < 16; y++)
+                    if (!(x >= 7 && x <= 8 && y >= 7 && y <= 8)) c.ClearBox(x, y, 6, x, y, 10);
+        }
+
+        /// <summary>Strike Fighter: an airfield. Runway with centre dashes across the plate, control tower in a corner.</summary>
+        public static VoxModel AirBase()
+        {
+            var c = FromVanilla(RadarBase, 2);
+            ClearPins(c);
+            c.Box(3, 3, 5, 12, 5, 5, Asphalt);                         // runway along x, in front of the column
+            for (int x = 3; x <= 12; x += 3) c.Box(x, 4, 5, x + 1, 4, 5, Paint);
+            c.Set(3, 3, 5, Paint); c.Set(3, 5, 5, Paint); c.Set(12, 3, 5, Paint); c.Set(12, 5, 5, Paint);
+            c.Box(10, 10, 6, 12, 12, 8, StoneOf(c));                   // control tower
+            c.Box(10, 10, 9, 12, 12, 9, RadarGlass);                   // glass cab
+            c.Box(11, 11, 9, 11, 11, 9, StoneOf(c));
+            c.Box(10, 10, 10, 12, 12, 10, RadarSteel);                      // roof
+            c.Box(11, 11, 11, 11, 11, 12, RadarSteel); c.Set(11, 11, 12, MastRed); // antenna
+            c.Box(4, 10, 6, 4, 10, 8, RadarSteel); c.Set(5, 10, 8, Hazard); c.Set(6, 10, 8, Hazard); // windsock
+            c.Recolor((x, y, z, col) => col == C(34, 102, 102), PanelBlue);
+            return c.ToModel("air_base");
+        }
+
+        /// <summary>Modern solid radar panel (same shape as the vanilla grid, filled, steel frame and blue face).</summary>
+        public static VoxModel AirBaseDish()
+        {
+            var c = FromVanilla(RadarDish, 0);
+            c.Box(1, 0, 2, 1, 13, 5, PanelBlue);                       // fill the grid
+            c.Recolor((x, y, z, col) => col == PanelBlue && (z == 2 || z == 5 || y == 0 || y == 13), RadarSteel);
+            c.Recolor((x, y, z, col) => col != PanelBlue, RadarSteel);
+            c.Set(1, 7, 6, Hazard); c.Set(1, 6, 6, Hazard);             // top beacon
+            return c.ToModel("air_base_dish");
+        }
+
+        /// <summary>Carpet Bomber: a bomb depot. Stacked bombs on the corner pads, hazard stripes instead of the teal ones.</summary>
+        public static VoxModel BombDepot()
+        {
+            var c = FromVanilla(RadarBase, 2);
+            c.Recolor((x, y, z, col) => col == C(34, 102, 102) && (x + y) % 2 == 0, Hazard);
+            c.Recolor((x, y, z, col) => col == C(34, 102, 102), Asphalt);
+            foreach (var (x0, y0) in new[] { (0, 0), (13, 0), (0, 13), (13, 13) })
+            {
+                // Three bombs: two side by side, one on top, lying along y with red tips.
+                foreach (var (dx, z) in new[] { (0, 3), (2, 3), (1, 4) })
+                {
+                    c.Box(x0 + dx, y0, z, x0 + dx, y0 + 1, z, Olive);
+                    c.Set(x0 + dx, y0 + 2, z, MastRed);
+                }
+            }
+            c.Box(5, 11, 6, 7, 12, 7, OliveDark); c.Box(5, 11, 7, 7, 11, 7, Olive); // ammo crates by the column
+            c.Box(9, 3, 6, 10, 4, 6, OliveDark);
+            return c.ToModel("bomb_depot");
+        }
+
+        /// <summary>The vanilla dish in olive drab with a yellow-tipped frame.</summary>
+        public static VoxModel BombDepotDish()
+        {
+            var c = FromVanilla(RadarDish, 0);
+            c.Recolor((x, y, z, col) => true, Olive);
+            c.Recolor((x, y, z, col) => y == 0 || y == 13, Hazard);
+            c.Recolor((x, y, z, col) => x >= 3, OliveDark);
+            return c.ToModel("bomb_depot_dish");
+        }
+
+        /// <summary>War Blimp: mooring field. Anchor posts with rope coils on the corner pads; the dish becomes the mast.</summary>
+        public static VoxModel AirshipMast()
+        {
+            var c = FromVanilla(RadarBase, 2);
+            ClearPins(c);
+            c.Box(6, 6, 6, 9, 9, 6, RadarSteel);                             // mast foot plate around the column
+            c.Box(7, 7, 6, 8, 8, 10, RadarSteel);
+            c.Recolor((x, y, z, col) => col == C(34, 102, 102), MastRed);
+            foreach (var (x, y) in new[] { (1, 1), (14, 1), (1, 14), (14, 14) })
+            {
+                c.Box(x, y, 3, x, y, 5, RadarSteel);                         // anchor bollard
+                c.Set(x, y, 6, MastRed);
+                c.Box(x - 1, y, 3, x + 1, y, 3, MooringRope); c.Box(x, y - 1, 3, x, y + 1, 3, MooringRope);
+            }
+            return c.ToModel("airship_mast");
+        }
+
+        /// <summary>A tall red-and-white lattice mooring mast on the turret (turns like the dish), nose cone and beacon on top.</summary>
+        public static VoxModel AirshipMastDish()
+        {
+            var c = new VoxCanvas(7, 14, 22);                           // same x/y as the vanilla dish (sidecar origin)
+            for (int z = 0; z <= 15; z++)
+            {
+                uint col = (z / 3) % 2 == 0 ? MastRed : MastWhite;
+                foreach (var (x, y) in new[] { (1, 6), (2, 6), (1, 7), (2, 7) })
+                    if ((x + y + z) % 2 == 0 || z % 3 == 0) c.Set(x, y, z, col);
+            }
+            c.Box(0, 5, 16, 3, 8, 16, RadarSteel);                           // mooring platform
+            c.Box(1, 6, 17, 2, 7, 18, MastWhite);
+            c.Box(1, 8, 17, 2, 11, 17, RadarSteel);                          // mooring arm pointing forward (+y)
+            c.Box(1, 12, 16, 2, 12, 18, RadarSteel); c.Set(1, 13, 17, Hazard); c.Set(2, 13, 17, Hazard); // coupling cone
+            c.Box(1, 6, 19, 2, 7, 19, MastRed);                         // beacon
+            c.Set(1, 6, 20, Hazard);
+            return c.ToModel("airship_mast_dish");
+        }
+
+        /// <summary>The stone colour of the vanilla radar base.</summary>
+        private static uint StoneOf(VoxCanvas c) => c.Get(7, 7, 4) != 0 ? c.Get(7, 7, 4) : C(94, 93, 87);
 
         // ------------------------------------------------------------------ Vampire Lair
 

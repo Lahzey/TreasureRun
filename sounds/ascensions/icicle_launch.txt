@@ -1,0 +1,6 @@
+ascensions/icicle_launch
+  duration 0.55 s | peak -1.0 dBFS | RMS -20.3 dBFS | loudest 50 ms -11.6 dBFS
+  attack 5 ms | decays to -30 dB at 0.39 s | brightness (spectral centroid) 9.4k
+  envelope per 50 ms (dBFS): -12 -17 -21 -25 -29 -33 -37 -40 -47 -54 -55
+  brightness per 100 ms:    10.5k 6.5k 4.0k 3.0k 2.1k 2.1k
+  dominant pitch per 100 ms: 840 2.4k 2.4k 2.4k 861 883

@@ -132,4 +132,5 @@ The Ballista is available from the start. The Mortar, Tesla Coil and Mana Siphon
 
 - **Cannon:** `Cannon.Fire` writes range, Ricochet and Collateral to the cannonball prefab instead of the ball it just fired. They take effect from the next shot, and all Cannons share whichever values were written last.
 - **Mana-cost cards:** the Tesla Coil, Obelisk, Flame Thrower, Poison Sprayer, Vampire Lair, Frost Keep and Encampment use `manaConsumptionRate` instead of `finalManaConsumption`, so they always pay their base mana rate. As a result, "Mana Cycling" (−20% Obelisk mana cost) has no effect. Mortar "Mana Bombs" does work.
+- **Future position of standing monsters:** `Enemy.GetFuturePosition` walks `speed × time` along the path. For a distance of 0 (a frozen, stunned or speed-0 monster) it falls out of its loop and returns (0, 0, 0), so Mortar shells aimed at such a monster land at the map origin. Treasure Run patches this (`Phase2Kit`).
 - **Lookout crit:** the Lookout's crit chance only counts against bleeding targets.
