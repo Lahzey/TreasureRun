@@ -2,7 +2,7 @@
 
 The design intent for every ascension is in [ascensions.txt](ascensions.txt). This document covers how they get built: shared infrastructure first, then each ascension with its approach, models, sounds, cards, tests and open questions. Vanilla mechanics referenced here are in [reference/vanilla-towers.md](reference/vanilla-towers.md).
 
-**Status:** Radar is done (Strike Fighter, Carpet Bomber, War Blimp; see `PLAN.md` §6b). The Radar tower itself gets its own base and dish per ascension (`AscendedRadar`: Air Base with runway and control tower, Bomb Depot with bomb stacks, Airship Mast with a turning mooring mast). **Phase 0 (infrastructure), phase 1 (Repeater, Springald, Lone Scout, Chain Lightning, Supercharge, Sealed Fate, Nest of Bats) and phase 2 (Icicle Cannon, Cluster Munitions, Firing Line, Hwacha, Magma Lobber, Bladestorm, Beam Cannon, Dead Man's Land) are done** (see §4). Phase 3 is planned.
+**Status:** Radar is done (Strike Fighter, Carpet Bomber, War Blimp; see `PLAN.md` §6b). The Radar tower itself gets its own base and dish per ascension (`AscendedRadar`: Air Base with runway and control tower, Bomb Depot with bomb stacks, Airship Mast with a turning mooring mast). **Phase 0 (infrastructure), phase 1 (Repeater, Springald, Lone Scout, Chain Lightning, Supercharge, Sealed Fate, Nest of Bats) and phase 2 (Icicle Cannon, Cluster Munitions, Firing Line, Hwacha, Magma Lobber, Bladestorm, Beam Cannon, Dead Man's Land) are done** (see §4). Phase 3 is in progress: The Saw Dimension is done.
 
 ---
 
@@ -151,7 +151,7 @@ All ascension models are code recipes in `tools/VoxTool/Recipes/AscensionRecipes
 | Supercharge | ✚ rising charge hum on buffed towers. **Done** (`ascensions/supercharge`) |
 | Icicle Cannon | ✚ ice shard launch; ✚ shatter. **Done** (`ascensions/icicle_launch`, `ascensions/icicle_shatter` with 3 variants) |
 | Magma Lobber | ✚ heavy lob; ✚ sizzling impact. **Done** (`ascensions/magma_lob`, `ascensions/magma_impact`) |
-| Saw Dimension | ✚ low saw-hum loop (one global loop, louder with more saws) |
+| Saw Dimension | ✚ low saw-hum loop (one global loop, louder with more saws). **Done** (`ascensions/saw_hum`, seamless 3 s loop on the camera; volume follows the number of Shredders and fades out as the saws retract) |
 | Bladestorm | ✚ whirring loop per tower. **Done** (`ascensions/blade_whirr`, seamless 2 s loop; hits re-pitch the vanilla ShredderHit) |
 | Dead Man's Land | ♻ explosion. **Done** (the mine's own vanilla explosion, once per charge) |
 | Lone Scout | ✚ soft tick (quiet; it fires often). **Done** (`ascensions/scout_tick`, 3 variants) |
@@ -536,7 +536,18 @@ Per ascension: logic + tests → component + models → sounds → one in-game s
 - **Permacamp white mine (playtest bug):** when a 2-charge mine exploded down to 1 charge, it went back to the vanilla mine mesh but kept the stack model's material, so the vanilla mesh rendered with the wrong palette. The vanilla material is now restored too. This is the most likely cause of the white leftover on the path, but it was not reproduced.
 - Dev console: `gold`, `mana` and `health` accept `10k`, `1.5m`.
 
-**Next: phase 3** (The Saw Dimension, Mega Mortar, Ley Line Network, Particle Accelerator, Ritual of the Sun), one ascension at a time with the per-ascension workflow above.
+**Phase 3, as built so far** (`src/TreasureRun/Ascensions/Phase3`):
+- **The Saw Dimension** (`SawDimension.cs`, logic in `SawDimensionLogic.cs`, 4 offline tests in `tests/TreasureRun.Tests/Phase3Tests.cs`; 44 tests in total):
+  - Every Shredder becomes a **Saw Engine**: a `Tower.Update` prefix skips aiming, attacks and vanilla XP; the turret spins while the saws run.
+  - One global `SawField` lays a floor saw every 0.9 along every path segment (waypoint → next and split-next). The layout is rebuilt when the number of waypoints changes, so it follows map expansion. Spawns happen at waypoints, so the saws cover every stretch monsters walk.
+  - **Damage:** 5 ticks a second on every monster in `SpawnManager.currentEnemies`. The base damage per tick is Σ(Shredder damage) / 10 / 5, with fractions carried, so there is never a forced minimum-1 hit. At most 5 hits a second; above that the hits get bigger, and the remainder is spread over the second (6 base damage per second hits 1, 1, 1, 1, 2). With few Shredders the hits are rarer instead (1 per second → one hit of 1 per second), so each hit shows the same number and more engines show up as more frequent hits until every tick hits. Multipliers, bleed and the other effects are the Shredders' averages. The hits count as Shredder damage, so Shredder cards keep working.
+  - **XP:** each Shredder gains the vanilla per-second XP of a tower with a target (1 / (2 × range) + 1/2), split over the shield, armor and health pools by the share of monsters on each layer. It gains nothing while no monsters are on the map.
+  - **No Shredders:** the saws sink into the floor (0.6 s) and stop; the dark slits stay visible. Building one raises them again.
+  - **Drawing:** `Graphics.DrawMesh` per saw and slot. The game build strips the Standard shader's instancing variants, so `DrawMeshInstanced` rendered nothing.
+  - **Models** (`tools/VoxTool/Recipes/AscensionRecipes3.cs`): floor saw (vertical disc, half of it above the path), slit, Saw Engine base (power cables) and top (generator with an upright saw). **Sound:** `ascensions/saw_hum` (`tools/SfxTool/Recipes/AscensionSounds3.cs`), not listened to yet.
+  - **Scenario** `saw-dimension` (`Debugging/Phase3Scenarios.cs`): two Shredders away from the dummy; the saws deal 42 DPS to it (direct hits 40 = Σ damage 20 / 10 × health multiplier 20); the Shredders gain XP; after demolishing them the saws retract and stop hitting.
+
+**Next in phase 3:** Mega Mortar, Ley Line Network, Particle Accelerator, Ritual of the Sun, one ascension at a time with the per-ascension workflow above.
 
 ## 5. Open questions (summary)
 

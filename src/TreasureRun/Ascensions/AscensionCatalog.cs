@@ -8,6 +8,7 @@ namespace TreasureRun.Ascensions
             PlaneAscensions.Register();
             Phase1.Phase1Ascensions.Register();
             Phase2.Phase2Ascensions.Register();
+            Phase3.Phase3Ascensions.Register();
             TestAscension.Register();
         }
 

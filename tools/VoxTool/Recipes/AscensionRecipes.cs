@@ -16,6 +16,7 @@ namespace VoxTool.Recipes
         static AscensionRecipes()
         {
             foreach (var kv in Phase2Sidecars) VanillaSidecars[kv.Key] = kv.Value;
+            foreach (var kv in Phase3Sidecars) VanillaSidecars[kv.Key] = kv.Value;
         }
 
         /// <summary>Folder of the extracted vanilla models (set by <c>build</c>: models/../../Voxels).</summary>
@@ -67,6 +68,7 @@ namespace VoxTool.Recipes
             yield return ("ascensions/radar/airship_mast", AirshipMast);
             yield return ("ascensions/radar/airship_mast_dish", AirshipMastDish);
             foreach (var r in Phase2All()) yield return r;
+            foreach (var r in Phase3All()) yield return r;
         }
 
         private static readonly uint Wood = C(128, 92, 21), WoodDark = C(85, 57, 0), Cream = C(255, 227, 170), Steel = C(128, 124, 105);

@@ -13,6 +13,7 @@ namespace SfxTool
             Variants("ascensions/bat_bite", 3, BatBite);
             Add("ascensions/springald_launch", SpringaldLaunch);
             RegisterPhase2();
+            RegisterPhase3();
         }
 
         /// <summary>

@@ -111,6 +111,7 @@ Generated from the source (`src/TreasureRun/Treasures/Effects`, console command 
 | **Monolith** (`monolith`) | Towers deal 25% more damage and attack 5% faster for every tower fewer than 10 you own. | Build |
 | **Prism of Ascendance** (`prism_of_ascendance`) | In every treasure offer, one treasure is upgraded by one rarity. Legendaries become Mythical. | Meta |
 | **Second Wind** (`second_wind`) | Once per run, when your castle would be destroyed, it survives with 50% health instead. | Starter |
+| **The Saw Dimension** (`saw_dimension`) | The floor is saw. Saws cover the whole path and cut every monster on the map 5 times a second, for a tenth of your Shredders' combined damage per second (with their bleed). Shredders stop attacking but keep levelling up. Without Shredders, the saws sink into the floor. | Ascension |
 | **Grand Bombard** (`grand_bombard`) | The castle cannon deals triple damage, but fires 30% slower. | Castle (Siege Workshop) |
 | **Trebuchet Battery** (`trebuchet_battery`) | The catapult throws three boulders at once, each at a different monster. | Castle (Siege Workshop) |
 
@@ -123,4 +124,4 @@ Generated from the source (`src/TreasureRun/Treasures/Effects`, console command 
 | **Time Dilation** (`time_dilation`) | All enemies move 30% slower. | Meta |
 | **War Blimp** (`war_blimp`) | Radar biplanes become huge, slow war blimps that hover over the thickest crowd, fire a gatling gun without pause and drop bombs on the track. Each blimp carries a tower slot on its deck: build any tower there and it flies along (counts as +3 high ground). | Ascension |
 
-Total: 90
+Total: 91
