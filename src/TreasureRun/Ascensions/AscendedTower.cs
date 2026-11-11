@@ -14,6 +14,9 @@ namespace TreasureRun.Ascensions
         public AscensionDef Def { get; private set; }
         public AscensionTarget Target { get; private set; }
 
+        /// <summary>Name shown for this particular tower instead of the ascension's tower name (null = that name).</summary>
+        public virtual string DisplayName => null;
+
         /// <summary>The vanilla tower (null for buildings).</summary>
         public Tower Tower { get; private set; }
 

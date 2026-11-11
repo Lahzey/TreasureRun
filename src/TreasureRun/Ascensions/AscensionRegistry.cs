@@ -175,7 +175,11 @@ namespace TreasureRun.Ascensions
         }
 
         /// <summary>The ascended tower's name ("Storm Coil") for a tower or building of an owned ascension, else null.</summary>
-        public static string DisplayNameOf(GameObject go) => AscensionOf(go)?.BuiltName;
+        public static string DisplayNameOf(GameObject go)
+        {
+            AscendedTower own = go != null ? go.GetComponent<AscendedTower>() : null;
+            return (own != null ? own.DisplayName : null) ?? AscensionOf(go)?.BuiltName;
+        }
 
         /// <summary>The owned ascension that applies to this object (also for ascensions without a component, like the Radar's).</summary>
         public static AscensionDef AscensionOf(GameObject go)

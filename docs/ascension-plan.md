@@ -2,7 +2,7 @@
 
 The design intent for every ascension is in [ascensions.txt](ascensions.txt). This document covers how they get built: shared infrastructure first, then each ascension with its approach, models, sounds, cards, tests and open questions. Vanilla mechanics referenced here are in [reference/vanilla-towers.md](reference/vanilla-towers.md).
 
-**Status:** Radar is done (Strike Fighter, Carpet Bomber, War Blimp; see `PLAN.md` §6b). The Radar tower itself gets its own base and dish per ascension (`AscendedRadar`: Air Base with runway and control tower, Bomb Depot with bomb stacks, Airship Mast with a turning mooring mast). **Phase 0 (infrastructure), phase 1 (Repeater, Springald, Lone Scout, Chain Lightning, Supercharge, Sealed Fate, Nest of Bats) and phase 2 (Icicle Cannon, Cluster Munitions, Firing Line, Hwacha, Magma Lobber, Bladestorm, Beam Cannon, Dead Man's Land) are done** (see §4). Phase 3 is in progress: The Saw Dimension is done.
+**Status:** Radar is done (Strike Fighter, Carpet Bomber, War Blimp; see `PLAN.md` §6b). The Radar tower itself gets its own base and dish per ascension (`AscendedRadar`: Air Base with runway and control tower, Bomb Depot with bomb stacks, Airship Mast with a turning mooring mast). **Phase 0 (infrastructure), phase 1 (Repeater, Springald, Lone Scout, Chain Lightning, Supercharge, Sealed Fate, Nest of Bats) and phase 2 (Icicle Cannon, Cluster Munitions, Firing Line, Hwacha, Magma Lobber, Bladestorm, Beam Cannon, Dead Man's Land) are done** (see §4). Phase 3 is in progress: The Saw Dimension and Mega Mortar are done.
 
 ---
 
@@ -41,7 +41,7 @@ Code: `src/TreasureRun/Ascensions`.
 | Ballista | Repeater | Repeater |
 | Ballista | Springald | Springald |
 | Mortar | Cluster Munitions | Cluster Mortar |
-| Mortar | Mega Mortar | Mortar Module |
+| Mortar | Mega Mortar | Mortar Module (fused: Mega Mortar) |
 | Tesla Coil | Chain Lightning | Storm Coil |
 | Tesla Coil | Supercharge | Capacitor Coil |
 | Frost Keep | Icicle Cannon | Icicle Cannon |
@@ -146,7 +146,7 @@ All ascension models are code recipes in `tools/VoxTool/Recipes/AscensionRecipes
 | Repeater | ♻ Ballista shot ×3, slightly higher pitch per round. **Done** (`SoundLibrary.PlayVanilla`) |
 | Springald | ✚ heavy bolt launch; ♻ Ballista hit per pierce, falling pitch. **Done** (`ascensions/springald_launch`) |
 | Cluster Munitions | ✚ shell split "pop"; ♻ small explosions. **Done** (`ascensions/cluster_pop`; bomblets use the vanilla explosion at half size) |
-| Mega Mortar | ✚ deep launch boom; ✚ huge explosion |
+| Mega Mortar | ✚ deep launch boom; ✚ huge explosion. **Done** (`ascensions/mega_launch`, `ascensions/mega_blast`; the vanilla explosion also plays, scaled up) |
 | Chain Lightning | ✚ crackling arc that jumps. **Done** (`ascensions/chain_crackle`, 3 variants) |
 | Supercharge | ✚ rising charge hum on buffed towers. **Done** (`ascensions/supercharge`) |
 | Icicle Cannon | ✚ ice shard launch; ✚ shatter. **Done** (`ascensions/icicle_launch`, `ascensions/icicle_shatter` with 3 variants) |
@@ -204,7 +204,7 @@ For checks of the form "set up a situation, expect an outcome", a deterministic 
 | Repeater | DPS against a dummy is 1.5× (±5%) the vanilla Ballista; a burst whose target dies loses the remaining bolts |
 | Springald | Damage sequence 100/80/60/40/20 %; despawns after the 5th hit |
 | Cluster Munitions | Over 1,000 seeded shots at a still target, ≥ 80% of the time all 5 bomblets hit the centre enemy |
-| Mega Mortar | Fusion finds the largest squares: an L of 5 mortars → one 2×2 + 1 single; 3×3 beats 2×2; XP sums |
+| Mega Mortar | Fusion finds the largest squares: an L of 5 mortars → one 2×2 + 1 single; 3×3 beats 2×2; a Mega Mortar only grows and its cells can't be borrowed; levels average by module count |
 | Chain Lightning | 30 enemies in a line 1.5 apart → exactly 20 unique hits; dead ends restart from earlier victims; no enemy hit twice |
 | Supercharge | 1 coil firing twice a second = +30% (refresh only); 2 coils = +60% |
 | Saw Dimension | Damage per second = Σ(Shredder damage)/10 (0 without Shredders); XP split adds up to the total |
@@ -263,17 +263,13 @@ Each entry: **effect**, **approach**, **models**, **cards**, **open questions**.
 - **Models:** mortar with a ribbed shell rack; small bomblet model.
 
 #### Mega Mortar (Legendary, Replace)
-- **Tower name:** Mortar Module
-- **Effect:** mortars in a full square (2×2, 3×3, …) fuse into one big mortar; the terrain is raised to the highest of the cells.
-  - **Blast radius** × side length: 2×2 → 2×, 3×3 → 3×.
-  - **Damage:** the sum of all fused mortars' base damage, including their levels and upgrades. The same for health, armor and shield damage.
-  - **Fire rate:** unchanged (vanilla mortar rate).
-- **Approach:**
-  - `MegaMortarLogic` finds maximal squares on the build grid (largest first, no overlaps) whenever a mortar is built or demolished.
-  - The anchor tower stays a real `Morter` whose `SetStats` result is the sum of the group's stats; the others are hidden and stop firing, but keep existing so demolish/refund still works per mortar. Demolishing one breaks the fusion back into singles.
-  - XP: the anchor gains it while firing and spreads it over the members, so each member keeps its own level when the fusion breaks.
-  - A plinth model under the fused mortar at the highest cell's height; its `transform.y` sets the height bonus.
-- **Models:** scalable mega mortar per size (2×2, 3×3, 4×4 recipes), plinth.
+- **Tower name:** Mortar Module (loose, and the build button); a fused one is called **Mega Mortar**.
+- **Effect:** Mortar Modules built in a full square (2×2, 3×3, …) fuse for good into one Mega Mortar, a single tower standing on the highest of its tiles.
+  - **Damage:** base damage × number of modules (the modules' sum). Health, armor and shield multipliers and the level are the modules' **average**, weighted by module count (a 2×2 counts 4× when it grows into a 3×3).
+  - **Blast radius** × side length; **range** + 2 per side above 1 (2×2 +2, 3×3 +4, 4×4 +6); fire rate unchanged.
+  - **Only grows:** a bigger full square around a Mega Mortar (nothing sticking out of it) fuses again; its modules can't be taken for another square.
+  - **Selling:** demolish sells the whole Mega Mortar, for what its modules would bring sold one by one. Its modules keep counting for the Mortar price.
+- **Models:** square Mortar Module and Mega Mortar per size (2×2 … 8×8: wider, but the same height), yellow connectors in the middle of each side; concrete plinth.
 
 ### Tesla Coil
 
@@ -547,7 +543,29 @@ Per ascension: logic + tests → component + models → sounds → one in-game s
   - **Models** (`tools/VoxTool/Recipes/AscensionRecipes3.cs`): floor saw (vertical disc, half of it above the path), slit, Saw Engine base (power cables) and top (generator with an upright saw). **Sound:** `ascensions/saw_hum` (`tools/SfxTool/Recipes/AscensionSounds3.cs`), not listened to yet.
   - **Scenario** `saw-dimension` (`Debugging/Phase3Scenarios.cs`): two Shredders away from the dummy; the saws deal 42 DPS to it (direct hits 40 = Σ damage 20 / 10 × health multiplier 20); the Shredders gain XP; after demolishing them the saws retract and stop hitting.
 
-**Next in phase 3:** Mega Mortar, Ley Line Network, Particle Accelerator, Ritual of the Sun, one ascension at a time with the per-ascension workflow above.
+- **Mega Mortar** (`MegaMortar.cs`, logic in `MegaMortarLogic.cs`, 4 offline tests; 49 tests in total). Reworked after the first playtest (summed multipliers were far too strong; the fused mortar was still several hidden towers):
+  - Every Mortar becomes a **Mortar Module**. Building one (or gaining the ascension) marks `MortarFusionGrid` dirty; it fuses with `NextFusion` until nothing is left. Rule: the largest square (ties: lowest z, then x) that is completely covered by at least two units (loose modules or Mega Mortars), none of which sticks out; up to 8×8.
+  - **Fusing:** the biggest unit's tower survives; the others are destroyed without a refund and taken out of the Mortar flyweight. The survivor moves to the middle of the square at the highest tile's height (so the vanilla height bonus and the targeting centre are right), its root `BoxCollider` grows to the square (it blocks building there and opens its popup), its base mesh becomes `mega_mortar_N` and the turret (muzzle) is raised 0.25. Level, damage and multiplier upgrades and XP pools become the module-weighted averages (`MegaMortarLogic.Average`). From then on it is a normal tower: vanilla targeting, XP and level buying.
+  - **Stats** (`Tower.SetStats` postfix): damage × Size², range + 2 (Size − 1), blast × Size.
+  - **Prices:** modules inside Mega Mortars (`ExtraModules` = Σ Size² − 1) still count. `TowerFlyweight.AddNewTower`/`RemoveTower` patches recompute the build and sell prices and the refund of a loose module with them. Demolishing a Mega Mortar pays `SellValue` (all its modules sold one by one; the popup shows it) and lowers the price by all of them.
+  - **Firing:**
+    - **Shell:** every module (loose or fused) fires the modern `mortar_shell` in place of the vanilla shell art. Its red tail light (`mortar_shell_light`, same canvas) blinks 3 times a second by switching its renderer on and off; there's no real light source, to keep it cheap. Mega Mortar shells are drawn bigger.
+    - **Recoil:** the barrel is a separate model (`mortar_barrel`, `mega_barrel_N`, drawn on the same canvas as the base so they line up). It sinks into its collar in 0.06 s and eases back over 0.45 s.
+    - **Steam** (Mega Mortars only): `SteamFx` vents soft white puffs and thin, fast stretched streaks from the barrel rim out to all sides. From 3×3 on, a stream also shoots straight up out of each vent grille: the 4 corners on a 3×3, more on bigger ones (`MegaMortarLogic.VentTiles`, the same rule as the model). Two pooled world-space particle systems (Sprites/Default with a generated soft-circle texture) serve every Mega Mortar.
+    - **Sounds and impact:** `mega_launch` plays at the muzzle; on impact, a scaled-up copy of the vanilla explosion, `mega_blast` and debris.
+  - **Name:** `AscendedTower.DisplayName` (new, per tower) is "Mega Mortar" for fused ones; the popup title uses it.
+  - **Plinth:** with different tile heights, a concrete block (`mega_plinth_N`) stretched from the lowest tile up to the highest. Before, a 2-unit block hung below the map edge.
+  - **Models** (`AscensionRecipes3.cs`, `MortarBody`): `mortar_module` (16×16×12, square light steel base with panel seams, a yellow connector socket in the middle of each side, hazard-striped gunmetal deck, cyan corner lights, short wide barrel), `mega_mortar_2…8` (the same design 16N wide but always 16 high, a barrel 4.6N wide, a vent grille on each tile the barrel leaves free), `mega_plinth_2…8`.
+  - **Scenarios:** `mega-mortar`:
+    - An L of 5 modules → one 2×2 + 1 loose module, with 2 towers left. The price is unchanged by the fusion; the Mega Mortar is named, centred and its tiles are blocked.
+    - Damage 80 = 4 × 20, multiplier 10 (averaged), range +2, blast 2×; the biggest hit is 800; it gains XP.
+    - Grows to a 3×3 with 5 more modules: level (4 × 5 + 5 × 1) / 9 → 3, price for 9 modules.
+    - When it fires: the barrel recoils and returns; the shell is the modern one (screenshots of the steam and the shell).
+    - Demolish pays 4500 g and the price returns to 200 g.
+
+    `mega-mortar-hill`: fuses on a slope; it stands on the highest tile, and the plinth spans from the lowest tile to the highest.
+
+**Next in phase 3:** Ley Line Network, Particle Accelerator, Ritual of the Sun, one ascension at a time with the per-ascension workflow above.
 
 ## 5. Open questions (summary)
 
@@ -556,4 +574,4 @@ Per ascension: logic + tests → component + models → sounds → one in-game s
 3. Ritual of the Sun: do linked obelisks keep their normal beams? (default: yes)
 4. Beam Cannon: hit the first enemy on the line, or all of them? (default: first, as built)
 
-**Decided:** Particle Accelerator uses one core plus capacitors (only one black hole source, fixed 30 s charge). Cluster Munitions bomblets have 50% radius; Mega Mortar radius × side length, damage = sum of all members' damage incl. levels and upgrades, vanilla fire rate; Magma Lobber lobs like the Catapult; Saw Dimension has no base damage and retracts without Shredders; the Cannon ascension is called Firing Line; Ley Line Network keeps quadratic income for now.
+**Decided:** Particle Accelerator uses one core plus capacitors (only one black hole source, fixed 30 s charge). Cluster Munitions bomblets have 50% radius; Mega Mortar radius × side length, base damage × modules with multipliers and level averaged (weighted by module count), +2 range per side above 1, vanilla fire rate, fusing is permanent; Magma Lobber lobs like the Catapult; Saw Dimension has no base damage and retracts without Shredders; the Cannon ascension is called Firing Line; Ley Line Network keeps quadratic income for now.

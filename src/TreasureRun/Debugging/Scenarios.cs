@@ -87,6 +87,14 @@ namespace TreasureRun.Debugging
             return null;
         }
 
+        /// <summary>Builds a tower or building on one grid cell (null if the cell is not free grass).</summary>
+        public GameObject BuildAt(string prefab, int x, int z)
+        {
+            GameObject go = DevConsole.BuildAt(prefab, x, z, false, out string message);
+            if (go != null) spawned.Add(go);
+            return go;
+        }
+
         /// <summary>
         /// Spawns a stationary dummy enemy (a vanilla tier-1 monster with the given health layers) on the track at a point.
         /// </summary>

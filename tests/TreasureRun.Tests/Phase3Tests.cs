@@ -105,5 +105,97 @@ namespace TreasureRun.Tests
             for (int i = 0; i < 20; i++) e = SawDimensionLogic.Extension(e, true, 1f / 60f);
             Assert.That(e, Is.GreaterThan(0f).And.LessThan(1f));
         }
+
+        // ------------------------------------------------------------------ Mega Mortar
+
+        private static List<MortarSquare> Singles(params (int x, int z)[] cells) => cells.Select(c => new MortarSquare(c.x, c.z, 1)).ToList();
+
+        private static List<MortarSquare> Block(int x0, int z0, int size)
+        {
+            var cells = new List<MortarSquare>();
+            for (int x = 0; x < size; x++)
+                for (int z = 0; z < size; z++)
+                    cells.Add(new MortarSquare(x0 + x, z0 + z, 1));
+            return cells;
+        }
+
+        [Test]
+        public void MegaMortarFusesTheLargestSquares()
+        {
+            // An L of 5 modules: one 2x2, the fifth stays loose.
+            List<MortarSquare> l = MegaMortarLogic.Resolve(Singles((0, 0), (1, 0), (0, 1), (1, 1), (0, 2)));
+            Assert.That(l.Count, Is.EqualTo(2));
+            Assert.That(l.Single(u => u.Size == 2).Contains(0, 2), Is.False);
+
+            // 3x3 beats the 2x2s inside it; a 2x3 rectangle gives one 2x2 (lowest first) and two loose modules.
+            Assert.That(MegaMortarLogic.Resolve(Block(4, 7, 3)).Single(), Is.EqualTo(new MortarSquare(4, 7, 3)));
+            List<MortarSquare> rect = MegaMortarLogic.Resolve(Block(0, 0, 2).Concat(Singles((0, 2), (1, 2))));
+            Assert.That(rect.Single(u => u.Size == 2), Is.EqualTo(new MortarSquare(0, 0, 2)));
+            Assert.That(rect.Count, Is.EqualTo(3));
+
+            // A line or a diagonal fuses nothing.
+            Assert.That(MegaMortarLogic.Resolve(Singles((0, 0), (1, 0), (2, 0), (3, 0))).Count, Is.EqualTo(4));
+            Assert.That(MegaMortarLogic.Resolve(Singles((0, 0), (1, 1), (2, 2))).Count, Is.EqualTo(3));
+        }
+
+        [Test]
+        public void MegaMortarOnlyGrowsAndCannotBeTakenApart()
+        {
+            // A 2x2 Mega Mortar plus 5 modules around it becomes a 3x3.
+            var mega = new MortarSquare(0, 0, 2);
+            var grow = new List<MortarSquare> { mega };
+            grow.AddRange(Singles((2, 0), (2, 1), (2, 2), (0, 2), (1, 2)));
+            var contained = new List<int>();
+            Assert.That(MegaMortarLogic.NextFusion(grow, contained), Is.EqualTo(new MortarSquare(0, 0, 3)));
+            Assert.That(contained.Count, Is.EqualTo(6));
+
+            // Modules next to a Mega Mortar can't borrow its cells for a square of their own: the 2x2 at (1,1) would
+            // take one cell of the mega, so nothing fuses.
+            var steal = new List<MortarSquare> { mega };
+            steal.AddRange(Singles((2, 1), (1, 2), (2, 2)));
+            Assert.That(MegaMortarLogic.NextFusion(steal, contained), Is.Null);
+
+            // A 3x3 next to the mega that would cut through it doesn't form either; separate squares beside it do.
+            var beside = new List<MortarSquare> { mega };
+            beside.AddRange(Block(2, 0, 2));
+            List<MortarSquare> after = MegaMortarLogic.Resolve(beside);
+            Assert.That(after, Is.EquivalentTo(new[] { mega, new MortarSquare(2, 0, 2) }));
+
+            // Two 2x2 megas side by side never fuse into a rectangle; with a full 4x4 of megas they become one 4x4.
+            var four = new List<MortarSquare> { new MortarSquare(0, 0, 2), new MortarSquare(2, 0, 2), new MortarSquare(0, 2, 2), new MortarSquare(2, 2, 2) };
+            Assert.That(MegaMortarLogic.Resolve(four).Single(), Is.EqualTo(new MortarSquare(0, 0, 4)));
+        }
+
+        [Test]
+        public void MegaMortarAveragesLevelsByModuleCount()
+        {
+            // A level-5 2x2 (weight 4) with 5 fresh modules: (4 x 5 + 5 x 1) / 9 = 2.8 -> level 3.
+            var parts = new List<MortarProgress> { new MortarProgress { Weight = 4, Level = 5, DamageUp = 4, HealthUp = 4, HealthXp = 9f } };
+            for (int i = 0; i < 5; i++) parts.Add(new MortarProgress { Weight = 1, Level = 1 });
+            MortarProgress p = MegaMortarLogic.Average(parts);
+            Assert.That(p.Weight, Is.EqualTo(9));
+            Assert.That(p.Level, Is.EqualTo(3));
+            Assert.That(p.DamageUp, Is.EqualTo(2)); // 16 / 9 = 1.8
+            Assert.That(p.HealthUp, Is.EqualTo(2));
+            Assert.That(p.HealthXp, Is.EqualTo(4f).Within(1e-4));
+
+            // Stats: damage x modules, blast x side, +2 range per side above 1.
+            Assert.That(MegaMortarLogic.DamageFactor(3), Is.EqualTo(9));
+            Assert.That(MegaMortarLogic.BlastFactor(2), Is.EqualTo(2f));
+            Assert.That(MegaMortarLogic.RangeBonus(1), Is.EqualTo(0f));
+            Assert.That(MegaMortarLogic.RangeBonus(2), Is.EqualTo(2f));
+            Assert.That(MegaMortarLogic.RangeBonus(4), Is.EqualTo(6f));
+
+            // Vents: a 3x3 has exactly its 4 corners (steam shoots up from each).
+            Assert.That(MegaMortarLogic.VentTiles(3), Is.EquivalentTo(new[] { (0, 0), (2, 0), (0, 2), (2, 2) }));
+        }
+
+        [Test]
+        public void MegaMortarSellsLikeItsModulesOneByOne()
+        {
+            // Mortar 200 + 75 per mortar owned. 6 owned, selling a 2x2: 4 sales at 575, 500, 425, 350.
+            Assert.That(MegaMortarLogic.SellValue(200, 75, 6, 4), Is.EqualTo(575 + 500 + 425 + 350));
+            Assert.That(MegaMortarLogic.SellValue(200, 75, 1, 1), Is.EqualTo(200));
+        }
     }
 }

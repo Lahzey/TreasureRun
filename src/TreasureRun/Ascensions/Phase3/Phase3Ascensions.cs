@@ -6,6 +6,7 @@ namespace TreasureRun.Ascensions.Phase3
         public static void Register()
         {
             SawEngine.Register();
+            MortarModule.Register();
         }
 
         /// <summary>Follow-up cards, only drawable while their ascension is owned (called from CustomCards.RegisterAll).</summary>

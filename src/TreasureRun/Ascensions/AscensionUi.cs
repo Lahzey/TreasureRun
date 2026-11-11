@@ -18,7 +18,8 @@ namespace TreasureRun.Ascensions
         private static void TowerUiSetStats(TowerUI __instance, Tower _myTower)
         {
             AscensionDef def = AscensionRegistry.AscensionOf(_myTower != null ? _myTower.gameObject : null);
-            string title = def?.BuiltName;
+            AscendedTower own = _myTower != null ? _myTower.GetComponent<AscendedTower>() : null;
+            string title = (own != null ? own.DisplayName : null) ?? def?.BuiltName;
             if (title == null || __instance.levelText == null) return;
 
             // Clone the whole "Level" panel (background + text) and put the copy right above it.
