@@ -2,7 +2,7 @@
 
 The design intent for every ascension is in [ascensions.txt](ascensions.txt). This document covers how they get built: shared infrastructure first, then each ascension with its approach, models, sounds, cards, tests and open questions. Vanilla mechanics referenced here are in [reference/vanilla-towers.md](reference/vanilla-towers.md).
 
-**Status:** Radar is done (Strike Fighter, Carpet Bomber, War Blimp; see `PLAN.md` §6b). The Radar tower itself gets its own base and dish per ascension (`AscendedRadar`: Air Base with runway and control tower, Bomb Depot with bomb stacks, Airship Mast with a turning mooring mast). **Phase 0 (infrastructure), phase 1 (Repeater, Springald, Lone Scout, Chain Lightning, Supercharge, Sealed Fate, Nest of Bats) and phase 2 (Icicle Cannon, Cluster Munitions, Firing Line, Hwacha, Magma Lobber, Bladestorm, Beam Cannon, Dead Man's Land) are done** (see §4). Phase 3 is in progress: The Saw Dimension and Mega Mortar are done.
+**Status:** Radar is done (Strike Fighter, Carpet Bomber, War Blimp; see `PLAN.md` §6b). The Radar tower itself gets its own base and dish per ascension (`AscendedRadar`: Air Base with runway and control tower, Bomb Depot with bomb stacks, Airship Mast with a turning mooring mast). **Phase 0 (infrastructure), phase 1 (Repeater, Springald, Lone Scout, Chain Lightning, Supercharge, Sealed Fate, Nest of Bats) and phase 2 (Icicle Cannon, Cluster Munitions, Firing Line, Hwacha, Magma Lobber, Bladestorm, Beam Cannon, Dead Man's Land) are done** (see §4). Phase 3 is in progress: The Saw Dimension, Mega Mortar and Ley Line Network are done.
 
 ---
 
@@ -162,7 +162,7 @@ All ascension models are code recipes in `tools/VoxTool/Recipes/AscensionRecipes
 | Ritual of the Sun | ✚ choir-like swell when the ring closes; ✚ beam roar loop |
 | Beam Cannon | ✚ continuous energy beam loop. **Done** (`ascensions/beam_hum`, seamless 2 s loop) |
 | Particle Accelerator | ✚ charging whine (rising); ✚ black hole rumble; ✚ collapse |
-| Ley Line Network | ✚ quiet arcane flow loop |
+| Ley Line Network | ✚ quiet arcane flow loop. **Done** (`ascensions/ley_flow`, seamless 4 s pad + shimmer + soft flow, one global loop on the camera; louder with more income) |
 | Ascension pick | ✚ special pick chime. **Done:** `ui/ascension_pick` (rising bell arpeggio + shimmer, 1.6 s, loudness like the vanilla card sound); not yet listened to |
 
 ---
@@ -565,7 +565,32 @@ Per ascension: logic + tests → component + models → sounds → one in-game s
 
     `mega-mortar-hill`: fuses on a slope; it stands on the highest tile, and the plinth spans from the lowest tile to the highest.
 
-**Next in phase 3:** Ley Line Network, Particle Accelerator, Ritual of the Sun, one ascension at a time with the per-ascension workflow above.
+- **Ley Line Network** (`LeyLineNetwork.cs`, logic in `LeyLineLogic.cs`, 3 offline tests; 52 tests in total). Income rule reworked after playtest (the first version paid every siphon × every crystal):
+  - **Networks:** every Mana Siphon becomes a **Ley Siphon**. `LeyNetwork` (one global object) recomputes on every build or demolish, and when the crystal count changes (checked every 2 s). `LeyLineLogic.Solve` flood-fills siphons over the 4 neighbours at **any** height (after playtest feedback; vanilla only gathers from a crystal at the same height). A crystal counts once per network if it touches any of its siphons.
+  - **Income:** only **taps** (siphons next to a crystal themselves) gather: rate × (1 + ½ per further crystal in the network), rounded down, so rate × (C + 1) / 2 (`LeyLineLogic.TapIncome`). They gather once a second during waves (a `ManaSiphon.Update` prefix replaces vanilla gathering). Other siphons are **connectors**: they gather nothing but link crystals into the network. The HUD's mana rate gets the difference to what vanilla already shows.
+  - **Popup:** the siphon popup shows the network (siphons, crystals) and the income of the siphon and of the whole network.
+  - **Visuals:** hollow glass pipes with gold edges, world-aligned (the vanilla siphon art is hidden because it turns towards its crystal).
+    - **Generated in game:** the geometry is `src/Shared/Vox/LeyGeometry.cs`, shared with VoxTool, on one fixed palette. The game meshes each part per port combination the first time it is needed and caches it (`LeyParts`). VoxTool only writes `ley_palette` (whose material all parts use) and the card art.
+    - **Glass:** the panes are a second mesh per part, drawn with the unlit alpha-blended ghost material on the same palette. The build strips the Standard shader's transparent variants, so a Fade copy rendered opaque white.
+    - **Hubs:** a 6x6 glass junction. Where a pipe joins, the hub's face takes the pipe's own cross-section, so the pipe's gold edge lines and glass panes run straight on into the hub with no break in the border (as in the card edit from playtest). The pipes' bottom gold lines continue across the hub's floor. A tap stands on a wooden plinth with a glowing mark and has purple indicator corners (vivid while the network touches a crystal, pale otherwise). A connector stands on wooden feet and has no indicators.
+    - **Corners:** on risers and drops they are as wide as the pipe (4x4); only hubs are wider.
+    - **Funnels:** solid stepped rings (each overlaps the one before, and the gold corners are blocks as thick as the wall, so the gold edges step in Ls, never diagonals), with the mouth exactly the crystal's size (8x8 voxels) and flush with its face. Ending exactly on the crystal's face is fine, as the two faces point opposite ways; the earlier dithering came from same-facing faces inside the crystal.
+    - The brass first style was dropped after the glass experiment.
+  - **Heights** (`LeyLineLogic.Plan`): between nodes of different height the pipe runs at the higher one's level, and the lower siphon carries it.
+    - **Riser and tees:** the lower siphon gets a riser (`ley_riser`, stretched) up to its highest neighbour, with one tee fitting (`ley_tee`) per level where arms branch off, so several higher neighbours never get overlapping pipes. Its arms and intakes sit at those levels.
+    - **Lower crystal:** it can't carry anything, so the siphon's arm goes to the tile edge, then an elbow (`ley_elbow`), a stretched drop pipe (`ley_drop`), and an elbow with the funnel at the crystal's level (`ley_funnel_low`).
+  - **Motes:** all motes are one mesh, built from copies of the `ley_mote` vertices and rewritten every frame. That is one `Graphics.DrawMesh` call, with no GameObjects; the arrays are rebuilt only when the number of motes changes. Motes don't rotate and are 0.06 across, so they fit the tubes' 2x2 hollow (0.125). They move along polylines (up the risers and across), from crystals into the siphons and between siphons away from the crystals; a network without crystals stays still. A fully GPU version would need a custom shader built into an AssetBundle with the game's Unity version, which the mod has no pipeline for yet.
+  - **Popup:** short lines (gathering siphons and crystals in the network, this siphon's mana/s or "Connector", the network's mana/s), with best fit so it fits the vanilla box.
+  - **Particle Accelerator hook:** `LeyNetwork.TotalIncome` (mana/s of all networks) is there for the Particle Accelerator's drain bonus, which is not built yet.
+  - **Scenario** `ley-line`:
+    - Setup: test crystals are placed from the crystal prefab, with the spawn roll forced. 3 siphons in a row, each next to its own crystal (3 crystals).
+    - Network: 3 taps × 2 = 6 mana/s; the HUD shows +3 over vanilla's 3. The pipes and intakes are in place, with 3 flowing links.
+    - Gathering: 6 mana/s measured during a wave.
+    - Demolishing the middle siphon splits the row into 1 + 1 mana/s, removes its pipes and puts the HUD back.
+
+    `ley-line-hill`: a low siphon (a tap) with higher neighbours (connectors). It forms one network with 1 mana/s; the indicators are lit; it has a riser and one tee per level; screenshots of the slope and of the popup.
+
+**Next in phase 3:** Particle Accelerator (with the Ley Line drain bonus), Ritual of the Sun, one ascension at a time with the per-ascension workflow above.
 
 ## 5. Open questions (summary)
 

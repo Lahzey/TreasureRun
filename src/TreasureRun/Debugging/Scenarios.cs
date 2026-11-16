@@ -87,6 +87,9 @@ namespace TreasureRun.Debugging
             return null;
         }
 
+        /// <summary>Removes the object again when the scenario ends.</summary>
+        public void Track(GameObject go) { if (go != null) spawned.Add(go); }
+
         /// <summary>Builds a tower or building on one grid cell (null if the cell is not free grass).</summary>
         public GameObject BuildAt(string prefab, int x, int z)
         {

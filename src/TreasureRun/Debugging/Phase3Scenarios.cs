@@ -13,7 +13,7 @@ namespace TreasureRun.Debugging
     {
         public static IEnumerable<Scenario> All => new Scenario[]
         {
-            new SawDimensionScenario(), new SawScalingScenario(), new MegaMortarScenario(), new MegaMortarHillScenario(),
+            new SawDimensionScenario(), new SawScalingScenario(), new MegaMortarScenario(), new MegaMortarHillScenario(), new LeyLineScenario(), new LeyLineHillScenario(),
         };
     }
 
@@ -297,6 +297,202 @@ namespace TreasureRun.Debugging
                 c.ExpectNear(b.max.y, top, 0.03f, "plinth reaches the highest tile");
             }
             yield return Phase1Scenarios.Picture(c, mega.gameObject, "slope", 3f);
+        }
+    }
+
+    internal sealed class LeyLineScenario : Scenario
+    {
+        public override string Name => "ley-line";
+        public override string Description => "Ley Line Network: 3 siphons in a row, each next to one of 3 crystals: 3 taps x (1 + 2 x 1/2) = 6 mana/s; pipes and intakes; splitting the row.";
+
+        private static float? Ground(int x, int z)
+        {
+            if (!Physics.Raycast(new Vector3(x, 40f, z), Vector3.down, out RaycastHit hit, 80f, BuildingManager.instance.buildableMask, QueryTriggerInteraction.Ignore))
+                return null;
+            if (hit.collider.gameObject.layer != LayerMask.NameToLayer("Grass")) return null;
+            return Mathf.Round(3f * hit.point.y) / 3f;
+        }
+
+        // The siphon's own list: a part replaced this frame is still in the scene until the end of the frame.
+        private static int Parts(LeySiphon s, string model) =>
+            s.Parts.Count(p => p != null && p.name == "TR_Ley_" + model);
+
+        public override IEnumerator Run(ScenarioContext c)
+        {
+            GameObject prefab = Resources.FindObjectsOfTypeAll<ManaCrystal>().Select(m => m.gameObject).FirstOrDefault(g => !g.scene.IsValid());
+            if (prefab == null) { c.Expect(false, "mana crystal prefab found"); yield break; }
+
+            // A free row of 5 cells at one height: crystal, siphon, siphon, siphon, crystal.
+            (int x, int z, float y)? row = null;
+            for (int r = 1; r <= 12 && row == null; r++)
+                for (int x = -r; x <= r && row == null; x++)
+                    for (int z = -r; z <= r && row == null; z++)
+                    {
+                        float? y0 = Ground(x, z);
+                        if (y0 == null) continue;
+                        bool ok = Ground(x + 2, z + 1) is float side && Mathf.Abs(side - y0.Value) < 0.01f;
+                        for (int i = 1; i < 5 && ok; i++) ok = Ground(x + i, z) is float y && Mathf.Abs(y - y0.Value) < 0.01f;
+                        if (ok) row = (x, z, y0.Value);
+                    }
+            if (row == null) { c.Expect(false, "free row of 5 cells"); yield break; }
+            int ox = row.Value.x, oz = row.Value.z;
+            foreach (var (dx, dz) in new[] { (0, 0), (4, 0), (2, 1) })
+            {
+                GameObject crystal = Object.Instantiate(prefab, new Vector3(ox + dx, row.Value.y, oz + dz), Quaternion.identity);
+                // Vanilla rolls the spawn chance in Start and deletes the crystal on a miss: make it always appear.
+                ManaCrystal mc = crystal.GetComponent<ManaCrystal>();
+                mc.spawnChance = 1f;
+                mc.spawnLevels = new Vector2(-1f, 1_000_000f);
+                crystal.SetActive(true);
+                c.Track(crystal);
+            }
+            yield return null;
+            var siphons = new List<GameObject>();
+            for (int i = 1; i <= 3; i++)
+            {
+                GameObject go = c.BuildAt("ManaSiphon", ox + i, oz);
+                if (go == null) { c.Expect(false, $"siphon built at {ox + i},{oz}"); yield break; }
+                siphons.Add(go);
+                yield return null;
+            }
+            ResourceManager rm = ResourceManager.instance;
+            int shown0 = rm.manaGatherRate;
+            c.Info($"vanilla: siphons gathering {string.Join(", ", siphons.Select(s => s.GetComponent<ManaSiphon>().gathering))}, HUD rate +{shown0}");
+
+            c.Ascend(LeySiphon.Id);
+            yield return c.Wait(0.5f);
+            List<LeySiphon> ley = siphons.Select(s => s.GetComponent<LeySiphon>()).ToList();
+            c.Expect(ley.All(l => l != null), "every siphon is a Ley Siphon");
+            if (ley.Any(l => l == null)) yield break;
+            c.Expect(LeyNetwork.TotalIncome == 6, $"network income {LeyNetwork.TotalIncome} mana/s (3 taps x (1 + 2 x 1/2))");
+            c.Expect(ley.All(l => l.Income == 2 && l.IsTap && l.Lit), $"per siphon: {string.Join(", ", ley.Select(l => l.Income))}, all taps, indicators lit");
+            c.Expect(rm.manaGatherRate - shown0 == 3, $"HUD mana rate +{rm.manaGatherRate - shown0} (vanilla showed 3 of the 6)");
+            c.Expect(Parts(ley[1], "pipe") == 2 && Parts(ley[1], "intake") == 1, "the middle siphon has two pipes and an intake");
+            c.Expect(Parts(ley[0], "pipe") == 1 && Parts(ley[0], "intake") == 1, "the end siphons have a pipe and a crystal intake");
+            c.Expect(LeyNetwork.Instance != null && LeyNetwork.Instance.Links == 3, $"{LeyNetwork.Instance?.Links} flowing links (3 intakes; all siphons are taps)");
+
+            // Gathering during a wave.
+            rm.maxMana = 1_000_000;
+            rm.mana = 0;
+            if (SpawnManager.instance != null && !SpawnManager.instance.combat) DevConsole.Execute("wave");
+            yield return c.Wait(1.5f);
+            // Only time spent in a wave counts (the siphons gather during waves only).
+            long g0 = ley.Sum(l => l.Gathered);
+            float inCombat = 0f;
+            for (float t = 0f; t < 6f; t += Time.deltaTime)
+            {
+                if (SpawnManager.instance.combat) inCombat += Time.deltaTime;
+                yield return null;
+            }
+            float perSecond = (ley.Sum(l => l.Gathered) - g0) / Mathf.Max(1f, inCombat);
+            c.ExpectNear(perSecond, 6f, 1.3f, "mana gathered per second by the network");
+            DevConsole.Execute($"towerui {ox + 2} {oz}");
+            yield return null;
+            yield return Phase1Scenarios.Picture(c, siphons[1], "popup", 2.5f);
+            DevConsole.Execute("closeui");
+            yield return Phase1Scenarios.Picture(c, siphons[1], "network", 2.5f);
+
+            // Taking the middle siphon away splits the row: each end siphon keeps its own crystal.
+            ManaSiphon middle = siphons[1].GetComponent<ManaSiphon>();
+            middle.Demolish();
+            Object.Destroy(siphons[1]);
+            yield return c.Wait(0.5f);
+            c.Expect(LeyNetwork.TotalIncome == 2, $"after splitting: {LeyNetwork.TotalIncome} mana/s (1 + 1: each end touches one crystal)");
+            c.Expect(Parts(ley[0], "pipe") == 0, "the pipe to the demolished siphon is gone (parts: " +
+                     string.Join(", ", ley[0].Parts.Where(x => x != null).Select(x => x.name.Replace("TR_Ley_", "") + "@" + Mathf.RoundToInt(x.transform.localEulerAngles.y))) + ")");
+            // Vanilla takes the demolished siphon's own +1 off (it touched a crystal); the rest is back to vanilla's.
+            c.Expect(rm.manaGatherRate == shown0 - 1, $"HUD mana rate back to vanilla's: +{rm.manaGatherRate}");
+        }
+    }
+
+    internal sealed class LeyLineHillScenario : Scenario
+    {
+        public override string Name => "ley-line-hill";
+        public override string Description => "Ley Line Network across heights: a low siphon links to higher neighbours with a riser and tee fittings; a crystal on another height still counts.";
+
+        private static float? Ground(int x, int z)
+        {
+            if (!Physics.Raycast(new Vector3(x, 40f, z), Vector3.down, out RaycastHit hit, 80f, BuildingManager.instance.buildableMask, QueryTriggerInteraction.Ignore))
+                return null;
+            if (hit.collider.gameObject.layer != LayerMask.NameToLayer("Grass")) return null;
+            return Mathf.Round(3f * hit.point.y) / 3f;
+        }
+
+        private static int Count(LeySiphon s, string model) => s.Parts.Count(p => p != null && p.name == "TR_Ley_" + model);
+
+        public override IEnumerator Run(ScenarioContext c)
+        {
+            GameObject prefab = Resources.FindObjectsOfTypeAll<ManaCrystal>().Select(m => m.gameObject).FirstOrDefault(g => !g.scene.IsValid());
+            if (prefab == null) { c.Expect(false, "mana crystal prefab found"); yield break; }
+
+            // A cell with at least two higher free neighbours and one more free neighbour (any height) for the crystal.
+            (int x, int z)? low = null;
+            List<(int x, int z)> higher = null;
+            (int x, int z) crystalCell = default;
+            for (int i = 0; i < 6 && low == null; i++)
+            {
+                for (int x = -14; x <= 14 && low == null; x++)
+                    for (int z = -14; z <= 14 && low == null; z++)
+                    {
+                        float? h = Ground(x, z);
+                        if (h == null) continue;
+                        var up = new List<(int, int)>();
+                        var other = new List<(int, int)>();
+                        foreach (var (dx, dz) in LeyLineLogic.Directions)
+                        {
+                            float? n = Ground(x + dx, z + dz);
+                            if (n == null) continue;
+                            if (n.Value > h.Value + 0.2f) up.Add((x + dx, z + dz)); else other.Add((x + dx, z + dz));
+                        }
+                        bool enough = up.Count >= 2 || up.Count >= 1 && i >= 3;
+                        if (enough && (other.Count >= 1 || up.Count >= 3))
+                        {
+                            low = (x, z);
+                            higher = up.Take(2).ToList();
+                            // The lowest free neighbour, so a drop down to the crystal is covered when the map has one.
+                            crystalCell = other.Count >= 1 ? other.OrderBy(o => Ground(o.Item1, o.Item2) ?? 0f).First() : up[2];
+                        }
+                    }
+                if (low == null) { DevConsole.Execute("killall"); yield return c.Wait(0.5f); DevConsole.Execute("wave"); yield return c.Wait(1f); }
+            }
+            if (low == null) { c.Info("no low cell with a higher free neighbour found: nothing to check"); yield break; }
+
+            float lowY = Ground(low.Value.x, low.Value.z).Value, crystalY = Ground(crystalCell.x, crystalCell.z).Value;
+            int[] rises = higher.Select(h => Mathf.RoundToInt((Ground(h.x, h.z).Value - lowY) * 3f)).ToArray();
+            int crystalDiff = Mathf.RoundToInt((crystalY - lowY) * 3f);
+            GameObject crystal = Object.Instantiate(prefab, new Vector3(crystalCell.x, crystalY, crystalCell.z), Quaternion.identity);
+            ManaCrystal mc = crystal.GetComponent<ManaCrystal>();
+            mc.spawnChance = 1f;
+            mc.spawnLevels = new Vector2(-1f, 1_000_000f);
+            crystal.SetActive(true);
+            c.Track(crystal);
+            c.Ascend(LeySiphon.Id);
+            var built = new List<GameObject>();
+            foreach (var cell in new[] { low.Value }.Concat(higher).ToList())
+            {
+                GameObject go = c.BuildAt("ManaSiphon", cell.x, cell.z);
+                if (go == null) { c.Expect(false, $"siphon built at {cell.x},{cell.z}"); yield break; }
+                built.Add(go);
+                yield return null;
+            }
+            yield return c.Wait(0.5f);
+            List<LeySiphon> ley = built.Select(b => b.GetComponent<LeySiphon>()).ToList();
+            LeySiphon bottom = ley[0];
+            c.Info($"higher neighbours {string.Join(", ", rises.Select(x => "+" + x))} steps; crystal {crystalDiff:+0;-0;0} steps");
+            int count = 1 + higher.Count;
+            c.Expect(bottom.NetworkSiphons == count, $"one network of {bottom.NetworkSiphons} siphons across the heights");
+            c.Expect(LeyNetwork.TotalIncome == 1, $"{LeyNetwork.TotalIncome} mana/s (only the low siphon touches the crystal)");
+            c.Expect(bottom.IsTap && ley.Skip(1).All(l => !l.IsTap && l.Income == 0), "the higher siphons are connectors");
+            c.Expect(ley.All(l => l.Lit), "all indicators lit");
+            c.Expect(Count(bottom, "riser") == Count(bottom, "corner") && Count(bottom, "riser") >= 1, "the low siphon has a riser (one segment per corner)");
+            int tees = rises.Concat(crystalDiff > 0 ? new[] { crystalDiff } : new int[0]).Distinct().Count();
+            c.Expect(Count(bottom, "corner") == tees, $"{Count(bottom, "corner")} tee fittings (one per level: {tees})");
+            c.Expect(ley.Skip(1).All(l => Count(l, "riser") == 0 || l.Parts.Count > 0), "the higher siphons need no riser towards the low one");
+            yield return Phase1Scenarios.Picture(c, built[0], "slope", 2.5f);
+            DevConsole.Execute($"towerui {low.Value.x} {low.Value.z}");
+            yield return null;
+            yield return Phase1Scenarios.Picture(c, built[0], "popup", 3f);
+            DevConsole.Execute("closeui");
         }
     }
 }

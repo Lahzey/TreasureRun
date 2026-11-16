@@ -10,6 +10,7 @@ namespace SfxTool
             Add("ascensions/saw_hum", SawHum);
             Add("ascensions/mega_launch", MegaLaunch);
             Add("ascensions/mega_blast", MegaBlast);
+            Add("ascensions/ley_flow", LeyFlow);
         }
 
         /// <summary>
@@ -55,6 +56,28 @@ namespace SfxTool
                 .Envelope(Env.Points(0f, 0f, 0.15f, 0.7f, 1.0f, 0.3f, 2.0f, 0f)).Gain(0.25f);
             Sound rumble = Sound.Noise(NoiseColor.Brown, 2.6f, 84).LowPass(250f).Envelope(Env.Points(0f, 0f, 0.1f, 1f, 1.2f, 0.5f, 2.6f, 0f)).Gain(0.7f);
             return Sound.Layer(boom, body, crack, debris, rumble).Drive(1.5f).Reverb(room: 0.8f, mix: 0.2f, tail: 0.6f).Normalize(-0.5f);
+        }
+
+        /// <summary>
+        /// Ley Line Network: a quiet arcane flow, one global loop. A soft pad (A minor triad, sines with slow tremolo), a
+        /// shimmer of high partials that drift in and out and a gentle liquid whoosh (band noise sweeping slowly), 4 s,
+        /// seamless. Played quietly; the game sets its volume from the network's income.
+        /// </summary>
+        private static Sound LeyFlow()
+        {
+            const float length = 4f, overlap = 0.4f, total = length + overlap;
+            Func<float, float> trem(float rate, float depth, float phase) => t => 1f - depth + depth * (0.5f + 0.5f * (float)Math.Sin(2 * Math.PI * (rate * t + phase)));
+            Sound pad = Sound.Layer(
+                Sound.Tone(Wave.Sine, total, 220f, trem(0.5f, 0.3f, 0f)),
+                Sound.Tone(Wave.Sine, total, 261.6f, trem(0.5f, 0.3f, 0.33f)).Gain(0.8f),
+                Sound.Tone(Wave.Sine, total, 329.6f, trem(0.5f, 0.3f, 0.66f)).Gain(0.7f)).Gain(0.5f);
+            Sound shimmer = Sound.Layer(
+                Sound.Tone(Wave.Sine, total, 1760f, trem(0.25f, 0.9f, 0f)),
+                Sound.Tone(Wave.Sine, total, 2217f, trem(0.25f, 0.9f, 0.5f)),
+                Sound.Tone(Wave.Sine, total, 2637f, trem(0.5f, 0.9f, 0.25f))).Gain(0.05f);
+            Sound flow = Sound.Noise(NoiseColor.Pink, total, 91).BandPass(900f, 1.5f)
+                .Map((x, t) => x * (0.5f + 0.5f * (float)Math.Sin(2 * Math.PI * 0.75f * t))).Gain(0.25f);
+            return Seamless(Sound.Layer(pad, shimmer, flow).Reverb(room: 0.7f, mix: 0.25f, tail: 0.5f), length, overlap).Normalize(-12f);
         }
     }
 }

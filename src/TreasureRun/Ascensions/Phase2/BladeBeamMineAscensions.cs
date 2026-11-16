@@ -81,7 +81,10 @@ namespace TreasureRun.Ascensions.Phase2
                 blades.Add(new Blade { Transform = Phase1Kit.Model("ascensions/shredder/blade", BladeScale, transform).transform });
         }
 
-        private float BladeY => transform.position.y - 1f / 3f + 0.3f;
+        // The tower stands on its tile's surface: the blades spin 0.25 above it, clear of grass at the same height (higher
+        // terrain nearby can still cut through them). Hits only compare positions on the ground plane, so the blades'
+        // and the monsters' heights never matter (a tower high above the path still hits).
+        private float BladeY => transform.position.y + 0.25f;
 
         private void Update()
         {

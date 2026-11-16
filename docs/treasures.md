@@ -107,6 +107,7 @@ Generated from the source (`src/TreasureRun/Treasures/Effects`, console command 
 |---|---|---|
 | **Domino Effect** (`domino_effect`) | On-death effects deal 50% more damage, and kills caused by them trigger on-death effects again. | Combat |
 | **Legion** (`legion`) | Additional towers of a type no longer cost more. Towers attack 3% faster for every other tower within 3 range, but deal 15% less damage. | Build |
+| **Ley Line Network** (`ley_line_network`) | Connect your siphons into one large network. Siphons next to each other link up with arcane pipes. A siphon next to a mana crystal gathers 1 mana per second, plus half a mana for every other crystal its network touches; siphons without a crystal of their own connect the network. | Ascension |
 | **Master of Elements** (`master_of_elements`) | Every direct hit also applies 10% bleed, burn and poison. | Combat |
 | **Mega Mortar** (`mega_mortar`) | How big is too big? Mortar Modules built in a full square (2x2, 3x3, ...) fuse for good into one Mega Mortar: it hits as hard as all its modules together, with their levels averaged, a blast as many times bigger as the square is wide and +2 range per extra row. It stands on the highest of its tiles and keeps growing as you build bigger squares around it. | Ascension |
 | **Monolith** (`monolith`) | Towers deal 25% more damage and attack 5% faster for every tower fewer than 10 you own. | Build |
@@ -125,4 +126,4 @@ Generated from the source (`src/TreasureRun/Treasures/Effects`, console command 
 | **Time Dilation** (`time_dilation`) | All enemies move 30% slower. | Meta |
 | **War Blimp** (`war_blimp`) | Radar biplanes become huge, slow war blimps that hover over the thickest crowd, fire a gatling gun without pause and drop bombs on the track. Each blimp carries a tower slot on its deck: build any tower there and it flies along (counts as +3 high ground). | Ascension |
 
-Total: 92
+Total: 93

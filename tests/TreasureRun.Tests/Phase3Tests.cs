@@ -197,5 +197,81 @@ namespace TreasureRun.Tests
             Assert.That(MegaMortarLogic.SellValue(200, 75, 6, 4), Is.EqualTo(575 + 500 + 425 + 350));
             Assert.That(MegaMortarLogic.SellValue(200, 75, 1, 1), Is.EqualTo(200));
         }
+
+        // ------------------------------------------------------------------ Ley Line Network
+
+        private static List<LeyCell> Cells(params (int x, int z)[] cells) => cells.Select(c => new LeyCell(c.x, c.z, 1)).ToList();
+
+        [Test]
+        public void LeyNetworksFloodFillAndPayTapsPerCrystal()
+        {
+            // 5 siphons in a row touching 4 crystals: taps are siphons 0, 2 and 4; each gathers 1 + 3 x 1/2 = 2.5 -> 2.
+            var siphons = Cells((0, 0), (1, 0), (2, 0), (3, 0), (4, 0));
+            var crystals = Cells((-1, 0), (0, 1), (2, -1), (5, 0));
+            LeyLineLogic.Result r = LeyLineLogic.Solve(siphons, crystals);
+            Assert.That(r.Networks.Count, Is.EqualTo(1));
+            Assert.That(r.IsTap, Is.EqualTo(new[] { true, false, true, false, true }));
+            Assert.That(r.Income, Is.EqualTo(new[] { 2, 0, 2, 0, 2 }), "connectors gather nothing");
+            Assert.That(r.Networks[0].Income, Is.EqualTo(6));
+
+            // Per tap: 1 crystal 1, 2 -> 1.5 -> 1, 3 -> 2, 4 -> 2.5 -> 2, 5 -> 3, 9 -> 5. The rate (cards) multiplies first.
+            Assert.That(new[] { 0, 1, 2, 3, 4, 5, 9 }.Select(c => LeyLineLogic.TapIncome(c)), Is.EqualTo(new[] { 0, 1, 1, 2, 2, 3, 5 }));
+            Assert.That(LeyLineLogic.TapIncome(4, 2), Is.EqualTo(5));
+
+            // A crystal next to two siphons of the same network counts once (both are taps); a diagonal doesn't connect.
+            r = LeyLineLogic.Solve(Cells((0, 0), (1, 0), (2, 1)), Cells((0, 1)));
+            Assert.That(r.Networks.Count, Is.EqualTo(2));
+            Assert.That(r.Income, Is.EqualTo(new[] { 1, 0, 0 }));
+            r = LeyLineLogic.Solve(Cells((0, 0), (1, 0), (2, 0)), Cells((0, 1), (1, 1), (2, 1)));
+            Assert.That(r.Income, Is.EqualTo(new[] { 2, 2, 2 }));
+
+            // Different heights link too (siphons and crystals), unlike vanilla.
+            var mixed = new List<LeyCell> { new LeyCell(0, 0, 1), new LeyCell(1, 0, 2) };
+            r = LeyLineLogic.Solve(mixed, new List<LeyCell> { new LeyCell(2, 0, 4) });
+            Assert.That(r.Networks.Count, Is.EqualTo(1));
+            Assert.That(r.Income, Is.EqualTo(new[] { 0, 1 }));
+
+            // Two separate networks share a crystal: it counts for both. No crystal: no income.
+            r = LeyLineLogic.Solve(Cells((0, 0), (2, 0), (9, 9)), Cells((1, 0)));
+            Assert.That(r.Income, Is.EqualTo(new[] { 1, 1, 0 }));
+        }
+
+        [Test]
+        public void LeyPipesMeetAcrossHeights()
+        {
+            var self = new LeyCell(0, 0, 3);
+            var none = new LeyNeighbour(LeyNeighbourKind.None, 0);
+            // Neighbours one and two steps up, one level with it, and a crystal one step down.
+            LeyPlan plan = LeyLineLogic.Plan(self, new[]
+            {
+                new LeyNeighbour(LeyNeighbourKind.Siphon, 4), new LeyNeighbour(LeyNeighbourKind.Siphon, 5),
+                new LeyNeighbour(LeyNeighbourKind.Siphon, 3), new LeyNeighbour(LeyNeighbourKind.Crystal, 2),
+            });
+            Assert.That(plan.Arms.Select(a => a.Rise), Is.EqualTo(new[] { 1, 2, 0, 0 }));
+            Assert.That(plan.Arms[3].Drop, Is.EqualTo(1));
+            Assert.That(plan.Tees, Is.EqualTo(new[] { 1, 2 }), "one tee per level the riser passes");
+            Assert.That(plan.Riser, Is.EqualTo(2), "the riser reaches the highest neighbour");
+
+            // Two higher neighbours on the same level share one tee; a node above all its neighbours has no riser
+            // (they carry the pipes up to it), and a higher crystal is reached on the riser like a siphon.
+            plan = LeyLineLogic.Plan(self, new[] { new LeyNeighbour(LeyNeighbourKind.Siphon, 5), new LeyNeighbour(LeyNeighbourKind.Crystal, 5), none, none });
+            Assert.That(plan.Tees, Is.EqualTo(new[] { 2 }));
+            Assert.That(plan.Arms[1].Rise, Is.EqualTo(2));
+            plan = LeyLineLogic.Plan(self, new[] { new LeyNeighbour(LeyNeighbourKind.Siphon, 1), new LeyNeighbour(LeyNeighbourKind.Siphon, 2), none, none });
+            Assert.That(plan.Riser, Is.EqualTo(0));
+            Assert.That(plan.Tees, Is.Empty);
+            Assert.That(plan.Arms.All(a => a.Rise == 0 && a.Drop == 0), Is.True);
+        }
+
+        [Test]
+        public void LeyManaFlowsAwayFromTheCrystals()
+        {
+            // Crystal at the left end: distances 0, 1, 2, 3 along the row; a network without crystals has none.
+            LeyLineLogic.Result r = LeyLineLogic.Solve(Cells((0, 0), (1, 0), (2, 0), (3, 0), (8, 8)), Cells((-1, 0)));
+            Assert.That(r.Distance, Is.EqualTo(new[] { 0, 1, 2, 3, -1 }));
+            // Crystals at both ends: the middle is furthest.
+            r = LeyLineLogic.Solve(Cells((0, 0), (1, 0), (2, 0), (3, 0), (4, 0)), Cells((-1, 0), (5, 0)));
+            Assert.That(r.Distance, Is.EqualTo(new[] { 0, 1, 2, 1, 0 }));
+        }
     }
 }

@@ -21,6 +21,7 @@ namespace VoxTool.Recipes
             yield return ("ascensions/shredder/floor_saw_slot", FloorSawSlot);
             yield return ("ascensions/shredder/saw_engine_base", SawEngineBase);
             yield return ("ascensions/shredder/saw_engine_turret", SawEngineTurret);
+            foreach (var r in LeyAll()) yield return r;
             yield return ("ascensions/mortar/mortar_module", MortarModule);
             yield return ("ascensions/mortar/mortar_barrel", () => MortarBody(1, 3, 11, true).ToModel("mortar_barrel"));
             yield return ("ascensions/mortar/mortar_shell", () => MortarShell(false));
