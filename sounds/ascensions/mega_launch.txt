@@ -1,6 +1,0 @@
-ascensions/mega_launch
-  duration 1.60 s | peak -1.0 dBFS | RMS -14.9 dBFS | loudest 50 ms -5.5 dBFS
-  attack 45 ms | decays to -30 dB at 0.99 s | brightness (spectral centroid) 620
-  envelope per 50 ms (dBFS): -6 -6 -6 -10 -17 -14 -16 -18 -20 -20 -18 -18 -21 -26 -26 -32 -36 -34 -36 -36 -37 -41 -43 -45 -49 -48 -51 -57 -58 -60 -60 -60
-  brightness per 100 ms:    1.2k 413 352 234 191 123 133 153 154 460 730 350 405 207 184 408
-  dominant pitch per 100 ms: 65 65 65 65 65 65 65 65 65 65 65 65 65 65 65 65

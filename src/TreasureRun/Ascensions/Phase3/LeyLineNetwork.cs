@@ -41,6 +41,8 @@ namespace TreasureRun.Ascensions.Phase3
         /// <summary>Siphons of the network that gather (taps).</summary>
         public int NetworkTaps { get; private set; }
         public int NetworkCrystals { get; private set; }
+        /// <summary>The network is plugged into the Particle Accelerator's core.</summary>
+        public bool FeedsAccelerator { get; private set; }
         public long Gathered { get; private set; }
         public bool Lit { get; private set; }
         /// <summary>The pipe parts currently shown (frames and glass), named "TR_Ley_&lt;part&gt;" (for tests).</summary>
@@ -145,14 +147,21 @@ namespace TreasureRun.Ascensions.Phase3
                 int start = arm.Rise > 0 ? 10 : 11; // from a corner (4 wide) or from the hub (6 wide)
                 float y = arm.Rise * Step;
                 if (arm.Kind == LeyNeighbourKind.Siphon) { Part($"pipe_{start}", () => LeyGeometry.Pipe(start), y, d); continue; }
-                if (arm.Drop == 0) { Part($"intake_{start}", () => LeyGeometry.Intake(start), y, d); continue; }
-                // A lower crystal: the arm to the tile edge, a corner, a drop and a corner with the mouth at the crystal.
+                bool feed = arm.Kind == LeyNeighbourKind.Accelerator;
+                if (arm.Drop == 0)
+                {
+                    if (feed) Part($"feed_{start}", () => LeyGeometry.Feed(start), y, d);
+                    else Part($"intake_{start}", () => LeyGeometry.Intake(start), y, d);
+                    continue;
+                }
+                // A lower crystal or core: the arm to the tile edge, a corner, a drop and a corner with the mouth at it.
                 float down = -arm.Drop * Step;
                 Part("pipe_11", () => LeyGeometry.Pipe(11), 0f, d);
                 Part("drop_upper", () => LeyGeometry.DropCorner(true), 0f, d);
                 float dropFrom = down + FittingTop;
                 Part("drop", LeyGeometry.Drop, dropFrom, d, FittingBottom - dropFrom);
-                Part("drop_lower", () => LeyGeometry.DropCorner(false), down, d);
+                if (feed) Part("feeddrop", LeyGeometry.FeedDrop, down, d);
+                else Part("drop_lower", () => LeyGeometry.DropCorner(false), down, d);
             }
         }
 
@@ -180,9 +189,10 @@ namespace TreasureRun.Ascensions.Phase3
         }
 
         /// <summary>Sets this siphon's income and keeps the HUD's mana rate in step (vanilla already shows its own rate).</summary>
-        internal void SetIncome(int income, bool tap, int networkSiphons, int networkTaps, int networkCrystals, int networkIncome)
+        internal void SetIncome(int income, bool tap, int networkSiphons, int networkTaps, int networkCrystals, int networkIncome, bool feeds)
         {
             Income = income;
+            FeedsAccelerator = feeds;
             NetworkSiphons = networkSiphons;
             NetworkTaps = networkTaps;
             NetworkCrystals = networkCrystals;
@@ -265,8 +275,13 @@ namespace TreasureRun.Ascensions.Phase3
     internal sealed class LeyNetwork : MonoBehaviour
     {
         public static LeyNetwork Instance { get; private set; }
-        /// <summary>Mana per second of all networks together (the Particle Accelerator's drain will rise by this).</summary>
+        /// <summary>Mana per second of all networks together.</summary>
         public static int TotalIncome { get; private set; }
+        /// <summary>
+        /// Mana per second of the networks plugged into the Particle Accelerator's core (a siphon next to it): the core's
+        /// drain rises by this, so it charges faster (the secret interaction).
+        /// </summary>
+        public static int AcceleratorIncome { get; private set; }
         public int Links => links.Count;
 
         private static bool dirty = true;
@@ -313,6 +328,7 @@ namespace TreasureRun.Ascensions.Phase3
         {
             if (Instance == this) Instance = null;
             TotalIncome = 0;
+            AcceleratorIncome = 0;
             if (hum != null) Destroy(hum.gameObject);
             if (batch != null) Destroy(batch);
         }
@@ -342,14 +358,16 @@ namespace TreasureRun.Ascensions.Phase3
             var siphonCells = siphons.Select(s => s.Cell).ToList();
             var crystalCells = crystals.Select(c => CellOf(c.transform.position)).ToList();
             int rate = siphons.Count > 0 ? siphons[0].Rate : 1;
-            LeyLineLogic.Result r = LeyLineLogic.Solve(siphonCells, crystalCells, rate);
+            LeyCell? core = AcceleratorGrid.CoreCell;
+            LeyLineLogic.Result r = LeyLineLogic.Solve(siphonCells, crystalCells, rate, core);
+            AcceleratorIncome = r.AcceleratorIncome;
 
             links.Clear();
             TotalIncome = 0;
             for (int i = 0; i < siphons.Count; i++)
             {
                 LeyNetworkInfo net = r.Networks[r.NetworkOf[i]];
-                siphons[i].SetIncome(r.Income[i], r.IsTap[i], net.Siphons.Count, net.Taps, net.Crystals.Count, net.Income);
+                siphons[i].SetIncome(r.Income[i], r.IsTap[i], net.Siphons.Count, net.Taps, net.Crystals.Count, net.Income, net.FeedsAccelerator);
                 TotalIncome += r.Income[i];
                 LeyCell me = siphonCells[i];
                 Vector3 pos = siphons[i].transform.position;
@@ -359,8 +377,10 @@ namespace TreasureRun.Ascensions.Phase3
                     var (dx, dz) = LeyLineLogic.Directions[d];
                     int other = siphonCells.FindIndex(c => c.X == me.X + dx && c.Z == me.Z + dz);
                     int crystal = other >= 0 ? -1 : crystalCells.FindIndex(c => c.X == me.X + dx && c.Z == me.Z + dz);
+                    bool accelerator = core.HasValue && core.Value.X == me.X + dx && core.Value.Z == me.Z + dz;
                     around[d] = other >= 0 ? new LeyNeighbour(LeyNeighbourKind.Siphon, siphonCells[other].Level)
                               : crystal >= 0 ? new LeyNeighbour(LeyNeighbourKind.Crystal, crystalCells[crystal].Level)
+                              : accelerator ? new LeyNeighbour(LeyNeighbourKind.Accelerator, core.Value.Level)
                               : new LeyNeighbour(LeyNeighbourKind.None, 0);
                 }
                 LeyPlan plan = LeyLineLogic.Plan(me, around);
@@ -382,6 +402,14 @@ namespace TreasureRun.Ascensions.Phase3
                         else AddLink(P(arm.Rise, mouth), P(arm.Rise, 0f), P(0, 0));
                         continue;
                     }
+                    if (arm.Kind == LeyNeighbourKind.Accelerator)
+                    {
+                        // Mana flows out of the network into the core (only if the network gathers anything).
+                        if (net.Income <= 0) continue;
+                        if (arm.Drop > 0) AddLink(P(0, 0), P(0, elbow), P(-arm.Drop, elbow), P(-arm.Drop, mouth));
+                        else AddLink(P(0, 0), P(arm.Rise, 0f), P(arm.Rise, mouth));
+                        continue;
+                    }
                     if (arm.Kind != LeyNeighbourKind.Siphon) continue;
                     int other = siphonCells.FindIndex(c => c.X == me.X + dx && c.Z == me.Z + dz);
                     // Each pair once: from the lower siphon (it carries the pipe), or the lower index on equal height.
@@ -394,7 +422,7 @@ namespace TreasureRun.Ascensions.Phase3
             }
             if (ModConfig.DebugTools.Value)
                 Plugin.Log.LogInfo($"[ley] {siphons.Count} siphons in {r.Networks.Count} networks, {crystals.Length} crystals on the map: " +
-                                   $"{TotalIncome} mana/s, {links.Count} flowing links.");
+                                   $"{TotalIncome} mana/s ({AcceleratorIncome} into the Accelerator), {links.Count} flowing links.");
         }
 
         private void AddLink(params Vector3[] points)
@@ -457,7 +485,7 @@ namespace TreasureRun.Ascensions.Phase3
         private void UpdateHum()
         {
             float volume = TotalIncome > 0 ? Mathf.Min(1f, 0.35f + 0.03f * TotalIncome) * 0.5f : 0f;
-            if (volume > 0.01f && hum == null && Camera.main != null) hum = SoundLoop.Start("ascensions/ley_flow", Camera.main.transform, volume);
+            if (volume > 0.01f && hum == null && Camera.main != null) hum = SoundLoop.Start("ascensions/ley_line_network/ley_flow", Camera.main.transform, volume);
             if (hum != null)
             {
                 hum.Volume = volume;
@@ -493,7 +521,8 @@ namespace TreasureRun.Ascensions.Phase3
                           $"{ley.NetworkCrystals} crystal{(ley.NetworkCrystals == 1 ? "" : "s")}\n" +
                           (ley.NetworkCrystals == 0 ? "No crystal in this network"
                            : ley.Income > 0 ? $"This siphon: {ley.Income} mana/s\nNetwork: {ley.NetworkIncome} mana/s"
-                           : $"Connector (no crystal next to it)\nNetwork: {ley.NetworkIncome} mana/s");
+                           : $"Connector (no crystal next to it)\nNetwork: {ley.NetworkIncome} mana/s") +
+                          (ley.FeedsAccelerator ? "\nFeeds the Particle Accelerator" : "");
             Text label = ui.discriptionText;
             if (label != null)
             {

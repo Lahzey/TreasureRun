@@ -1,0 +1,12 @@
+# Visual TODO
+
+Visual improvements noticed in playtests, collected for a later polish pass (like `balance-todo.md` for numbers).
+
+## Ascensions
+
+| Ascension | Change | Where |
+|---|---|---|
+| **The Saw Dimension** | Visual overhaul of the Saw Engines: make them look like a connection of gears and shafts, maybe with some brass colours. | `tools/VoxTool/Recipes/AscensionRecipes3.cs` (`SawEngineBase`, `SawEngineTurret`) |
+| **The Saw Dimension** | Saws currently appear a brief moment after new track is added (the layout is re-checked every 2 s). Either make it immediate (e.g. react to the new tile being placed) or add a spawn animation (saws rising out of new slits) so it is less jarring. | `SawField.RefreshLayout`, `LayoutCheck` in `SawDimension.cs` |
+| **Mega Mortar** | Overhaul the steam effect: replace the round steam-cloud particles with small blocky steam particles. | `SteamFx` in `MegaMortar.cs` |
+| **Mega Mortar** | The corner vents (3x3 and up) should no longer release steam; instead they briefly glow deep blue when the mortar fires. | `SteamFx.Blast` vents, `MortarModule.VentPositions`, vent grilles in `MortarBody` |

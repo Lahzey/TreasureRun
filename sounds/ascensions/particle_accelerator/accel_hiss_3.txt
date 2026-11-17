@@ -1,0 +1,6 @@
+ascensions/particle_accelerator/accel_hiss_3
+  duration 0.75 s | peak -6.0 dBFS | RMS -28.2 dBFS | loudest 50 ms -17.9 dBFS
+  attack 5 ms | decays to -30 dB at 0.38 s | brightness (spectral centroid) 4.9k
+  envelope per 50 ms (dBFS): -18 -24 -29 -32 -36 -40 -44 -46 -51 -55 -60 -60 -60 -60 -60
+  brightness per 100 ms:    4.9k 4.9k 4.8k 4.8k 4.8k 4.7k 4.7k 4.7k
+  dominant pitch per 100 ms: 3.3k 3.3k 3.3k 3.0k 2.9k 2.8k 2.7k 2.9k

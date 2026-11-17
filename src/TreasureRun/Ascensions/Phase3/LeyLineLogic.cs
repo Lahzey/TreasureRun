@@ -13,7 +13,8 @@ namespace TreasureRun.Ascensions.Phase3
         public bool Touches(LeyCell o) => Mathf.Abs(X - o.X) + Mathf.Abs(Z - o.Z) == 1;
     }
 
-    public enum LeyNeighbourKind { None, Siphon, Crystal }
+    /// <summary>What a siphon's neighbour is. <see cref="Accelerator"/>: the Particle Accelerator's core (never a capacitor).</summary>
+    public enum LeyNeighbourKind { None, Siphon, Crystal, Accelerator }
 
     /// <summary>What sits next to a siphon in one direction, and at which height step.</summary>
     public struct LeyNeighbour
@@ -24,7 +25,7 @@ namespace TreasureRun.Ascensions.Phase3
     }
 
     /// <summary>The pipe towards one neighbour: <see cref="Rise"/> steps above the siphon (on its riser), or for a lower
-    /// crystal an intake that drops <see cref="Drop"/> steps down to it.</summary>
+    /// crystal or Accelerator an intake/feed that drops <see cref="Drop"/> steps down to it.</summary>
     public struct LeyArm
     {
         public LeyNeighbourKind Kind;
@@ -46,6 +47,8 @@ namespace TreasureRun.Ascensions.Phase3
         public readonly List<int> Crystals = new List<int>();
         /// <summary>Siphons that touch a crystal themselves: only these gather (the others are connectors).</summary>
         public int Taps;
+        /// <summary>A siphon of this network touches the Particle Accelerator's core: its income is fed into the core.</summary>
+        public bool FeedsAccelerator;
         /// <summary>Mana per second each tap gathers.</summary>
         public int IncomePerTap;
         public int Income => IncomePerTap * Taps;
@@ -73,9 +76,13 @@ namespace TreasureRun.Ascensions.Phase3
             /// from lower to higher values.
             /// </summary>
             public int[] Distance;
+            /// <summary>Mana per second of the networks plugged into the Particle Accelerator's core (each counted once).</summary>
+            public int AcceleratorIncome;
         }
 
-        public static Result Solve(IReadOnlyList<LeyCell> siphons, IReadOnlyList<LeyCell> crystals, int ratePerCrystal = 1)
+        /// <param name="accelerator">The Particle Accelerator's core cell, if any: networks touching it feed it.</param>
+        public static Result Solve(IReadOnlyList<LeyCell> siphons, IReadOnlyList<LeyCell> crystals, int ratePerCrystal = 1,
+                                   LeyCell? accelerator = null)
         {
             int n = siphons.Count;
             var r = new Result { NetworkOf = new int[n], Income = new int[n], Distance = new int[n], IsTap = new bool[n] };
@@ -128,6 +135,11 @@ namespace TreasureRun.Ascensions.Phase3
                     foreach (int t in neighbours[s])
                         if (r.Distance[t] < 0) { r.Distance[t] = r.Distance[s] + 1; queue.Enqueue(t); }
                 }
+
+                if (accelerator.HasValue)
+                    foreach (int s in net.Siphons)
+                        if (siphons[s].Touches(accelerator.Value)) { net.FeedsAccelerator = true; break; }
+                if (net.FeedsAccelerator) r.AcceleratorIncome += net.Income;
             }
             return r;
         }
@@ -144,7 +156,7 @@ namespace TreasureRun.Ascensions.Phase3
         /// at the higher one's level: the lower node carries it, the higher one just has its normal arm. A siphon below a
         /// neighbour therefore gets a riser up to its highest such neighbour, with a tee fitting at every level where an
         /// arm branches off (one fitting per level, however many arms leave there). A crystal below a siphon can't carry
-        /// anything, so that siphon's intake drops down to the crystal's level instead.
+        /// anything, so that siphon's intake drops down to the crystal's level instead; the same for a lower Accelerator.
         /// </summary>
         public static LeyPlan Plan(LeyCell self, LeyNeighbour[] neighbours)
         {
@@ -155,7 +167,7 @@ namespace TreasureRun.Ascensions.Phase3
                 LeyNeighbour n = neighbours[d];
                 if (n.Kind == LeyNeighbourKind.None) continue;
                 int diff = n.Level - self.Level;
-                var arm = new LeyArm { Kind = n.Kind, Rise = Mathf.Max(0, diff), Drop = n.Kind == LeyNeighbourKind.Crystal ? Mathf.Max(0, -diff) : 0 };
+                var arm = new LeyArm { Kind = n.Kind, Rise = Mathf.Max(0, diff), Drop = n.Kind != LeyNeighbourKind.Siphon ? Mathf.Max(0, -diff) : 0 };
                 plan.Arms[d] = arm;
                 if (arm.Rise > 0) tees.Add(arm.Rise);
             }

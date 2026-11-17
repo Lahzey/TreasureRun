@@ -3,7 +3,7 @@ using System.IO;
 
 namespace SfxTool
 {
-    /// <summary>WAV read/write (16-bit PCM, mono out) and OGG read (NVorbis), mixed down to mono at 44.1 kHz.</summary>
+    /// <summary>WAV read/write (16-bit PCM, mono out), OGG read (NVorbis) and MP3 read (NLayer), mixed down to mono at 44.1 kHz.</summary>
     public static class AudioIO
     {
         public static void WriteWav(string path, Sound s)
@@ -19,7 +19,8 @@ namespace SfxTool
         }
 
         public static Sound Read(string path) =>
-            path.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase) ? ReadOgg(path) : ReadWav(path);
+            path.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase) ? ReadOgg(path)
+            : path.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase) ? ReadMp3(path) : ReadWav(path);
 
         public static Sound ReadWav(string path)
         {
@@ -70,6 +71,24 @@ namespace SfxTool
                 mono[i] = sum / channels;
             }
             return Resample(mono, v.SampleRate);
+        }
+
+        /// <summary>MP3 (NLayer, a managed decoder), for reference examples.</summary>
+        public static Sound ReadMp3(string path)
+        {
+            using var f = new NLayer.MpegFile(path);
+            int channels = f.Channels;
+            var buf = new float[8192 * channels];
+            var mono = new System.Collections.Generic.List<float>();
+            int n;
+            while ((n = f.ReadSamples(buf, 0, buf.Length)) > 0)
+                for (int i = 0; i + channels <= n; i += channels)
+                {
+                    float sum = 0;
+                    for (int c = 0; c < channels; c++) sum += buf[i + c];
+                    mono.Add(sum / channels);
+                }
+            return Resample(mono.ToArray(), f.SampleRate);
         }
 
         private static Sound Resample(float[] mono, int rate) =>

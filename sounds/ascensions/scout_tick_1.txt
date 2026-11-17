@@ -1,6 +1,0 @@
-ascensions/scout_tick_1
-  duration 0.10 s | peak -9.1 dBFS | RMS -24.9 dBFS | loudest 50 ms -22.0 dBFS
-  attack 0 ms | decays to -30 dB at 0.08 s | brightness (spectral centroid) 3.5k
-  envelope per 50 ms (dBFS): -22 -41
-  brightness per 100 ms:    3.5k
-  dominant pitch per 100 ms: 1.1k

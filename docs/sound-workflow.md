@@ -6,9 +6,9 @@ Sound effects are code, like the voxel models: recipes in `tools/SfxTool/Recipes
 
 | Folder | Content | In git? |
 |---|---|---|
-| `TreasureRun/sounds` | Our sounds (`.wav`) with their analysis (`.png`, `.txt`) | yes |
+| `TreasureRun/sounds` | Our sounds (`.wav`) with their analysis (`.png`, `.txt`): `ascensions/<ascension id>/` (one folder per ascension, e.g. `ascensions/particle_accelerator/accel_charge`), `ui/`; `previews/` holds review mixes (not deployed) | yes |
 | `RogueTower/SoundReference` | Analysis of every vanilla clip (`reference.md` table, `.png`, `.txt`) | no (game assets) |
-| `BepInEx/plugins/TreasureRun/sounds` | What the game loads (only `.wav`; copied on every plugin build) | – |
+| `BepInEx/plugins/TreasureRun/sounds` | What the game loads (only `.wav`; copied on every plugin build, stale ones removed) | – |
 
 ## SfxTool
 
@@ -35,10 +35,17 @@ bin/Release/net8.0/SfxTool.exe play ../../sounds/ui/ascension_pick.wav
 ```
 
 - **`build`** renders recipes (all, or names starting with a prefix) into `.wav` + `.png` + `.txt`.
-- **`analyze`** writes the `.png` for any `.wav`/`.ogg` and prints the report.
+- **`analyze`** writes the `.png` for any `.wav`/`.ogg`/`.mp3` and prints the report.
+- **`morphpreview <modelsDir> <soundsDir> <outDir>`** mixes the Particle Accelerator's transformation the way the game plays it (timing and sounds from `models/ascensions/particle/accelerator_morph.txt`): `accelerator_to_core.wav`, `accelerator_to_capacitor.wav` and `*_slow.wav` (TimeScale 2), for listening to the whole sequence at once:
+
+  ```bash
+  bin/Release/net8.0/SfxTool.exe morphpreview ../../models ../../sounds ../../sounds/previews
+  ```
 - **`reference`** analyzes a folder of clips (the vanilla ones) and writes a summary table.
 - **`play`** opens the file in the default player.
 - **`list`** lists the recipes.
+
+SfxTool runs as a built program: after editing a recipe, `dotnet build tools/SfxTool -c Release` first. Rendering only writes into `sounds/`; the game gets the new files with the next mod build (see the README), then F6 reloads them.
 
 ## Writing a recipe
 

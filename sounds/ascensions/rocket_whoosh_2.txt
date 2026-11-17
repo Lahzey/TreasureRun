@@ -1,6 +1,0 @@
-ascensions/rocket_whoosh_2
-  duration 0.50 s | peak -1.9 dBFS | RMS -18.0 dBFS | loudest 50 ms -10.9 dBFS
-  attack 0 ms | decays to -30 dB at 0.47 s | brightness (spectral centroid) 6.9k
-  envelope per 50 ms (dBFS): -11 -16 -18 -19 -20 -21 -23 -24 -30 -38
-  brightness per 100 ms:    5.8k 6.8k 7.5k 8.4k 6.9k
-  dominant pitch per 100 ms: 840 1.2k 1.3k 1.9k 2.3k

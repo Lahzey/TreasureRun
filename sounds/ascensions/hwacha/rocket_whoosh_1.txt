@@ -1,0 +1,6 @@
+ascensions/hwacha/rocket_whoosh_1
+  duration 0.50 s | peak -1.9 dBFS | RMS -18.5 dBFS | loudest 50 ms -11.5 dBFS
+  attack 0 ms | decays to -30 dB at 0.46 s | brightness (spectral centroid) 6.8k
+  envelope per 50 ms (dBFS): -11 -17 -18 -19 -21 -21 -23 -24 -31 -39
+  brightness per 100 ms:    5.7k 6.6k 7.3k 8.2k 7.0k
+  dominant pitch per 100 ms: 151 1.3k 1.8k 1.8k 2.5k

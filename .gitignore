@@ -6,3 +6,6 @@ obj/
 *.user
 *.suo
 Directory.Build.user.props
+
+# Review mixes (SfxTool morphpreview), regenerated on demand
+sounds/previews/

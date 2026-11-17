@@ -1,0 +1,6 @@
+ascensions/particle_accelerator/accel_lock_4
+  duration 0.40 s | peak -1.0 dBFS | RMS -23.9 dBFS | loudest 50 ms -17.6 dBFS
+  attack 140 ms | decays to -30 dB at 0.27 s | brightness (spectral centroid) 3.9k
+  envelope per 50 ms (dBFS): -40 -27 -18 -19 -34 -42 -44 -48
+  brightness per 100 ms:    4.8k 3.8k 2.7k 1.5k
+  dominant pitch per 100 ms: 1.4k 108 129 108

@@ -50,7 +50,7 @@ namespace TreasureRun.Ascensions.Phase1
             for (int i = 0; i < due && Combat.IsAlive(e); i++)
                 e.TakeDamage(TowerType.Lookout, 1, 1, 1, 1, 0f, 0f, 0f, 0f, 0f, 0f);
             CosmeticShot.Fly("ascensions/lookout/scout_bolt", 0.45f, scout, e.transform, 0.12f);
-            SoundLibrary.Play("ascensions/scout_tick", scout, 0.7f, 0.08f, 3);
+            SoundLibrary.Play("ascensions/lone_scout/scout_tick", scout, 0.7f, 0.08f, 3);
         }
     }
 
@@ -300,7 +300,7 @@ namespace TreasureRun.Ascensions.Phase1
                 Tower t = Tower;
                 b.Target.TakeDamage(TowerType.VampireLair, t.damage, t.healthDamage, t.armorDamage, t.shieldDamage, t.slowPercent,
                                     t.bleedPercent + NestOfBatsLogic.BiteBleed, t.burnPercent, t.poisonPercent, t.critChance, t.stunChance);
-                SoundLibrary.Play("ascensions/bat_bite", next, 0.6f, 0.1f, 3);
+                SoundLibrary.Play("ascensions/nest_of_bats/bat_bite", next, 0.6f, 0.1f, 3);
             }
         }
     }

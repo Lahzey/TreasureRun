@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using TreasureRun.Ascensions.Phase1;
 using TreasureRun.Ascensions.Phase3;
 using TreasureRun.Core;
 using TreasureRun.UI;
@@ -14,6 +15,7 @@ namespace TreasureRun.Debugging
         public static IEnumerable<Scenario> All => new Scenario[]
         {
             new SawDimensionScenario(), new SawScalingScenario(), new MegaMortarScenario(), new MegaMortarHillScenario(), new LeyLineScenario(), new LeyLineHillScenario(),
+            new ParticleAcceleratorScenario(), new AcceleratorMorphScenario(), new ParticleLeyScenario(), new BlackHoleLookScenario(),
         };
     }
 
@@ -493,6 +495,338 @@ namespace TreasureRun.Debugging
             yield return null;
             yield return Phase1Scenarios.Picture(c, built[0], "popup", 3f);
             DevConsole.Execute("closeui");
+        }
+    }
+    internal sealed class ParticleAcceleratorScenario : Scenario
+    {
+        public override string Name => "particle-accelerator";
+        public override string Description => "Particle Accelerator: the strongest cannon is the core (barrel model), the others capacitors; it drains 60 mana/s and charges in 30 s at most that fast; stops at 25% mana; the black hole lifts 6 dummies into its disc without stacking them, lenses and shakes, ticks, bursts and throws them; Make Core; losing the core.";
+
+        public override IEnumerator Run(ScenarioContext c)
+        {
+            Phase1Scenarios.FillMana();
+            Vector3 spot = c.TrackPoint(6f) ?? Vector3.zero;
+            var gos = new List<GameObject>();
+            for (int i = 0; i < 3; i++)
+            {
+                GameObject go = c.BuildNear("ParticleCannon", spot, 2f, 6f);
+                if (go == null) { c.Expect(false, "particle cannon built"); yield break; }
+                gos.Add(go);
+            }
+            List<Tower> towers = gos.Select(g => g.GetComponent<Tower>()).ToList();
+            yield return null; // Tower.Start sets the level to 1
+            towers[1].level = 4;
+            towers[1].SetStats();
+            c.Ascend(AcceleratorCannon.Id);
+            yield return null;
+            yield return null;
+            AcceleratorGrid grid = AcceleratorGrid.Instance;
+            c.Expect(grid != null, "accelerator grid exists");
+            if (grid == null) yield break;
+            List<AcceleratorCannon> acc = gos.Select(g => g.GetComponent<AcceleratorCannon>()).ToList();
+            c.Expect(grid.Core == acc[1], "the highest-level cannon is the core");
+            c.Expect(acc.Count(a => a.IsCore) == 1, "exactly one core");
+            bool BarrelShown(GameObject g) => g.GetComponentsInChildren<MeshFilter>().Any(f => f.sharedMesh != null && f.sharedMesh.name == "TR_ascensions/particle/accelerator_barrel");
+            c.Expect(Phase1Scenarios.MeshSwapped(gos[1], "ascensions/particle/accelerator_base") && BarrelShown(gos[1]), "core: ring base and the big barrel");
+            c.Expect(Phase1Scenarios.MeshSwapped(gos[0], "ascensions/particle/capacitor_base") && !BarrelShown(gos[0]), "capacitor model");
+            c.Expect(acc[0].DisplayName == "Capacitor" && acc[1].DisplayName == null, "capacitors are named");
+            int sum = towers.Sum(t => t.damage);
+            c.Expect(grid.Pool.Base == sum, $"black hole base damage {grid.Pool.Base} = the cannons' {sum}");
+
+            // Six dummies around a track spot (the wave ends at once without monsters on the map).
+            var dummies = new List<Enemy>();
+            for (int i = 0; i < 6; i++)
+            {
+                float a = i * Mathf.PI / 3f, r = 0.6f + 0.4f * i;
+                dummies.Add(c.Dummy(spot + new Vector3(Mathf.Cos(a) * r, 0f, Mathf.Sin(a) * r), 50_000_000));
+            }
+
+            // Charging: only during waves; 60 mana/s and 1/30 of the charge per second, however much mana there is.
+            float p0 = grid.Charge.Progress;
+            yield return c.Wait(1f);
+            c.Expect(grid.Charge.Progress == p0, "no charging between waves");
+            bool was = Phase2Scenarios.Combat(true);
+            ResourceManager rm = ResourceManager.instance;
+            long drained0 = grid.Drained;
+            float t0 = Time.time;
+            yield return c.Wait(3f);
+            float rate = (grid.Charge.Progress - p0) / (Time.time - t0);
+            c.ExpectNear(rate * ParticleAcceleratorLogic.ChargeSeconds, 1f, 0.08f, "charge per 30 s with plenty of mana (the cap)");
+            float drained = (grid.Drained - drained0) / (Time.time - t0);
+            c.ExpectNear(drained, 60f, 6f, "mana drained per second");
+            DevConsole.Execute($"towerui {Mathf.RoundToInt(gos[1].transform.position.x)} {Mathf.RoundToInt(gos[1].transform.position.z)}");
+            yield return null;
+            yield return Phase1Scenarios.Picture(c, gos[1], "core_popup", 3f);
+            DevConsole.Execute("closeui");
+            yield return Phase1Scenarios.Picture(c, gos[1], "core", 1.6f);
+
+            // The 25% floor.
+            rm.maxMana = 1000;
+            rm.mana = 400;
+            float held = grid.Charge.Progress;
+            yield return c.Wait(3f);
+            c.Expect(rm.mana >= 250 && rm.mana < 300 && grid.LowMana, $"drains down to 25% mana and stops: {rm.mana}/1000");
+            float stalled = grid.Charge.Progress;
+            int low = rm.mana;
+            for (float w = 0f; w < 1f; w += Time.deltaTime) { low = Mathf.Min(low, rm.mana); yield return null; }
+            c.Expect(stalled > held && low >= 250, $"held at the floor: mana never below {low}/1000");
+            Phase1Scenarios.FillMana();
+
+            // Fill the charge so it fires at once.
+            foreach (Tower t in towers) t.DetectEnemies();
+            DamageMeter m = c.Meter();
+            int fired0 = grid.Fired, caught0 = BlackHole.TotalCaught, ticks0 = BlackHole.TotalTicks, bursts0 = BlackHole.TotalBursts;
+            grid.Charge.Progress = 1f;
+            float waited = 0f;
+            while (grid.Fired == fired0 && waited < 3f) { waited += Time.deltaTime; yield return null; }
+            c.Expect(grid.Fired == fired0 + 1, "the core fires when charged");
+            c.Expect(grid.Charge.Progress < 0.2f, "and starts charging again");
+            yield return c.Wait(0.9f);
+            BlackHole hole = BlackHole.Active.FirstOrDefault();
+            c.Expect(hole != null, "a black hole is open");
+            if (hole == null) { Phase2Scenarios.Combat(was); yield break; }
+            c.Expect(hole.ShakeAmplitude > 0f, $"it shakes the screen ({hole.ShakeAmplitude:0.0000} of the screen height)");
+            c.Expect(SpaceWarp.Texture != null, "space around it is warped (lens texture rendered)");
+            yield return c.Wait(1f);
+            c.Expect(hole.CaughtCount >= 5, $"{hole.CaughtCount} dummies caught (6 placed around the target)");
+            float spacing = hole.MinSpacing();
+            c.Expect(spacing > 0.1f, $"caught monsters don't stack: closest two {spacing:0.00} apart");
+            Vector3 centre = hole.transform.position;
+            float far = dummies.Where(d => d != null).Max(d => Vector3.Distance(Phase1Kit.Flat(d.transform.position), Phase1Kit.Flat(centre)));
+            c.Expect(far < ParticleAcceleratorLogic.OrbitMax + 0.4f, $"all pulled into the disc (furthest {far:0.00})");
+            float lift = dummies.Where(d => d != null).Average(d => d.transform.position.y - centre.y);
+            c.ExpectNear(lift, ParticleAcceleratorLogic.Lift, 0.15f, "lifted into the disc");
+            yield return Phase1Scenarios.Picture(c, hole.gameObject, "black_hole", 4f);
+            yield return Phase1Scenarios.Picture(c, hole.gameObject, "black_hole_close", 2.4f);
+            yield return c.Wait(ParticleAcceleratorLogic.HoleSeconds - 1.9f - ParticleAcceleratorLogic.CollapseSeconds * 0.5f - 0.4f);
+            yield return Phase1Scenarios.Picture(c, hole.gameObject, "collapse", 4f);
+            yield return c.Wait(0.45f);
+            yield return Phase1Scenarios.Picture(c, hole.gameObject, "burst", 4.5f);
+            yield return c.Wait(0.8f);
+            c.Expect(BlackHole.Held.Count == 0, "everyone released after the burst");
+            float spread = dummies.Where(d => d != null).Average(d => Vector3.Distance(Phase1Kit.Flat(d.transform.position), Phase1Kit.Flat(centre)));
+            c.Expect(spread > 1f, $"thrown away from the centre (mean distance {spread:0.00})");
+            float ground = dummies.Where(d => d != null).Max(d => Mathf.Abs(d.transform.position.y - centre.y));
+            c.Expect(ground < 0.7f, $"and back on the ground (highest {ground:0.00} off the hole's ground)");
+            int caught = BlackHole.TotalCaught - caught0, ticks = BlackHole.TotalTicks - ticks0, bursts = BlackHole.TotalBursts - bursts0;
+            c.Expect(ticks >= caught * 19 && ticks <= caught * 21 && bursts == caught, $"{ticks} ticks and {bursts} burst hits on {caught} caught (20 ticks each)");
+            // Treasures of the run (crits, mana bonuses) can add to the hits, so only a floor is checked.
+            int tick = ParticleAcceleratorLogic.TickDamage(grid.Pool.Base), burst = ParticleAcceleratorLogic.BurstDamage(grid.Pool.Base);
+            float expected = (ticks * tick + bursts * burst) * grid.Pool.Health;
+            long dealt = m.Of(TowerType.ParticleCannon);
+            c.Expect(dealt >= expected * 0.95f, $"black hole damage {dealt} (at least {expected:0}: ticks of {tick} and bursts of {burst}, x health multiplier {grid.Pool.Health})");
+            yield return c.Wait(0.6f);
+            c.Expect(BlackHole.Active.Count == 0 && hole == null, "the hole is gone");
+
+            // Make Core moves the role and keeps the charge; losing the core hands it to the strongest capacitor.
+            float charge = grid.Charge.Progress;
+            grid.MakeCore(acc[0]);
+            yield return null;
+            c.Expect(acc[0].Morphing && acc[1].Morphing, "both play the transformation");
+            // Frames of both directions at normal speed (capacitor -> core on the first, core -> capacitor on the second).
+            DevConsole.Execute("speed 1");
+            for (int f = 0; f < 14; f++)
+            {
+                yield return c.Wait(AcceleratorCannon.MorphSeconds / 14f);
+                yield return Phase1Scenarios.Picture(c, gos[0], $"morph_core_{f:00}", 1.8f);
+                yield return Phase1Scenarios.Picture(c, gos[1], $"morph_cap_{f:00}", 1.8f);
+            }
+            for (float morphWait = 0f; (acc[0].Morphing || acc[1].Morphing) && morphWait < AcceleratorCannon.MorphSeconds; morphWait += Time.deltaTime)
+                yield return null;
+            DevConsole.Execute("speed 4");
+            c.Expect(!acc[0].Morphing && !acc[1].Morphing, "transformation finished");
+            c.Expect(grid.Core == acc[0] && acc[0].IsCore && !acc[1].IsCore && BarrelShown(gos[0]) && !BarrelShown(gos[1]), "Make Core moved the role (and the barrel)");
+            yield return c.Wait(1f);
+            float tilt = Quaternion.Angle(towers[1].turret.transform.localRotation, Quaternion.identity);
+            c.Expect(tilt < 0.5f, $"the old core, now a capacitor, stands upright and doesn't aim ({tilt:0.0} degrees)");
+            c.Expect(grid.Charge.Progress >= charge - 0.001f, $"the charge carried over ({charge:P0} before, {grid.Charge.Progress:P0} now: still charging)");
+            DevConsole.Execute($"towerui {Mathf.RoundToInt(gos[2].transform.position.x)} {Mathf.RoundToInt(gos[2].transform.position.z)}");
+            yield return null;
+            yield return Phase1Scenarios.Picture(c, gos[2], "capacitor_popup", 3f);
+            DevConsole.Execute("closeui");
+            yield return c.Wait(0.4f);
+            yield return Phase1Scenarios.Picture(c, gos[0], "links", 3.5f);
+            charge = grid.Charge.Progress;
+            towers[0].Demolish();
+            yield return null;
+            yield return null;
+            c.Expect(grid.Core == acc[1], "the strongest remaining cannon took over the core");
+            c.Expect(grid.Charge.Progress >= charge - 0.01f, "and kept the charge");
+            Phase2Scenarios.Combat(was);
+            foreach (Enemy d in dummies) if (d != null) SpawnManager.instance.currentEnemies.Remove(d);
+        }
+    }
+
+    internal sealed class AcceleratorMorphScenario : Scenario
+    {
+        public override string Name => "accelerator-morph";
+        public override string Description => "Particle Accelerator transformation only: two cannons away from the castle swap roles (Make Core); frames of both directions (game time at 15%), frozen for each pair of shots.";
+
+        public override IEnumerator Run(ScenarioContext c)
+        {
+            Vector3 spot = c.TrackPoint(11f) ?? Vector3.zero;
+            var gos = new List<GameObject>();
+            for (int i = 0; i < 2; i++)
+            {
+                GameObject go = c.BuildNear("ParticleCannon", spot, 2f, 6f);
+                if (go == null) { c.Expect(false, "particle cannon built"); yield break; }
+                gos.Add(go);
+            }
+            List<Tower> towers = gos.Select(g => g.GetComponent<Tower>()).ToList();
+            yield return null;
+            towers[1].level = 4;
+            towers[1].SetStats();
+            c.Ascend(AcceleratorCannon.Id);
+            yield return null;
+            yield return null;
+            AcceleratorGrid grid = AcceleratorGrid.Instance;
+            List<AcceleratorCannon> acc = gos.Select(g => g.GetComponent<AcceleratorCannon>()).ToList();
+            c.Expect(grid != null && grid.Core == acc[1] && !acc[0].IsCore, "the second cannon is the core, the first a capacitor");
+            if (grid == null) yield break;
+            DevConsole.Execute("active UniverseLibCanvas 0");
+            DevConsole.Execute("speed 0");
+            yield return Phase1Scenarios.Picture(c, gos[0], "rest_capacitor", 2.4f);
+            yield return Phase1Scenarios.Picture(c, gos[1], "rest_core", 2.4f);
+            grid.MakeCore(acc[0]);
+            // Game time at 15%: frames catch even the short steps however fast the transformation is set.
+            DevConsole.Execute("speed 0.15");
+            yield return null;
+            c.Expect(acc[0].Morphing && acc[1].Morphing, "both transform");
+            const int frames = 24;
+            for (int f = 0; f < frames; f++)
+            {
+                yield return c.Wait(AcceleratorCannon.MorphSeconds / frames);
+                DevConsole.Execute("speed 0");
+                yield return Phase1Scenarios.Picture(c, gos[0], $"to_core_{f:00}", 2.4f);
+                yield return Phase1Scenarios.Picture(c, gos[1], $"to_capacitor_{f:00}", 2.4f);
+                DevConsole.Execute("speed 0.15");
+            }
+            for (float waited = 0f; (acc[0].Morphing || acc[1].Morphing) && waited < 3f; waited += Time.deltaTime) yield return null;
+            c.Expect(!acc[0].Morphing && !acc[1].Morphing && acc[0].IsCore && !acc[1].IsCore, "transformation finished, roles swapped");
+            DevConsole.Execute("speed 0");
+            yield return Phase1Scenarios.Picture(c, gos[0], "after_core", 2.4f);
+            yield return Phase1Scenarios.Picture(c, gos[1], "after_capacitor", 2.4f);
+            DevConsole.Execute("speed 4");
+            DevConsole.Execute("active UniverseLibCanvas 1");
+        }
+    }
+
+    internal sealed class ParticleLeyScenario : Scenario
+    {
+        public override string Name => "particle-ley";
+        public override string Description => "Particle Accelerator + Ley Line Network: siphons next to the core plug into it (a feed pipe into its socket) and their networks' income adds to its drain; a capacitor takes no pipe; Make Core moves the feed.";
+
+        private static float? Ground(int x, int z)
+        {
+            if (!Physics.Raycast(new Vector3(x, 40f, z), Vector3.down, out RaycastHit hit, 80f, BuildingManager.instance.buildableMask, QueryTriggerInteraction.Ignore))
+                return null;
+            if (hit.collider.gameObject.layer != LayerMask.NameToLayer("Grass")) return null;
+            return Mathf.Round(3f * hit.point.y) / 3f;
+        }
+
+        private static int Feeds(LeySiphon s) => s.Parts.Count(p => p != null && p.name == "TR_Ley_feed");
+
+        public override IEnumerator Run(ScenarioContext c)
+        {
+            GameObject prefab = Resources.FindObjectsOfTypeAll<ManaCrystal>().Select(m => m.gameObject).FirstOrDefault(g => !g.scene.IsValid());
+            if (prefab == null) { c.Expect(false, "mana crystal prefab found"); yield break; }
+            // A free row of 4 cells at one height (siphon, core, siphon, capacitor) with free cells above the siphons for crystals.
+            (int x, int z, float y)? row = null;
+            for (int r = 1; r <= 12 && row == null; r++)
+                for (int x = -r; x <= r && row == null; x++)
+                    for (int z = -r; z <= r && row == null; z++)
+                    {
+                        float? y0 = Ground(x, z);
+                        if (y0 == null) continue;
+                        bool ok = true;
+                        foreach (var (dx, dz) in new[] { (1, 0), (2, 0), (3, 0), (0, 1), (2, 1) })
+                            ok &= Ground(x + dx, z + dz) is float y && Mathf.Abs(y - y0.Value) < 0.01f;
+                        if (ok) row = (x, z, y0.Value);
+                    }
+            if (row == null) { c.Expect(false, "free row of 4 cells"); yield break; }
+            int ox = row.Value.x, oz = row.Value.z;
+            foreach (var (dx, dz) in new[] { (0, 1), (2, 1) })
+            {
+                GameObject crystal = Object.Instantiate(prefab, new Vector3(ox + dx, row.Value.y, oz + dz), Quaternion.identity);
+                ManaCrystal mc = crystal.GetComponent<ManaCrystal>();
+                mc.spawnChance = 1f;
+                mc.spawnLevels = new Vector2(-1f, 1_000_000f);
+                crystal.SetActive(true);
+                c.Track(crystal);
+            }
+            yield return null;
+            GameObject core = c.BuildAt("ParticleCannon", ox + 1, oz), cap = c.BuildAt("ParticleCannon", ox + 3, oz);
+            GameObject s1 = c.BuildAt("ManaSiphon", ox, oz), s2 = c.BuildAt("ManaSiphon", ox + 2, oz);
+            if (core == null || cap == null || s1 == null || s2 == null) { c.Expect(false, "row built"); yield break; }
+            yield return null;
+            core.GetComponent<Tower>().level = 5;
+            c.Ascend(LeySiphon.Id);
+            c.Ascend(AcceleratorCannon.Id);
+            yield return c.Wait(0.6f);
+            AcceleratorGrid grid = AcceleratorGrid.Instance;
+            AcceleratorCannon coreA = core.GetComponent<AcceleratorCannon>(), capA = cap.GetComponent<AcceleratorCannon>();
+            LeySiphon l1 = s1.GetComponent<LeySiphon>(), l2 = s2.GetComponent<LeySiphon>();
+            c.Expect(grid != null && grid.Core == coreA, "the level 5 cannon is the core");
+            if (grid == null || l1 == null || l2 == null) yield break;
+            int net = l1.NetworkIncome + l2.NetworkIncome;
+            c.Expect(LeyNetwork.AcceleratorIncome == net && net > 0, $"both networks feed the core: {LeyNetwork.AcceleratorIncome} mana/s ({l1.NetworkIncome} + {l2.NetworkIncome})");
+            c.Expect(Feeds(l1) == 1 && Feeds(l2) == 1, $"each siphon plugs one feed into the core ({Feeds(l1)}, {Feeds(l2)}); none into the capacitor");
+            c.Expect(l1.FeedsAccelerator && l2.FeedsAccelerator, "their popups say so");
+            c.ExpectNear(ParticleAcceleratorLogic.Drain(AcceleratorGrid.LeyIncome), 60f + net, 0.01f, "the drain rises by the plugged-in income");
+            yield return Phase1Scenarios.Picture(c, core, "feeds", 2.2f);
+
+            grid.MakeCore(capA);
+            yield return c.Wait(0.5f);
+            c.Expect(Feeds(l1) == 0 && Feeds(l2) == 0 && LeyNetwork.AcceleratorIncome == 0,
+                     $"while the new core transforms nothing feeds it yet ({Feeds(l1)}, {Feeds(l2)}): its sockets are still underground");
+            for (float waitA = 0f; (capA.Morphing || coreA.Morphing) && waitA < AcceleratorCannon.MorphSeconds + 1f; waitA += Time.deltaTime) yield return null;
+            yield return c.Wait(0.5f);
+            c.Expect(Feeds(l1) == 0 && Feeds(l2) == 1, $"after Make Core only the siphon next to the new core feeds it ({Feeds(l1)}, {Feeds(l2)})");
+            c.Expect(LeyNetwork.AcceleratorIncome == l2.NetworkIncome, $"income into the core: {LeyNetwork.AcceleratorIncome} mana/s");
+            yield return Phase1Scenarios.Picture(c, cap, "feeds_moved", 2.2f);
+
+            // Selling the core: the pipes follow the new core; selling the last cannon takes every feed away.
+            cap.GetComponent<Tower>().Demolish();
+            yield return c.Wait(0.5f);
+            for (float waitB = 0f; coreA != null && coreA.Morphing && waitB < AcceleratorCannon.MorphSeconds + 1f; waitB += Time.deltaTime) yield return null;
+            yield return c.Wait(0.5f);
+            c.Expect(grid.Core == coreA && Feeds(l1) == 1 && Feeds(l2) == 1, $"core sold: the other cannon is the core again and both siphons feed it once it stands ({Feeds(l1)}, {Feeds(l2)})");
+            core.GetComponent<Tower>().Demolish();
+            yield return c.Wait(0.5f);
+            c.Expect(Feeds(l1) == 0 && Feeds(l2) == 0 && LeyNetwork.AcceleratorIncome == 0, $"last cannon sold: no feed left ({Feeds(l1)}, {Feeds(l2)}), {LeyNetwork.AcceleratorIncome} mana/s into a core");
+            yield return Phase1Scenarios.Picture(c, s2, "feeds_gone", 2.2f);
+        }
+    }
+    internal sealed class BlackHoleLookScenario : Scenario
+    {
+        public override string Name => "black-hole-look";
+        public override string Description => "Black hole visuals only: a hole on open track with 5 dummies, shots while open, in the collapse and after the burst.";
+
+        public override IEnumerator Run(ScenarioContext c)
+        {
+            Vector3 spot = c.TrackPoint(11f) ?? Vector3.zero;
+            var dummies = new List<Enemy>();
+            for (int i = 0; i < 5; i++)
+            {
+                float a = i * 1.3f, r = 0.8f + 0.5f * i;
+                dummies.Add(c.Dummy(spot + new Vector3(Mathf.Cos(a) * r, 0f, Mathf.Sin(a) * r), 50_000_000));
+            }
+            bool was = Phase2Scenarios.Combat(true);
+            var stats = new HoleStats { Pool = new PooledDamage { Base = 40, Health = 15, Armor = 10, Shield = 20, Cannons = 1 } };
+            BlackHole hole = BlackHole.Open(spot, stats);
+            yield return c.Wait(1.6f);
+            c.Info(hole.DiscInfo());
+            DevConsole.Execute("speed 0");
+            yield return Phase1Scenarios.Picture(c, hole.gameObject, "open", 3.2f);
+            yield return Phase1Scenarios.Picture(c, hole.gameObject, "open_close", 1.8f);
+            DevConsole.Execute("speed 4");
+            yield return c.Wait(ParticleAcceleratorLogic.HoleSeconds - 1.6f - 0.25f);
+            yield return Phase1Scenarios.Picture(c, hole.gameObject, "collapse", 3.2f);
+            yield return c.Wait(0.4f);
+            yield return Phase1Scenarios.Picture(c, hole.gameObject, "burst", 3.2f);
+            yield return c.Wait(1.5f);
+            Phase2Scenarios.Combat(was);
+            foreach (Enemy d in dummies) if (d != null) SpawnManager.instance.currentEnemies.Remove(d);
         }
     }
 }

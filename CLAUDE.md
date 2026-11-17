@@ -1,13 +1,14 @@
 # Treasure Run (Rogue Tower mod)
 
 BepInEx 5 + Harmony mod for Rogue Tower. The plan and roadmap are in `PLAN.md`; the game internals are in `docs/game-architecture.md`.
+Building, regenerating assets (models, the accelerator transformation, sounds) and deploying them to the game: `README.md`. Only the mod build deploys: after regenerating anything, build the mod again.
 
 ## Rules that must always hold
 - **Content rules:** follow `docs/content-rules.md` for every card and treasure, including:
   - max-health costs are declared and paid via `HealthCost`, and unaffordable options are never offered
   - content tags drive castle bans
   - castle-exclusive content
-- Balance concerns go into `docs/balance-todo.md`, not into ad-hoc tweaks.
+- Balance concerns go into `docs/balance-todo.md`, not into ad-hoc tweaks. Visual improvements for later go into `docs/visual-todo.md`.
 - Castles work in every mode (normal and Treasure Run). Treasure Run–only logic checks `TreasureRunMode.Active`.
 - Castle models are generated from code (`tools/VoxTool/Recipes`, `dotnet run -- build ../../models`). They must be grounded (`VoxCanvas.Grounded()`), because the grass layer hides the lowest ~4 voxels.
 - Ascensions follow `docs/ascension-plan.md`: register through `AscensionRegistry` (exclusion group per tower), behaviour in an `AscendedTower` component, mechanics in a pure `*Logic.cs` file (only `System`, `Vector3`/`Mathf`, `IRng`) with offline tests.

@@ -7,11 +7,11 @@ namespace SfxTool
     {
         private static void RegisterAscensions()
         {
-            Variants("ascensions/scout_tick", 3, ScoutTick);
-            Variants("ascensions/chain_crackle", 3, ChainCrackle);
-            Add("ascensions/supercharge", Supercharge);
-            Variants("ascensions/bat_bite", 3, BatBite);
-            Add("ascensions/springald_launch", SpringaldLaunch);
+            Variants("ascensions/lone_scout/scout_tick", 3, ScoutTick);
+            Variants("ascensions/chain_lightning/chain_crackle", 3, ChainCrackle);
+            Add("ascensions/supercharge/supercharge", Supercharge);
+            Variants("ascensions/nest_of_bats/bat_bite", 3, BatBite);
+            Add("ascensions/springald/springald_launch", SpringaldLaunch);
             RegisterPhase2();
             RegisterPhase3();
         }

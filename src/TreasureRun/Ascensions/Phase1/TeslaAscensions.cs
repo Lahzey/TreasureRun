@@ -83,7 +83,7 @@ namespace TreasureRun.Ascensions.Phase1
                                    $"max {ChainLightningLogic.MaxHits(CardCounters.Get(MoreChainsCard))}, nearest unreached {(gap < float.MaxValue ? gap.ToString("0.00") : "-")}");
             }
             Fx.Burst(tip, BoltColor, 8, 0.07f, 0.8f);
-            SoundLibrary.Play("ascensions/chain_crackle", transform.position, 0.9f);
+            SoundLibrary.Play("ascensions/chain_lightning/chain_crackle", transform.position, 0.9f);
         }
     }
 
@@ -151,7 +151,7 @@ namespace TreasureRun.Ascensions.Phase1
             }
             foreach (int id in Buffs.Apply(Tower.GetInstanceID(), inRange, Time.time))
                 if (buffed.TryGetValue(id, out Tower t) && t != null) t.SetStats();
-            if (inRange.Count > 0) SoundLibrary.Play("ascensions/supercharge", transform.position, 0.8f, 0.05f, 3);
+            if (inRange.Count > 0) SoundLibrary.Play("ascensions/supercharge/supercharge", transform.position, 0.8f, 0.05f, 3);
         }
 
         private void Update()

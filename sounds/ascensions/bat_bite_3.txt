@@ -1,6 +1,0 @@
-ascensions/bat_bite_3
-  duration 0.10 s | peak -8.5 dBFS | RMS -20.0 dBFS | loudest 50 ms -17.1 dBFS
-  attack 0 ms | decays to -30 dB at 0.10 s | brightness (spectral centroid) 2.0k
-  envelope per 50 ms (dBFS): -17 -32
-  brightness per 100 ms:    2.0k
-  dominant pitch per 100 ms: 194

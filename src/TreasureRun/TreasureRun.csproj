@@ -48,13 +48,24 @@
     <MakeDir Directories="$(PluginDeployPath)" />
     <Copy SourceFiles="$(TargetPath);$(TargetDir)$(TargetName).pdb" DestinationFolder="$(PluginDeployPath)" SkipUnchangedFiles="true" />
     <ItemGroup>
-      <ModelFiles Include="$(MSBuildProjectDirectory)\..\..\models\**\*.vox;$(MSBuildProjectDirectory)\..\..\models\**\*.json" />
+      <ModelFiles Include="$(MSBuildProjectDirectory)\..\..\models\**\*.vox;$(MSBuildProjectDirectory)\..\..\models\**\*.json;$(MSBuildProjectDirectory)\..\..\models\**\*.txt" />
     </ItemGroup>
     <Copy SourceFiles="@(ModelFiles)" DestinationFiles="@(ModelFiles->'$(PluginDeployPath)\models\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
     <ItemGroup>
-      <SoundFiles Include="$(MSBuildProjectDirectory)\..\..\sounds\**\*.wav" />
+      <!-- sounds/previews holds review mixes (SfxTool morphpreview), not game sounds. -->
+      <SoundFiles Include="$(MSBuildProjectDirectory)\..\..\sounds\**\*.wav" Exclude="$(MSBuildProjectDirectory)\..\..\sounds\previews\**" />
     </ItemGroup>
     <Copy SourceFiles="@(SoundFiles)" DestinationFiles="@(SoundFiles->'$(PluginDeployPath)\sounds\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <!-- Deployed models and sounds whose source is gone (renamed, moved or deleted) are removed; models/overrides (your own
+         replacement models, not in the repository) stay. -->
+    <ItemGroup>
+      <DeployedAssets Include="$(PluginDeployPath)\models\**\*.vox;$(PluginDeployPath)\models\**\*.json;$(PluginDeployPath)\models\**\*.txt;$(PluginDeployPath)\sounds\**\*.wav"
+                      Exclude="$(PluginDeployPath)\models\overrides\**" />
+      <StaleAssets Include="@(DeployedAssets)"
+                   Exclude="@(ModelFiles->'$(PluginDeployPath)\models\%(RecursiveDir)%(Filename)%(Extension)');@(SoundFiles->'$(PluginDeployPath)\sounds\%(RecursiveDir)%(Filename)%(Extension)')" />
+    </ItemGroup>
+    <Delete Files="@(StaleAssets)" />
+    <Message Condition="'@(StaleAssets)' != ''" Importance="high" Text="Removed stale deployed files: @(StaleAssets->'%(RecursiveDir)%(Filename)%(Extension)', ', ')" />
     <Message Importance="high" Text="Deployed $(TargetFileName) -> $(PluginDeployPath)" />
   </Target>
 

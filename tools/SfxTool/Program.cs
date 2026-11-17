@@ -14,6 +14,8 @@ namespace SfxTool
     /// <item><c>analyze &lt;file.wav|ogg&gt;...</c>: analysis .png next to the file, report on stdout</item>
     /// <item><c>reference &lt;audioDir&gt; &lt;outDir&gt;</c>: analyzes every clip (e.g. vanilla .ogg) into outDir + reference.md</item>
     /// <item><c>play &lt;file&gt;</c>: opens the file in the default player</item>
+    /// <item><c>morphpreview &lt;modelsDir&gt; &lt;soundsDir&gt; &lt;outDir&gt;</c>: the Particle Accelerator's transformation as one
+    /// file per direction (<see cref="MorphPreview"/>)</item>
     /// <item><c>list</c>: lists recipes</item>
     /// </list>
     /// </summary>
@@ -30,6 +32,7 @@ namespace SfxTool
                     case "analyze": return Analyze(args.Skip(1).ToArray());
                     case "reference": return Reference(args.Skip(1).ToArray());
                     case "play": Process.Start(new ProcessStartInfo(Path.GetFullPath(args[1])) { UseShellExecute = true }); return 0;
+                    case "morphpreview": return MorphPreview.Run(args.Skip(1).ToArray());
                     case "list": foreach (string n in Recipes.All.Keys.OrderBy(k => k)) Console.WriteLine(n); return 0;
                     default: return Usage();
                 }
@@ -43,7 +46,7 @@ namespace SfxTool
 
         private static int Usage()
         {
-            Console.WriteLine("SfxTool build <soundsDir> [name|all] | analyze <file>... | reference <audioDir> <outDir> | play <file> | list");
+            Console.WriteLine("SfxTool build <soundsDir> [name|all] | analyze <file>... | reference <audioDir> <outDir> | morphpreview <modelsDir> <soundsDir> <outDir> | play <file> | list");
             return 1;
         }
 
@@ -57,6 +60,7 @@ namespace SfxTool
                 if (which != "all" && !kv.Key.StartsWith(which, StringComparison.OrdinalIgnoreCase)) continue;
                 Sound s = kv.Value();
                 string wav = Path.Combine(dir, kv.Key.Replace('/', Path.DirectorySeparatorChar) + ".wav");
+                Directory.CreateDirectory(Path.GetDirectoryName(wav));
                 AudioIO.WriteWav(wav, s);
                 Analysis a = Analysis.Of(s, kv.Key);
                 a.Render(s).SavePng(Path.ChangeExtension(wav, ".png"));

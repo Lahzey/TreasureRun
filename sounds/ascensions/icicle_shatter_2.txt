@@ -1,6 +1,0 @@
-ascensions/icicle_shatter_2
-  duration 0.27 s | peak -1.9 dBFS | RMS -18.7 dBFS | loudest 50 ms -13.7 dBFS
-  attack 0 ms | decays to -30 dB at 0.25 s | brightness (spectral centroid) 11.8k
-  envelope per 50 ms (dBFS): -14 -16 -22 -30 -38 -47
-  brightness per 100 ms:    12.0k 10.8k 9.3k
-  dominant pitch per 100 ms: 4.4k 4.8k 4.8k

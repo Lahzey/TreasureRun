@@ -113,11 +113,11 @@ namespace TreasureRun.Ascensions.Phase2
                     e.TakeDamage(TowerType.Frost, damage, t.healthDamage, t.armorDamage, t.shieldDamage, t.slowPercent,
                                  t.bleedPercent, t.burnPercent, t.poisonPercent, t.critChance, t.stunChance);
                     Fx.VoxelBurst(e.transform.position + Vector3.up * 0.4f, Phase2Kit.IceColors, 6, 0.05f, 1.4f, 0.4f, 2f);
-                    SoundLibrary.Play("ascensions/icicle_shatter", e.transform.position, 0.6f, 0.1f, 4);
+                    SoundLibrary.Play("ascensions/icicle_cannon/icicle_shatter", e.transform.position, 0.6f, 0.1f, 4);
                     return true;
                 });
             Fx.VoxelBurst(from, Phase2Kit.IceColors, 5, 0.05f, 1f, 0.35f, 0f);
-            SoundLibrary.Play("ascensions/icicle_launch", from, 0.8f, 0.06f, 3);
+            SoundLibrary.Play("ascensions/icicle_cannon/icicle_launch", from, 0.8f, 0.06f, 3);
             Shots++;
         }
     }
@@ -201,7 +201,7 @@ namespace TreasureRun.Ascensions.Phase2
                 Fx.VoxelBurst(shot.transform.position, Phase2Kit.FireColors, 2, 0.06f, 0.3f, 0.5f, -0.5f);
             });
             Fx.VoxelBurst(from, Phase2Kit.FireColors, 10, 0.07f, 1.2f, 0.4f, 0f);
-            SoundLibrary.Play("ascensions/magma_lob", from, 0.9f, 0.05f, 3);
+            SoundLibrary.Play("ascensions/magma_lobber/magma_lob", from, 0.9f, 0.05f, 3);
             Lobs++;
         }
 
@@ -214,7 +214,7 @@ namespace TreasureRun.Ascensions.Phase2
             }
             Fx.VoxelBurst(pos + Vector3.up * 0.15f, Phase2Kit.FireColors, 30, 0.12f, 2.4f * radius, 0.8f, 2.5f);
             Fx.Burst(pos + Vector3.up * 0.2f, new Color(1f, 0.5f, 0.1f), 24, 0.14f, 1.6f);
-            SoundLibrary.Play("ascensions/magma_impact", pos, 1f, 0.06f, 3);
+            SoundLibrary.Play("ascensions/magma_lobber/magma_impact", pos, 1f, 0.06f, 3);
         }
     }
 

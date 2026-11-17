@@ -1,0 +1,6 @@
+ascensions/chain_lightning/chain_crackle_2
+  duration 0.70 s | peak -1.0 dBFS | RMS -17.3 dBFS | loudest 50 ms -12.7 dBFS
+  attack 30 ms | decays to -30 dB at 0.56 s | brightness (spectral centroid) 9.8k
+  envelope per 50 ms (dBFS): -13 -14 -14 -14 -14 -16 -18 -22 -26 -31 -39 -43 -46 -50
+  brightness per 100 ms:    9.5k 9.7k 10.1k 9.8k 10.1k 6.0k 2.5k
+  dominant pitch per 100 ms: 237 237 431 129 129 129 129

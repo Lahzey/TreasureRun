@@ -1,0 +1,6 @@
+ascensions/bladestorm/blade_whirr
+  duration 2.00 s | peak -8.0 dBFS | RMS -17.4 dBFS | loudest 50 ms -17.1 dBFS
+  attack 10 ms | decays to -30 dB at 2.01 s | brightness (spectral centroid) 2.0k
+  envelope per 50 ms (dBFS): -17 -17 -18 -18 -18 -17 -17 -18 -18 -17 -17 -18 -17 -17 -17 -18 -18 -17 -17 -18 -17 -17 -17 -17 -18 -17 -17 -18 -17 -17 -17 -18 -18 -17 -17 -18 -18 -17 -17 -18
+  brightness per 100 ms:    2.0k 1.8k 2.0k 2.0k 2.0k 2.0k 2.1k 2.1k 2.0k 2.0k 2.0k 2.1k 2.0k 2.0k 2.0k 2.1k 2.1k 2.0k 2.0k 2.1k
+  dominant pitch per 100 ms: 65 65 65 65 65 65 65 65 65 65 65 65 65 65 65 65 65 65 65 65

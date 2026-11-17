@@ -56,7 +56,7 @@ namespace TreasureRun.Ascensions.Phase2
             SwapVanillaMesh("BaseArt", "ascensions/shredder/bladestorm_base");
             SwapVanillaMesh("TurretArt", "ascensions/shredder/bladestorm_hub");
             hub = Tower.turret != null ? Tower.turret.transform : null;
-            whirr = SoundLoop.Start("ascensions/blade_whirr", transform, 0.35f);
+            whirr = SoundLoop.Start("ascensions/bladestorm/blade_whirr", transform, 0.35f);
         }
 
         protected override void OnDestroy()
@@ -208,7 +208,7 @@ namespace TreasureRun.Ascensions.Phase2
             if (core != null) core.enabled = on;
             if (glow != null) glow.enabled = on;
             if (flare != null) flare.intensity = on ? 1.6f : 0f;
-            if (on && hum == null) hum = SoundLoop.Start("ascensions/beam_hum", transform, 0.45f);
+            if (on && hum == null) hum = SoundLoop.Start("ascensions/beam_cannon/beam_hum", transform, 0.45f);
             else if (!on && hum != null) { Destroy(hum.gameObject); hum = null; }
         }
 

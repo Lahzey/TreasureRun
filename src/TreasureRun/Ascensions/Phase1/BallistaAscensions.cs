@@ -151,7 +151,7 @@ namespace TreasureRun.Ascensions.Phase1
             if (target == null) return;
             Vector3 from = Tower.muzzle != null ? Tower.muzzle.position : transform.position + Vector3.up;
             PiercingBolt.Launch(Tower, from, target);
-            SoundLibrary.Play("ascensions/springald_launch", from, 0.9f);
+            SoundLibrary.Play("ascensions/springald/springald_launch", from, 0.9f);
         }
     }
 

@@ -261,7 +261,7 @@ namespace TreasureRun.Ascensions.Phase3
         private void UpdateHum()
         {
             float volume = Extension * Mathf.Min(1f, 0.3f + 0.07f * shredders.Count) * 0.45f;
-            if (volume > 0.01f && hum == null && Camera.main != null) hum = SoundLoop.Start("ascensions/saw_hum", Camera.main.transform, volume);
+            if (volume > 0.01f && hum == null && Camera.main != null) hum = SoundLoop.Start("ascensions/saw_dimension/saw_hum", Camera.main.transform, volume);
             if (hum != null)
             {
                 hum.Volume = volume;

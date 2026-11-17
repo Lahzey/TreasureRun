@@ -96,7 +96,7 @@ namespace TreasureRun.Ascensions.Phase2
                 }, 300f);
             }
             Fx.VoxelBurst(from, Phase2Kit.SmokeColors, 10, 0.07f, 1.2f, 0.5f, 0f);
-            SoundLibrary.Play("ascensions/cluster_pop", from, 0.9f, 0.08f, 3);
+            SoundLibrary.Play("ascensions/cluster_munitions/cluster_pop", from, 0.9f, 0.08f, 3);
             if (owner != null) owner.Splits++;
             if (s.detachOnDestruction != null) s.detachOnDestruction.transform.parent = null;
             if (s.extraFX != null) s.extraFX.OnDetach();
@@ -335,7 +335,7 @@ namespace TreasureRun.Ascensions.Phase2
                                     last, HwachaLogic.ScatterOffset(GameRng.Instance), damage, radius);
                 Rockets++;
                 if (art != null) art.localPosition = rest - Vector3.forward * 0.03f;
-                SoundLibrary.Play("ascensions/rocket_whoosh", from, 0.55f, 0.1f, 5);
+                SoundLibrary.Play("ascensions/hwacha/rocket_whoosh", from, 0.55f, 0.1f, 5);
                 yield return null;
                 if (art != null) art.localPosition = rest;
             }
@@ -403,7 +403,7 @@ namespace TreasureRun.Ascensions.Phase2
             if (tower != null) Phase2Kit.Blast(tower, end, radius + 0.25f, damage, HwachaLogic.Burn); // + 0.25: monster collider
             Fx.VoxelBurst(end + Vector3.up * 0.12f, RocketColors, 14, 0.075f, 1.9f, 0.45f, 1.5f);
             Fx.Burst(end + Vector3.up * 0.15f, RocketColors[Random.Range(0, 3)], 8, 0.08f, 1.4f);
-            SoundLibrary.Play("ascensions/rocket_pop", end, 0.5f, 0.12f, 4);
+            SoundLibrary.Play("ascensions/hwacha/rocket_pop", end, 0.5f, 0.12f, 4);
             Destroy(gameObject);
         }
     }

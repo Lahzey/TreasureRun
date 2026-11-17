@@ -1,0 +1,6 @@
+ascensions/particle_accelerator/accel_pump_stop
+  duration 1.00 s | peak -8.0 dBFS | RMS -22.8 dBFS | loudest 50 ms -18.7 dBFS
+  attack 20 ms | decays to -30 dB at 0.74 s | brightness (spectral centroid) 2.7k
+  envelope per 50 ms (dBFS): -19 -19 -19 -20 -20 -21 -21 -23 -24 -24 -19 -23 -31 -38 -45 -53 -60 -60 -60 -60
+  brightness per 100 ms:    2.9k 2.8k 2.7k 2.5k 2.5k 2.1k 4.0k 4.3k 4.9k 4.8k
+  dominant pitch per 100 ms: 538 517 474 409 301 86 65 65 3.2k 3.0k

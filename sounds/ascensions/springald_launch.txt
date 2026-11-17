@@ -1,6 +1,0 @@
-ascensions/springald_launch
-  duration 0.80 s | peak -1.0 dBFS | RMS -17.9 dBFS | loudest 50 ms -8.1 dBFS
-  attack 0 ms | decays to -30 dB at 0.49 s | brightness (spectral centroid) 1.3k
-  envelope per 50 ms (dBFS): -8 -13 -15 -21 -22 -25 -31 -32 -35 -36 -42 -44 -44 -48 -52 -53
-  brightness per 100 ms:    1.0k 1.6k 1.6k 1.7k 1.2k 780 569 611
-  dominant pitch per 100 ms: 108 86 129 108 108 129 129 108

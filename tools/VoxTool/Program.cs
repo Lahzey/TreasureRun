@@ -28,6 +28,10 @@ namespace VoxTool
                     case "info": return Info(args.Skip(1).ToArray());
                     case "slices": return Slices(args.Skip(1).ToArray());
                     case "build": return Build(args.Skip(1).ToArray());
+                    case "morph":
+                        VoxTool.Recipes.AscensionRecipes.VoxelsRoot = Path.GetFullPath(Path.Combine(args[1], "..", "..", "Voxels"));
+                        VoxTool.Recipes.AcceleratorMorph.Write(args[1], args.Length > 2 ? args[2] : null);
+                        return 0;
                     default: return Usage();
                 }
             }
@@ -170,6 +174,9 @@ namespace VoxTool
                 }
                 Console.WriteLine($"{kv.Key,-30} {m.SizeX}x{m.SizeY}x{m.SizeZ}, {m.CountFilled()} voxels -> {path}");
             }
+            // The Particle Accelerator's capacitor ⇄ core transformation is computed from its finished models.
+            if (which == "all" || "ascensions/particle/".StartsWith(which, StringComparison.OrdinalIgnoreCase) || which.StartsWith("ascensions/particle", StringComparison.OrdinalIgnoreCase))
+                VoxTool.Recipes.AcceleratorMorph.Write(modelsDir);
             return 0;
         }
 

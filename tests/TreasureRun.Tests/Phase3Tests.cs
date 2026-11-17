@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using TreasureRun.Ascensions.Phase3;
+using TreasureRun.Core;
 using UnityEngine;
 
 namespace TreasureRun.Tests
@@ -264,6 +265,27 @@ namespace TreasureRun.Tests
         }
 
         [Test]
+        public void LeyNetworksPluggedIntoTheAcceleratorFeedIt()
+        {
+            // Two networks: a row of 3 (2 taps, 2 crystals: 2 x 1 = ... see TapIncome) next to the core, and one far away.
+            LeyLineLogic.Result r = LeyLineLogic.Solve(Cells((0, 0), (1, 0), (2, 0), (9, 9)), Cells((-1, 0), (3, 0), (9, 10)),
+                                                       accelerator: new LeyCell(1, 1, 0));
+            int near = r.NetworkOf[0], far = r.NetworkOf[3];
+            Assert.That(r.Networks[near].FeedsAccelerator, Is.True, "the middle siphon touches the core");
+            Assert.That(r.Networks[far].FeedsAccelerator, Is.False);
+            Assert.That(r.AcceleratorIncome, Is.EqualTo(r.Networks[near].Income));
+            Assert.That(r.AcceleratorIncome, Is.GreaterThan(0));
+            // No core, or not touching: nothing.
+            Assert.That(LeyLineLogic.Solve(Cells((0, 0)), Cells((-1, 0))).AcceleratorIncome, Is.EqualTo(0));
+            Assert.That(LeyLineLogic.Solve(Cells((0, 0)), Cells((-1, 0)), accelerator: new LeyCell(1, 1, 0)).AcceleratorIncome, Is.EqualTo(0), "diagonal");
+            // A lower core is fed through a drop, a higher one from the riser, like a crystal.
+            LeyPlan plan = LeyLineLogic.Plan(new LeyCell(0, 0, 3), new[] { new LeyNeighbour(LeyNeighbourKind.Accelerator, 1),
+                new LeyNeighbour(LeyNeighbourKind.Accelerator, 5), new LeyNeighbour(), new LeyNeighbour() });
+            Assert.That(plan.Arms[0].Drop, Is.EqualTo(2));
+            Assert.That(plan.Arms[1].Rise, Is.EqualTo(2));
+        }
+
+        [Test]
         public void LeyManaFlowsAwayFromTheCrystals()
         {
             // Crystal at the left end: distances 0, 1, 2, 3 along the row; a network without crystals has none.
@@ -272,6 +294,154 @@ namespace TreasureRun.Tests
             // Crystals at both ends: the middle is furthest.
             r = LeyLineLogic.Solve(Cells((0, 0), (1, 0), (2, 0), (3, 0), (4, 0)), Cells((-1, 0), (5, 0)));
             Assert.That(r.Distance, Is.EqualTo(new[] { 0, 1, 2, 1, 0 }));
+        }
+            // ------------------------------------------------------------------ Particle Accelerator
+
+        /// <summary>
+        /// Seconds until the charge is full, draining from a pool of mana (spent as it drains) that gains
+        /// <paramref name="income"/> mana per second; <paramref name="ley"/> is the income of networks plugged into the core.
+        /// </summary>
+        private static float ChargeTime(int ley, ref int mana, int maxMana, float income = 0f, float limit = 300f)
+        {
+            var charge = new AcceleratorCharge();
+            const float dt = 0.02f;
+            float t = 0f, carry = 0f;
+            while (!charge.Full && t < limit)
+            {
+                carry += income * dt;
+                int gain = (int)carry;
+                carry -= gain;
+                mana = System.Math.Min(maxMana, mana + gain);
+                mana -= charge.Step(dt, mana, maxMana, ley);
+                t += dt;
+            }
+            return t;
+        }
+
+        [Test]
+        public void AcceleratorChargesInThirtySecondsWithEnoughMana()
+        {
+            Assert.That(ParticleAcceleratorLogic.Drain(0), Is.EqualTo(60f), "60 mana per second");
+            int mana = 10_000;
+            Assert.That(ChargeTime(0, ref mana, 10_000), Is.EqualTo(30f).Within(0.2f));
+            Assert.That(mana, Is.EqualTo(8200).Within(1), "30 s x 60 mana/s drained");
+        }
+
+        [Test]
+        public void AcceleratorNeverChargesFasterThanThirtySecondsWithoutLeyLines()
+        {
+            // Lots of income (from anything but a plugged-in Ley Line network) can't speed it up: the drain is capped.
+            int mana = 1000;
+            Assert.That(ChargeTime(0, ref mana, 1000, income: 300f), Is.EqualTo(30f).Within(0.2f));
+            // Less income than the drain: it takes as long as the income needs (18 mana/s from the floor: 100 s).
+            mana = 250;
+            Assert.That(ChargeTime(0, ref mana, 1000, income: 18f), Is.EqualTo(100f).Within(1.5f));
+        }
+
+        [Test]
+        public void AcceleratorStopsDrainingBelowAQuarterOfTheMana()
+        {
+            var charge = new AcceleratorCharge();
+            int mana = 400, max = 1000;
+            for (int i = 0; i < 1000; i++) mana -= charge.Step(0.02f, mana, max, 0);
+            Assert.That(mana, Is.GreaterThanOrEqualTo(250), "never below 25% of the maximum");
+            Assert.That(mana, Is.LessThan(252), "but drained down to it");
+            Assert.That(charge.Starved, Is.True);
+            float held = charge.Progress;
+            Assert.That(held, Is.EqualTo(150f / 1800f).Within(0.01f), "150 of the 1800 mana a charge needs");
+            for (int i = 0; i < 500; i++) mana -= charge.Step(0.02f, mana, max, 0);
+            Assert.That(charge.Progress, Is.EqualTo(held), "no charge while held at the floor");
+            // More mana comes in: it drains again.
+            mana += 30;
+            for (int i = 0; i < 100; i++) mana -= charge.Step(0.02f, mana, max, 0);
+            Assert.That(charge.Progress, Is.GreaterThan(held));
+        }
+
+        [Test]
+        public void PluggedInLeyLineIncomeShortensTheCharge()
+        {
+            int mana = 100_000;
+            Assert.That(ChargeTime(60, ref mana, 100_000), Is.EqualTo(15f).Within(0.2f), "drain doubled by 60 mana/s of Ley income");
+            mana = 100_000;
+            Assert.That(ChargeTime(18, ref mana, 100_000), Is.EqualTo(30f / 1.3f).Within(0.2f));
+            Assert.That(ParticleAcceleratorLogic.SecondsLeft(0.5f, 60), Is.EqualTo(7.5f).Within(1e-3));
+        }
+
+        [Test]
+        public void AcceleratorPoolsTheCapacitorsAndPicksTheStrongestCore()
+        {
+            var cannons = new List<CannonStats>
+            {
+                new CannonStats(3, 43, 15, 10, 20),
+                new CannonStats(5, 45, 16, 10, 20),
+                new CannonStats(5, 50, 15, 11, 20),
+            };
+            Assert.That(ParticleAcceleratorLogic.PickCore(cannons), Is.EqualTo(2), "highest level, then most damage");
+            Assert.That(ParticleAcceleratorLogic.PickCore(new List<CannonStats>()), Is.EqualTo(-1));
+            PooledDamage p = ParticleAcceleratorLogic.Pool(cannons);
+            Assert.That(p.Base, Is.EqualTo(138));
+            Assert.That(p.Cannons, Is.EqualTo(3));
+            float exact = 43 * 15 + 45 * 16 + 50 * 15;
+            Assert.That(p.Base * p.Health, Is.EqualTo(exact).Within(exact * 0.04f), "base x multiplier is the cannons' sum");
+            Assert.That(p.Armor, Is.EqualTo(10));
+            Assert.That(p.Shield, Is.EqualTo(20));
+            Assert.That(ParticleAcceleratorLogic.TickDamage(138), Is.EqualTo(55));
+            Assert.That(ParticleAcceleratorLogic.BurstDamage(138), Is.EqualTo(552));
+        }
+
+        [Test]
+        public void BlackHoleKeepsCaughtMonstersApart()
+        {
+            var rng = new SystemRng(7);
+            Vector3 centre = new Vector3(4f, 0.33f, -2f);
+            const int n = 30;
+            var slots = new OrbitSlot[n];
+            var pos = new Vector3[n];
+            for (int i = 0; i < n; i++)
+            {
+                slots[i] = ParticleAcceleratorLogic.Slot(i, rng);
+                float a = rng.Range(0f, 6.28f), d = rng.Range(0f, ParticleAcceleratorLogic.CaptureRadius);
+                pos[i] = centre + new Vector3(Mathf.Cos(a) * d, 0f, Mathf.Sin(a) * d);
+                Assert.That(ParticleAcceleratorLogic.InReach(centre, pos[i]), Is.True);
+            }
+            const float dt = 0.02f;
+            float minDist = float.MaxValue;
+            for (float age = 0f; age < ParticleAcceleratorLogic.HoleSeconds; age += dt)
+            {
+                for (int i = 0; i < n; i++)
+                    pos[i] = ParticleAcceleratorLogic.Pull(pos[i], ParticleAcceleratorLogic.OrbitPoint(centre, slots[i], age), dt);
+                if (age < 1.5f) continue; // pulled in by then
+                for (int i = 0; i < n; i++)
+                {
+                    float r = Vector3.Distance(pos[i], centre);
+                    if (age < 4f) Assert.That(r, Is.LessThan(ParticleAcceleratorLogic.OrbitMax + 0.15f), "in the disc");
+                    // (In the collapse the disc shrinks to a third: closer, but still apart.)
+                    float k = ParticleAcceleratorLogic.Collapse(age) > 0f ? 0.4f : 1f;
+                    for (int j = i + 1; j < n; j++) minDist = Mathf.Min(minDist, Vector3.Distance(pos[i], pos[j]) / k);
+                }
+            }
+            Assert.That(minDist, Is.GreaterThan(0.08f), "no two monsters on one point");
+            float spread = pos.Average(p => Vector3.Distance(p, centre));
+            Assert.That(spread, Is.LessThan(ParticleAcceleratorLogic.OrbitMax * 0.6f), "the collapse pulled them in");
+            Assert.That(spread, Is.GreaterThan(0.1f), "but not onto the centre");
+            // A monster at the rim is not snapped in: at most 6 units a second.
+            Vector3 rim = centre + new Vector3(ParticleAcceleratorLogic.CaptureRadius, 0f, 0f);
+            Assert.That(Vector3.Distance(rim, ParticleAcceleratorLogic.Pull(rim, centre, 0.1f)), Is.LessThanOrEqualTo(ParticleAcceleratorLogic.PullMaxSpeed * 0.1f + 1e-4f));
+        }
+
+        [Test]
+        public void SupernovaThrowsOneToThreeUnits()
+        {
+            var rng = new SystemRng(3);
+            for (int i = 0; i < 200; i++)
+            {
+                Vector3 o = ParticleAcceleratorLogic.ThrowOffset(rng);
+                Assert.That(o.y, Is.EqualTo(0f));
+                Assert.That(o.magnitude, Is.InRange(ParticleAcceleratorLogic.ThrowMin - 1e-4f, ParticleAcceleratorLogic.ThrowMax + 1e-4f));
+                Vector3 end = ParticleAcceleratorLogic.ThrowPoint(Vector3.zero, o, 1f);
+                Assert.That(Vector3.Distance(end, o), Is.LessThan(1e-4f), "lands where it was thrown");
+                Assert.That(ParticleAcceleratorLogic.ThrowPoint(Vector3.zero, o, 0.5f).y, Is.GreaterThan(0.3f), "with a hop");
+            }
         }
     }
 }

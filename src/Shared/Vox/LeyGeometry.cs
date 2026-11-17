@@ -223,6 +223,42 @@ namespace TreasureRun.Vox
         }
 
         /// <summary>
+        /// The coupler that plugs a pipe into the Particle Accelerator's core: a square gold flange (6x6, hollow where the
+        /// pipe passes) at tile y 19, against the socket on the core's base (whose face is at tile y 20, like a crystal's).
+        /// </summary>
+        private static void Flange(Part p)
+        {
+            for (int x = 5; x <= 10; x++)
+                for (int z = 1; z <= 6; z++)
+                {
+                    if (x >= 6 && x <= 9 && z >= 2 && z <= 5) continue;
+                    p.SetFrame(x, 19, z, Gold);
+                    bool edge = x == 5 || x == 10 || z == 1 || z == 6;
+                    p.SetFrame(x, 18, z, edge ? GoldDark : Gold);
+                }
+        }
+
+        /// <summary>
+        /// A feed into the Particle Accelerator's core on the same level (or a higher one, from a corner): the arm on to
+        /// tile y 19, violet (charged) past the tile edge, and the coupler flange at the core's Ley socket.
+        /// </summary>
+        public static Part Feed(int from)
+        {
+            Part p = Pipe(from);
+            TubeY(p, 16, 19, GlassViolet);
+            Flange(p);
+            return p;
+        }
+
+        /// <summary>A feed into a lower core: the lower drop corner (mouth at the socket) with the coupler flange.</summary>
+        public static Part FeedDrop()
+        {
+            Part p = DropCorner(false);
+            Flange(p);
+            return p;
+        }
+
+        /// <summary>
         /// Corner just past the tile edge (tile y 16..19, pipe-wide) for an intake down to a lower crystal. Upper: port
         /// from the arm (−y) and down. Lower (at the crystal's level): port up and an open mouth flush with the crystal
         /// (+y, at its face).

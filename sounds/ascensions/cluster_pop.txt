@@ -1,6 +1,0 @@
-ascensions/cluster_pop
-  duration 0.35 s | peak -2.9 dBFS | RMS -17.8 dBFS | loudest 50 ms -10.1 dBFS
-  attack 0 ms | decays to -30 dB at 0.25 s | brightness (spectral centroid) 3.1k
-  envelope per 50 ms (dBFS): -10 -18 -26 -32 -37 -58 -60
-  brightness per 100 ms:    1.9k 5.1k 6.4k -
-  dominant pitch per 100 ms: 237 129 4.2k -

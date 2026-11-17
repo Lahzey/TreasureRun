@@ -111,6 +111,7 @@ Generated from the source (`src/TreasureRun/Treasures/Effects`, console command 
 | **Master of Elements** (`master_of_elements`) | Every direct hit also applies 10% bleed, burn and poison. | Combat |
 | **Mega Mortar** (`mega_mortar`) | How big is too big? Mortar Modules built in a full square (2x2, 3x3, ...) fuse for good into one Mega Mortar: it hits as hard as all its modules together, with their levels averaged, a blast as many times bigger as the square is wide and +2 range per extra row. It stands on the highest of its tiles and keeps growing as you build bigger squares around it. | Ascension |
 | **Monolith** (`monolith`) | Towers deal 25% more damage and attack 5% faster for every tower fewer than 10 you own. | Build |
+| **Particle Accelerator** (`particle_accelerator`) | Bends the fabric of space itself. Your strongest Particle Cannon becomes the Accelerator: during waves it drains 60 mana per second (never below 25 %) and when charged (at least 30 s) fires a black hole that pulls in every monster near its target for 5 s, then bursts. Every other Particle Cannon becomes a Capacitor: it stops firing and adds its damage to the black hole. | Ascension |
 | **Prism of Ascendance** (`prism_of_ascendance`) | In every treasure offer, one treasure is upgraded by one rarity. Legendaries become Mythical. | Meta |
 | **Second Wind** (`second_wind`) | Once per run, when your castle would be destroyed, it survives with 50% health instead. | Starter |
 | **The Saw Dimension** (`saw_dimension`) | The floor is saw. Saws cover the whole path and cut every monster on the map 5 times a second, for a tenth of your Shredders' combined damage per second (with their bleed). Shredders stop attacking but keep levelling up. Without Shredders, the saws sink into the floor. | Ascension |
@@ -126,4 +127,4 @@ Generated from the source (`src/TreasureRun/Treasures/Effects`, console command 
 | **Time Dilation** (`time_dilation`) | All enemies move 30% slower. | Meta |
 | **War Blimp** (`war_blimp`) | Radar biplanes become huge, slow war blimps that hover over the thickest crowd, fire a gatling gun without pause and drop bombs on the track. Each blimp carries a tower slot on its deck: build any tower there and it flies along (counts as +3 high ground). | Ascension |
 
-Total: 93
+Total: 94

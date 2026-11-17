@@ -7,15 +7,15 @@ namespace SfxTool
     {
         private static void RegisterPhase2()
         {
-            Add("ascensions/icicle_launch", IcicleLaunch);
-            Variants("ascensions/icicle_shatter", 3, IcicleShatter);
-            Add("ascensions/cluster_pop", ClusterPop);
-            Variants("ascensions/rocket_whoosh", 4, RocketWhoosh);
-            Variants("ascensions/rocket_pop", 3, RocketPop);
-            Add("ascensions/magma_lob", MagmaLob);
-            Add("ascensions/magma_impact", MagmaImpact);
-            Add("ascensions/blade_whirr", BladeWhirr);
-            Add("ascensions/beam_hum", BeamHum);
+            Add("ascensions/icicle_cannon/icicle_launch", IcicleLaunch);
+            Variants("ascensions/icicle_cannon/icicle_shatter", 3, IcicleShatter);
+            Add("ascensions/cluster_munitions/cluster_pop", ClusterPop);
+            Variants("ascensions/hwacha/rocket_whoosh", 4, RocketWhoosh);
+            Variants("ascensions/hwacha/rocket_pop", 3, RocketPop);
+            Add("ascensions/magma_lobber/magma_lob", MagmaLob);
+            Add("ascensions/magma_lobber/magma_impact", MagmaImpact);
+            Add("ascensions/bladestorm/blade_whirr", BladeWhirr);
+            Add("ascensions/beam_cannon/beam_hum", BeamHum);
         }
 
         /// <summary>

@@ -8,6 +8,7 @@ namespace TreasureRun.Ascensions.Phase3
             SawEngine.Register();
             MortarModule.Register();
             LeySiphon.Register();
+            AcceleratorCannon.Register();
         }
 
         /// <summary>Follow-up cards, only drawable while their ascension is owned (called from CustomCards.RegisterAll).</summary>

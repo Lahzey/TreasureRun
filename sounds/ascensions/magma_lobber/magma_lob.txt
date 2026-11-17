@@ -1,0 +1,6 @@
+ascensions/magma_lobber/magma_lob
+  duration 0.80 s | peak -1.0 dBFS | RMS -17.7 dBFS | loudest 50 ms -8.8 dBFS
+  attack 5 ms | decays to -30 dB at 0.74 s | brightness (spectral centroid) 5.5k
+  envelope per 50 ms (dBFS): -9 -13 -18 -18 -19 -19 -23 -21 -21 -24 -24 -26 -28 -32 -37 -43
+  brightness per 100 ms:    4.4k 4.6k 5.0k 6.7k 6.1k 6.3k 7.8k 1.3k
+  dominant pitch per 100 ms: 108 86 65 86 86 65 65 86

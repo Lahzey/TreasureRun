@@ -190,7 +190,7 @@ namespace TreasureRun.Ascensions.Phase3
             recoil = 0f;
             if (!IsMega) return;
             Vector3 at = Tower.muzzle != null ? Tower.muzzle.position : transform.position + Vector3.up;
-            SoundLibrary.Play("ascensions/mega_launch", at, 0.75f, 0.05f, 3);
+            SoundLibrary.Play("ascensions/mega_mortar/mega_launch", at, 0.75f, 0.05f, 3);
             MeshRenderer r = barrel != null ? barrel.GetComponent<MeshRenderer>() : null;
             if (r != null)
             {
@@ -610,7 +610,7 @@ namespace TreasureRun.Ascensions.Phase3
                     main.scalingMode = ParticleSystemScalingMode.Hierarchy;
                 }
             }
-            SoundLibrary.Play("ascensions/mega_blast", p, 0.8f, 0.05f, 3);
+            SoundLibrary.Play("ascensions/mega_mortar/mega_blast", p, 0.8f, 0.05f, 3);
             Fx.VoxelBurst(p, Phase2Kit.FireColors, 10 * mega.Size, 0.07f * mega.Size, 2f + mega.Size, 0.6f, 3f);
             Fx.VoxelBurst(p, Phase2Kit.SmokeColors, 8 * mega.Size, 0.09f * mega.Size, 1f + 0.5f * mega.Size, 1.2f, -0.2f);
         }

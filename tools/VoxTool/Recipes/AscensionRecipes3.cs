@@ -13,6 +13,8 @@ namespace VoxTool.Recipes
             { "ascensions/shredder/saw_engine_base", ShredderBase },
             { "ascensions/shredder/saw_engine_turret", ShredderTurret },
             { "ascensions/mortar/mortar_module", MortarBase },
+            { "ascensions/particle/accelerator_base", ParticleBase },
+            { "ascensions/particle/capacitor_base", ParticleBase },
         };
 
         private static IEnumerable<(string, Func<VoxModel>)> Phase3All()
@@ -22,6 +24,7 @@ namespace VoxTool.Recipes
             yield return ("ascensions/shredder/saw_engine_base", SawEngineBase);
             yield return ("ascensions/shredder/saw_engine_turret", SawEngineTurret);
             foreach (var r in LeyAll()) yield return r;
+            foreach (var r in AcceleratorAll()) yield return r;
             yield return ("ascensions/mortar/mortar_module", MortarModule);
             yield return ("ascensions/mortar/mortar_barrel", () => MortarBody(1, 3, 11, true).ToModel("mortar_barrel"));
             yield return ("ascensions/mortar/mortar_shell", () => MortarShell(false));

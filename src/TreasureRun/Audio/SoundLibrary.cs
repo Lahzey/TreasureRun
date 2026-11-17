@@ -52,6 +52,33 @@ namespace TreasureRun.Audio
         }
 
         /// <summary>
+        /// Plays a one-shot in the world at full volume out to <paramref name="minDistance"/> (a temporary source with the
+        /// game's spatial settings), for loud events the pool's sources would fade with the camera's height.
+        /// </summary>
+        public static void PlayLoud(string name, Vector3 position, float volume, float minDistance)
+        {
+            SFXManager sfx = SFXManager.instance;
+            AudioClip clip = Get(name);
+            if (sfx == null || clip == null || sfx.volume <= 0f) return;
+            var go = new GameObject("TR_LoudSound_" + name);
+            go.transform.position = position;
+            var src = go.AddComponent<AudioSource>();
+            AudioSource template = sfx.sourceObject != null ? sfx.sourceObject.GetComponentInChildren<AudioSource>() : null;
+            if (template != null)
+            {
+                src.spatialBlend = template.spatialBlend;
+                src.rolloffMode = template.rolloffMode;
+                src.outputAudioMixerGroup = template.outputAudioMixerGroup;
+            }
+            src.minDistance = minDistance;
+            src.maxDistance = minDistance * 4f;
+            src.clip = clip;
+            src.volume = sfx.volume * volume;
+            src.Play();
+            UnityEngine.Object.Destroy(go, clip.length + 0.1f);
+        }
+
+        /// <summary>
         /// Plays a vanilla game sound at a fixed pitch (re-pitched variants: Repeater bursts, Springald pierces).
         /// Goes through the same pool and volume as SFXManager.PlaySound.
         /// </summary>
@@ -193,9 +220,17 @@ namespace TreasureRun.Audio
     public sealed class SoundLoop : MonoBehaviour
     {
         private AudioSource source;
+        private AudioSource[] extra = new AudioSource[0];
+        /// <summary>Loudness; above 1 needs <c>layers</c> (identical sources in sync: each doubling is +6 dB).</summary>
         public float Volume = 1f;
+        /// <summary>Playback pitch (1 = as recorded), e.g. a charge whine rising as it fills.</summary>
+        public float Pitch = 1f;
 
-        public static SoundLoop Start(string name, Transform parent, float volume = 1f)
+        /// <param name="minDistance">If set, the sound plays at full volume out to this distance (still placed in the
+        /// world): for loud events seen from the high game camera.</param>
+        /// <param name="layers">Identical sources played in sync, so <see cref="Volume"/> can go up to this (AudioSource
+        /// volume stops at 1): 3 layers = up to +9.5 dB.</param>
+        public static SoundLoop Start(string name, Transform parent, float volume = 1f, float minDistance = 0f, int layers = 1)
         {
             AudioClip clip = SoundLibrary.Get(name);
             if (clip == null || parent == null) return null;
@@ -214,17 +249,42 @@ namespace TreasureRun.Audio
                 loop.source.maxDistance = template.maxDistance;
                 loop.source.outputAudioMixerGroup = template.outputAudioMixerGroup;
             }
+            if (minDistance > 0f)
+            {
+                loop.source.minDistance = Mathf.Max(loop.source.minDistance, minDistance);
+                loop.source.maxDistance = Mathf.Max(loop.source.maxDistance, minDistance * 4f);
+            }
             loop.source.clip = clip;
             loop.source.loop = true;
             loop.source.playOnAwake = false;
+            loop.extra = new AudioSource[Mathf.Max(0, layers - 1)];
+            for (int i = 0; i < loop.extra.Length; i++)
+            {
+                AudioSource copy = go.AddComponent<AudioSource>();
+                copy.spatialBlend = loop.source.spatialBlend;
+                copy.rolloffMode = loop.source.rolloffMode;
+                copy.minDistance = loop.source.minDistance;
+                copy.maxDistance = loop.source.maxDistance;
+                copy.outputAudioMixerGroup = loop.source.outputAudioMixerGroup;
+                copy.clip = clip;
+                copy.loop = true;
+                copy.playOnAwake = false;
+                loop.extra[i] = copy;
+            }
             loop.Update();
+            // Started in the same frame and kept at the same pitch: they stay sample-aligned and add up.
             loop.source.Play();
+            foreach (AudioSource e in loop.extra) e.Play();
             return loop;
         }
 
         private void Update()
         {
-            if (source != null) source.volume = (SFXManager.instance != null ? SFXManager.instance.volume : 0.5f) * Volume;
+            if (source == null) return;
+            float v = (SFXManager.instance != null ? SFXManager.instance.volume : 0.5f) * Volume / (extra.Length + 1);
+            source.volume = v;
+            source.pitch = Pitch;
+            foreach (AudioSource e in extra) { e.volume = v; e.pitch = Pitch; }
         }
     }
 }

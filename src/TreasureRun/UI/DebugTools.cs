@@ -264,6 +264,7 @@ namespace TreasureRun.UI
             Voxels.VoxelLibrary.ClearCache();
             ModelIcons.ClearCache();
             Audio.SoundLibrary.ClearCache();
+            Ascensions.Phase3.MorphData.ClearCache();
             Voxels.ModelOverrides.ApplyAll();
 
             string[] names = (ModConfig.DebugPreviewModels.Value ?? "")
