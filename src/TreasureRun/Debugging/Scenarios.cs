@@ -200,6 +200,7 @@ namespace TreasureRun.Debugging
         {
             new BallistaDpsScenario(),
             new AscensionAttachScenario(),
+            new PaintBuildScenario(),
         }.Concat(Phase1Scenarios.All).Concat(Phase2Scenarios.All).Concat(Phase3Scenarios.All).ToList();
 
         private static Runner runner;

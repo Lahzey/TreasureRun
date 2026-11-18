@@ -18,6 +18,7 @@ namespace TreasureRun.Core
         public static ConfigEntry<UnityEngine.KeyCode> DebugModelKey { get; private set; }
         public static ConfigEntry<string> DebugPreviewModels { get; private set; }
         public static ConfigEntry<bool> LoadingAnimation { get; private set; }
+        public static ConfigEntry<bool> DragToBuild { get; private set; }
         public static ConfigEntry<int> HwachaRockets { get; private set; }
 
         /// <summary>The plugin's config file (for the dev console's <c>config</c> command).</summary>
@@ -29,6 +30,10 @@ namespace TreasureRun.Core
             LoadingAnimation = config.Bind("General", "LoadingAnimation", true,
                 "Play the circle wipe when switching between menu and game. Off: the loading screen appears and disappears " +
                 "instantly. (The vanilla 3-second minimum loading time is always removed.) Also in the in-game Options menu.");
+            DragToBuild = config.Bind("General", "DragToBuild", true,
+                "In build mode, hold Shift and keep the left mouse button pressed after placing a tower to paint a line of " +
+                "the same tower or building over every free cell the cursor passes (one per cell, each at its usual price). " +
+                "Also in the in-game Options menu.");
             HwachaRockets = config.Bind("Ascensions", "HwachaRockets", 20,
                 "Rockets per Hwacha volley (Cannon ascension). The damage per rocket stays the same, so more rockets = more damage.");
             ShowDevHud = config.Bind("Debug", "ShowDevHud", true,

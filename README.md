@@ -126,6 +126,7 @@ In game, the dev console command `treasuredoc` writes `console/treasures.md` in 
 
 - **Offline:** `dotnet test tests/TreasureRun.Tests` (seconds; game logic ports and the mod's pure logic files).
 - **In game:** the dev console (`§`, `` ` `` or F10, or the file `BepInEx\plugins\TreasureRun\console\in.txt`, output in `console\out.txt`). `scenario all` runs every scenario; `scenario <name>` one (`scenario accelerator-morph` plays the accelerator transformation both ways and saves frames to `screens/`). `help` lists the commands; [CLAUDE.md](CLAUDE.md) has the most useful ones.
+- **Building many at once:** in build mode, hold Shift, click and keep the button pressed: dragging paints the same tower or building on every free cell the cursor passes (a line without diagonal gaps, so Ley Siphons stay connected), each at its usual price. Setting `General.DragToBuild` (on by default; "Shift-drag to build" in the Options menu). `scenario paint-build` checks it (through the same placement code; the mouse itself can't be driven from the console).
 
 ## Quick reference
 

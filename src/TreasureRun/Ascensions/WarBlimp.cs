@@ -358,6 +358,9 @@ namespace TreasureRun.Ascensions
     {
         private static BlimpDeck pending;
 
+        /// <summary>The build ghost sits on a War Blimp deck (shift-drag building stops there).</summary>
+        internal static bool OverDeck => pending != null;
+
         /// <summary>Build mode: a ray hitting a free deck shows the ghost on the deck (it follows the blimp).</summary>
         [HarmonyPrefix, HarmonyPatch(typeof(BuildingManager), nameof(BuildingManager.SamplePoint))]
         private static bool SamplePointPrefix(BuildingManager __instance, ref bool __result)

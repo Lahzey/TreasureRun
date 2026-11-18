@@ -9,8 +9,9 @@ namespace TreasureRun.UI
 {
     /// <summary>
     /// Adds mod settings as extra toggle rows to the vanilla Options panel (main menu and in-game pause menu).
-    /// A row is a clone of the last vanilla toggle ("Projectile D.O.T. FX"). The panel grows by one row: toggles are
-    /// anchored to its top and the sliders/Back button to its bottom, so the new row fits between them.
+    /// A row is a clone of the last vanilla toggle ("Projectile D.O.T. FX"), placed one row further down per setting.
+    /// The panel grows by one row for each: toggles are anchored to its top and the sliders/Back button to its
+    /// bottom, so the new rows fit between them.
     /// </summary>
     [HarmonyPatch]
     internal static class OptionsMenuExtras
@@ -22,7 +23,8 @@ namespace TreasureRun.UI
             {
                 Toggle template = __instance.projectileFXToggle;
                 if (template == null) return;
-                AddToggleRow(template, __instance.showConditionToggle, "Loading animation", ModConfig.LoadingAnimation);
+                AddToggleRow(template, __instance.showConditionToggle, 1, "Loading animation", ModConfig.LoadingAnimation);
+                AddToggleRow(template, __instance.showConditionToggle, 2, "Shift-drag to build", ModConfig.DragToBuild);
             }
             catch (Exception e)
             {
@@ -30,7 +32,8 @@ namespace TreasureRun.UI
             }
         }
 
-        private static void AddToggleRow(Toggle template, Toggle previous, string label, ConfigEntry<bool> entry)
+        /// <param name="index">1 for the first row added under the template, 2 for the next, ...</param>
+        private static void AddToggleRow(Toggle template, Toggle previous, int index, string label, ConfigEntry<bool> entry)
         {
             var templateRect = (RectTransform)template.transform;
             var panel = (RectTransform)templateRect.parent;
@@ -45,7 +48,7 @@ namespace TreasureRun.UI
             GameObject row = UnityEngine.Object.Instantiate(template.gameObject, panel, false);
             row.name = "TreasureRun_" + entry.Definition.Key;
             var rowRect = (RectTransform)row.transform;
-            rowRect.anchoredPosition = templateRect.anchoredPosition - new Vector2(0f, step);
+            rowRect.anchoredPosition = templateRect.anchoredPosition - new Vector2(0f, step * index);
 
             Text text = row.GetComponentInChildren<Text>(true);
             if (text != null) text.text = label;
