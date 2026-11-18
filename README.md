@@ -133,6 +133,8 @@ In game, the dev console command `treasuredoc` writes `console/treasures.md` in 
 | I changed… | Run | Then |
 |---|---|---|
 | mod code | `dotnet build src/TreasureRun -c Release` | restart the game |
+| a treasure or card (balance) | its spec in `Balance/Specs/ContentSpecs.cs`, then `dotnet test tests/TreasureRun.Tests` | in game: `balance report`, then copy `console/balance.*` to `docs/balance-report.*` |
+| the game version (monster data) | `python tools/balance/extract_monsters.py ../Ripped/ExportedProject/Assets` | build the mod |
 | a model recipe | VoxTool `build ../../models <prefix>` | build the mod, F6 |
 | the transformation (steps, `TimeScale`) | VoxTool `morph ../../models` | build the mod, F6; SfxTool `morphpreview` |
 | a sound recipe | `dotnet build -c Release` in `tools/SfxTool`, then SfxTool `build ../../sounds <prefix>` | build the mod, F6; `morphpreview` for transformation sounds |

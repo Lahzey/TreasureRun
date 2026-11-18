@@ -669,6 +669,10 @@ namespace TreasureRun.UI
                 Print($"Wrote {file}");
             });
 
+            Add("balance", "balance <id|title> | report | coverage | pathstats",
+                "Balance points (docs/balance-framework.md): one item's points and curve, the full report (console/balance.md, .csv), " +
+                "items without a spec, or the map's path statistics.", false, a => Print(Balance.Game.BalanceGame.Command(a, Dir)));
+
             Add("zoom", "zoom <size> [x z]", "Orthographic camera size (vanilla 1-50) and optional focus point.", false, a =>
             {
                 if (Camera.main != null) Camera.main.orthographicSize = float.Parse(Arg(a, 0, "10"), System.Globalization.CultureInfo.InvariantCulture);

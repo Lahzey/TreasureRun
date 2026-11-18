@@ -215,7 +215,7 @@ For checks of the form "set up a situation, expect an outcome", a deterministic 
 | Particle Accelerator | Charges in 30 s with enough mana and never faster without Ley Lines; stops below 25%; only Ley networks plugged into the core shorten it |
 | Ley Line Network | Flood fill networks; income = siphons × crystals touched |
 
-The sim also writes a **balance report** (`tests/out/balance.md`): DPS of each ascension vs. its vanilla tower at levels 1/10/30, which feeds `docs/balance-todo.md`.
+The balance framework ([balance-framework.md](balance-framework.md)) writes the **balance report** ([balance-report.md](balance-report.md), dev command `balance report`). Each ascension has a spec in `Balance/Specs/ContentSpecs.cs`, mostly a proxy marked for the M8 simulation.
 
 ### 2.4 Tier 3: in-game scenarios, many per launch
 

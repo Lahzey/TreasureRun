@@ -68,6 +68,10 @@ namespace TreasureRun.Cards
 
         internal static string TitleOf(UpgradeCard c) => (c.title ?? "").Trim();
 
+        /// <summary>Whether a vanilla card belongs to the Treasure Run pool (by class or title whitelist).</summary>
+        internal static bool Whitelisted(UpgradeCard c) =>
+            WhitelistedClasses.Contains(c.GetType().Name) || WhitelistedTitles.Any(w => w.title == TitleOf(c));
+
         public static void Build(CardManager cm)
         {
             picked.Clear();

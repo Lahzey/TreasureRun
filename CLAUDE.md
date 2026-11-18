@@ -9,6 +9,7 @@ Building, regenerating assets (models, the accelerator transformation, sounds) a
   - content tags drive castle bans
   - castle-exclusive content
 - Balance concerns go into `docs/balance-todo.md`, not into ad-hoc tweaks. Visual improvements for later go into `docs/visual-todo.md`.
+- Every new treasure and custom card gets a balance spec in `src/TreasureRun/Balance/Specs/ContentSpecs.cs` (one line, `docs/balance-framework.md` §7); `dotnet test` and `scenario balance` check coverage. After content changes, regenerate the report (`balance report`, then copy `console/balance.md` and `.csv` to `docs/balance-report.*`).
 - Castles work in every mode (normal and Treasure Run). Treasure Run–only logic checks `TreasureRunMode.Active`.
 - Castle models are generated from code (`tools/VoxTool/Recipes`, `dotnet run -- build ../../models`). They must be grounded (`VoxCanvas.Grounded()`), because the grass layer hides the lowest ~4 voxels.
 - Ascensions follow `docs/ascension-plan.md`: register through `AscensionRegistry` (exclusion group per tower), behaviour in an `AscendedTower` component, mechanics in a pure `*Logic.cs` file (only `System`, `Vector3`/`Mathf`, `IRng`) with offline tests.
@@ -34,4 +35,5 @@ Building, regenerating assets (models, the accelerator transformation, sounds) a
   - `zoom <size> [x z]` for close-ups, `speed 0` to freeze a moment, `closeui`, `bounds <name>` to check overlaps
   - `planes` lists Radar planes (ascension, target, bomber phase, blimp deck); `deckbuild <name>` builds on a free War Blimp deck
   - `treasuredoc` writes `console/treasures.md`; copy it to `docs/treasures.md` after treasure changes
+  - `balance <id|title>` prints an item's points, curve and breakdown; `balance report` writes the balance report; `balance pathstats` measures the map's path statistics
 - Test castle mechanics under realistic conditions (e.g. a few ballistas on an early wave) and use `god` so the run survives the test.

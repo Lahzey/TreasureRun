@@ -29,6 +29,8 @@
   <ItemGroup>
     <Compile Include="..\..\src\TreasureRun\Core\IRng.cs" Link="Linked\IRng.cs" />
     <Compile Include="..\..\src\TreasureRun\**\*Logic.cs" Link="Linked\%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- The balance model (docs/balance-framework.md) is pure as a whole, except its in-game part in Balance/Game. -->
+    <Compile Include="..\..\src\TreasureRun\Balance\**\*.cs" Exclude="..\..\src\TreasureRun\Balance\Game\**;..\..\src\TreasureRun\Balance\**\*Logic.cs" Link="Linked\Balance\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

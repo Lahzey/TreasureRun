@@ -9,3 +9,6 @@ Directory.Build.user.props
 
 # Review mixes (SfxTool morphpreview), regenerated on demand
 sounds/previews/
+
+# Offline test output (balance report preview)
+tests/out/

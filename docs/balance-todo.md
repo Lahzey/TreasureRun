@@ -48,3 +48,17 @@ Things known to need tuning, collected for M9 (content & balance). All numbers a
 
 - Starter treasures are M2 placeholders. Review all of them in M9 (see `docs/treasures.md`).
 - Siege Workshop treasures (Wall Cannons … Trebuchet Battery) and Druid Grove treasures (Sapling Seeds, Ironbark, Golden Sap) are untested beyond a smoke test.
+
+## Balance framework: first report
+
+From [balance-report.md](balance-report.md) (M7.5). **No balance changes yet:** the treasures are mostly placeholders; the framework is there so the Points of Interest (M8) can be designed somewhat balanced. All constants are uncalibrated until the M8 simulation and the recorded runs of M9. Budgets: Common 12, Uncommon 18, Rare 24, Epic 30, Legendary 36, Mythical 54; ascensions 25% more.
+
+**The model's own doubts (calibrate in M8/M9):**
+- **Towers per gold:** with the density calibrated so that Tesla Coil and Mortar match Ballista, Obelisk and Particle Cannon (about 10–23 points per 1000 gold), Flame Thrower, Poison Sprayer, Shredder, Frost Keep and the Radar still come out about 3× higher. That comes from damage over time (the +1 layer multiplier for every tower, burn and poison doubling the damage up to the tick cap), slows, and the plane reaching the whole map, not from density. Encampment (2.5) and Lookout (2–3) come out very low.
+- **The safety net** (0.35 weight) and the **mana price** (150 gold per mana/s) are chosen numbers.
+- **Ascensions** are proxies ("about x times its tower") until the simulation measures them; they may be 25% above their rarity.
+
+**Leads (likely real, check in play):**
+- **Over:** Infinity Engine 88 vs 54 (twice the attack speed is ln 2 = 69 points by definition); Hoarder 39 vs 18 late (+4% per treasure, about 12 treasures by wave 45); Jackpot 42 vs 24 late; First Strike 24 vs 12 early; Trophy Hunter 27 vs 12 (+0.5 chests per mini-boss, about 7 more treasures per run); Monolith on a small board; the treasure cards Lucky Find and Blood Pact against the card budget of 2–6.
+- **Under:** Prism of Ascendance 2.9 and Lucky Coin 2.2 (a rarity step is about 4 points per treasure, treasures come about every 4 waves); Quick Study 3.6 (one more card every 6 waves, about 4.5 points each); Thunderclap, Shatter and Permafrost (freezes rarely matter without the others); most economy cards late; Time Dilation 29 vs 54.
+- **Mana Bolts** come out slightly negative (−2): the +4 Ballista damage is worth about 5 points, the mana it costs a bit more. Mana generation (Sorcery, siphons) is worth its building price.

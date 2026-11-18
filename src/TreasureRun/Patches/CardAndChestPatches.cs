@@ -89,6 +89,7 @@ namespace TreasureRun.Patches
         [HarmonyPostfix, HarmonyPatch(typeof(CardManager), nameof(CardManager.DisplayCards))]
         private static void DisplayCardsPostfix(CardManager __instance, int count)
         {
+            Balance.Game.BalanceOverlay.Cards(__instance, count);
             if (TreasureRunMode.Active) LevelUpTreasureSlots.Roll(__instance, count);
         }
     }

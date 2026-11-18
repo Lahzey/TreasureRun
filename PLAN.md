@@ -214,8 +214,9 @@ Next: phase 1 (Repeater, Springald, Lone Scout, Chain Lightning, Supercharge, Se
 | **M5 Voxel pipeline** | Mesh→vox converter, runtime vox loader |
 | **M6 Main tower** | Play menu overhaul, castle framework, 10 castles (more to come) |
 | **M7 Ascensions** | Radar/BiPlane → Strike Fighter / Carpet Bomber / War Blimp (done); infrastructure (done); then the other towers in three phases ([docs/ascension-plan.md](docs/ascension-plan.md)) |
-| **M8 POIs** | Mage Tower first |
-| **M9 Content & balance** | 150+ treasures, Prism of Ascendance, Mythicals, release |
+| **M7.5 Balance framework** | Power points for every card, treasure, tower and building: effect atoms, formulas on authored reference boards, value at a good moment, situational factor, rarity budgets, report ([docs/balance-framework.md](docs/balance-framework.md), steps B0–B3). Done: report in [docs/balance-report.md](docs/balance-report.md) |
+| **M8 POIs** | Mage Tower first; the full balance simulation alongside (balance framework B4) |
+| **M9 Content & balance** | 150+ treasures, Prism of Ascendance, Mythicals, release; recorded reference boards for the final balance touches (balance framework B5) |
 | **M10 Save/resume** | Between-wave save and load for Treasure Run, then optionally for vanilla mode |
 
 ## 10. Decisions on former open questions

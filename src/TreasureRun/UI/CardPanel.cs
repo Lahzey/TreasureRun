@@ -68,6 +68,7 @@ namespace TreasureRun.UI
             if (card != null) card.color = Color.Lerp(Color.white, RarityInfo.IconColor(t.Rarity), 0.3f);
 
             if (asc != null) AscensionCard.Show(cm, i, asc, card);
+            Balance.Game.BalanceOverlay.Treasure(cm, i, t);
         }
 
         /// <summary>
