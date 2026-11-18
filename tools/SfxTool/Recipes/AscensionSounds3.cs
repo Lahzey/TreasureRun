@@ -19,6 +19,7 @@ namespace SfxTool
             Add("ascensions/particle_accelerator/accel_servo", AccelServo);
             RegisterMorph();
             Add("ascensions/particle_accelerator/accel_latch", AccelLatch);
+            RegisterSun();
         }
 
         /// <summary>

@@ -154,6 +154,8 @@ Treasures that turn a tower into something new. They share an exclusion group pe
 
 **Phase 0 (infrastructure), done:** `AscensionRegistry`/`AscensionDef`/`AscendedTower` framework, ascension card look (type-line banner, crest, model art, frame), tower model swap and popup title, offline tests (`tests/TreasureRun.Tests`: `SimDamage`, `SimWorld`), in-game `scenario` runner, SfxTool + `SoundLibrary` (`docs/sound-workflow.md`), and a dev-only test ascension (Proving Ground). Not committed yet.
 
+**Phases 1–3, built:** every tower and building ascension in the plan, the last being Ritual of the Sun (Obelisk). Left for M7: listening to the newer sounds, playtests and the balance notes (`docs/balance-todo.md`).
+
 **Radar (`ascension:radar`), implemented:**
 - The vanilla `BiPlane` stays in place, so the Radar keeps feeding it target and stats and Wingman still works. An `AscendedPlane` component swaps the model and retargets instantly.
 - **Strike Fighter** (Rare): the vanilla dogfight AI with jet numbers: 2.2× speed, tighter turns (turn time 0.55 s instead of 1.5), fire interval ×0.6, 30-round magazine, shorter breakaway. Delta-wing jet with an afterburner trail.

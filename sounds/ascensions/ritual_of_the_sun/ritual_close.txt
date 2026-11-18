@@ -1,0 +1,6 @@
+ascensions/ritual_of_the_sun/ritual_close
+  duration 3.20 s | peak -3.0 dBFS | RMS -18.4 dBFS | loudest 50 ms -13.2 dBFS
+  attack 460 ms | decays to -30 dB at 3.03 s | brightness (spectral centroid) 1.6k
+  envelope per 50 ms (dBFS): -21 -18 -20 -18 -17 -18 -16 -16 -16 -13 -14 -17 -17 -17 -17 -17 -17 -17 -14 -16 -16 -15 -14 -14 -15 -15 -15 -15 -16 -15 -16 -16 -19 -19 -20 -21 -22 -22 -23 -21 -23 -21 -24 -25 -26 -26 -27 -28 -29 -28 -28 -29 -29 -30 -30 -32 -34 -35 -37 -39 -43 -47 -51 -60
+  brightness per 100 ms:    1.5k 1.7k 1.7k 1.9k 2.1k 1.8k 1.6k 1.6k 1.7k 1.8k 2.0k 1.9k 1.7k 1.4k 1.3k 1.2k 1.3k 1.3k 1.3k 1.2k 1.2k 1.2k 1.2k 1.2k 1.1k 1.1k 1.1k 1.1k 1.1k 1.1k 1.1k 1.0k
+  dominant pitch per 100 ms: 581 581 581 883 883 883 883 1.2k 883 883 883 668 151 151 151 151 754 1.3k 732 883 883 883 883 732 883 301 301 883 301 301 301 301

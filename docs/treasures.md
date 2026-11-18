@@ -124,7 +124,8 @@ Generated from the source (`src/TreasureRun/Treasures/Effects`, console command 
 |---|---|---|
 | **Infinity Engine** (`infinity_engine`) | All towers attack twice as fast and use half as much mana. | Meta |
 | **Midas Touch** (`midas_touch`) | Gold from monsters, income buildings and trees is doubled. | Starter |
+| **Ritual of the Sun** (`ritual_of_the_sun`) | Show your devotion and be rewarded. Obelisks link with beams of light; close a circle and the sun strikes its centre, burning every monster inside with the circle's average damage (100% burn, wider with more obelisks). Outside circles: 25 % burn. | Ascension |
 | **Time Dilation** (`time_dilation`) | All enemies move 30% slower. | Meta |
 | **War Blimp** (`war_blimp`) | Radar biplanes become huge, slow war blimps that hover over the thickest crowd, fire a gatling gun without pause and drop bombs on the track. Each blimp carries a tower slot on its deck: build any tower there and it flies along (counts as +3 high ground). | Ascension |
 
-Total: 94
+Total: 95

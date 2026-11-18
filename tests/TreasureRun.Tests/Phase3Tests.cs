@@ -443,5 +443,172 @@ namespace TreasureRun.Tests
                 Assert.That(ParticleAcceleratorLogic.ThrowPoint(Vector3.zero, o, 0.5f).y, Is.GreaterThan(0.3f), "with a hop");
             }
         }
+
+        // ------------------------------------------------------------------ Ritual of the Sun
+
+        private static List<RitualNode> Obelisks(float range, params float[] xz)
+        {
+            var nodes = new List<RitualNode>();
+            for (int i = 0; i < xz.Length; i += 2) nodes.Add(new RitualNode(xz[i], xz[i + 1], range));
+            return nodes;
+        }
+
+        /// <summary>The rings as sets of positions (independent of the node order).</summary>
+        private static List<string> RingShapes(List<RitualNode> nodes, RitualSolution s) =>
+            s.Rings.Select(r => string.Join(" ", r.Select(i => $"{nodes[i].Pos.x},{nodes[i].Pos.y}").OrderBy(p => p))).OrderBy(p => p).ToList();
+
+        [Test]
+        public void RitualFindsTrianglesSquaresAndHexagons()
+        {
+            var tri = Obelisks(5f, 0, 0, 4, 0, 2, 3);
+            RitualSolution s = RitualLogic.Solve(tri);
+            Assert.That(s.Rings.Count, Is.EqualTo(1));
+            Assert.That(s.Rings[0].Count, Is.EqualTo(3));
+            Assert.That(s.Chains, Is.Empty);
+            Assert.That(s.RingOf, Is.EqualTo(new[] { 0, 0, 0 }));
+            var poly = s.Rings[0].Select(i => tri[i].Pos).ToList();
+            Assert.That(RitualLogic.SignedArea(poly), Is.GreaterThan(0f), "counter-clockwise");
+
+            // A square links round its sides, not across.
+            var square = Obelisks(5f, 0, 0, 3, 0, 3, 3, 0, 3);
+            s = RitualLogic.Solve(square);
+            Assert.That(s.Rings.Count, Is.EqualTo(1));
+            Assert.That(s.Rings[0], Is.EqualTo(new[] { 0, 1, 2, 3 }));
+            Assert.That(s.Linked(0, 2) || s.Linked(1, 3), Is.False);
+
+            // Six round a circle of radius 3.
+            var hex = new List<RitualNode>();
+            for (int i = 0; i < 6; i++) hex.Add(new RitualNode(3f * Mathf.Cos(i * Mathf.PI / 3f), 3f * Mathf.Sin(i * Mathf.PI / 3f), 5f));
+            s = RitualLogic.Solve(hex);
+            Assert.That(s.Rings.Count, Is.EqualTo(1));
+            Assert.That(s.Rings[0].Count, Is.EqualTo(6));
+            Assert.That(s.Links.Count, Is.EqualTo(6));
+
+            // Two rows of three on both sides of a path close into one ring of six.
+            var rows = Obelisks(5f, 0, 0, 2, 0, 4, 0, 0, 3, 2, 3, 4, 3);
+            s = RitualLogic.Solve(rows);
+            Assert.That(s.Rings.Count, Is.EqualTo(1));
+            Assert.That(s.Rings[0].Count, Is.EqualTo(6));
+        }
+
+        [Test]
+        public void RitualChainsWithoutACycleAreNoRing()
+        {
+            // The third side is out of range: a chain.
+            var bent = Obelisks(5f, 0, 0, 4, 0, 4, 4);
+            RitualSolution s = RitualLogic.Solve(bent);
+            Assert.That(s.Rings, Is.Empty);
+            Assert.That(s.Chains.Count, Is.EqualTo(1));
+            Assert.That(s.Chains[0], Is.EqualTo(new[] { 0, 1, 2 }));
+            Assert.That(s.RingOf, Is.EqualTo(new[] { -1, -1, -1 }));
+
+            // A straight row: the beam from end to end would pass through the middle obelisk.
+            var row = Obelisks(5f, 0, 0, 2, 0, 4, 0);
+            s = RitualLogic.Solve(row);
+            Assert.That(s.Rings, Is.Empty);
+            Assert.That(s.Linked(0, 2), Is.False);
+            Assert.That(s.Links.Count, Is.EqualTo(2));
+
+            // Two obelisks link once: no ring of two.
+            s = RitualLogic.Solve(Obelisks(5f, 0, 0, 2, 0));
+            Assert.That(s.Links.Count, Is.EqualTo(1));
+            Assert.That(s.Rings, Is.Empty);
+
+            // Out of range: no link. The larger range counts.
+            Assert.That(RitualLogic.Solve(Obelisks(5f, 0, 0, 6, 0)).Links, Is.Empty);
+            var mixed = new List<RitualNode> { new RitualNode(0, 0, 5f), new RitualNode(6, 0, 6.5f) };
+            Assert.That(RitualLogic.Solve(mixed).Links.Count, Is.EqualTo(1));
+
+            // Each obelisk holds two beams: one close to a triangle's corner takes a beam, and the triangle stays open
+            // (the newcomer can't reach the far corner to close a ring of four).
+            var tail = Obelisks(3.5f, 0, 0, 3, 0, 1.5f, 2.6f, -1.5f, 0);
+            s = RitualLogic.Solve(tail);
+            Assert.That(s.Rings, Is.Empty);
+            Assert.That(s.Chains.Count, Is.EqualTo(1));
+            Assert.That(s.Chains[0].Count, Is.EqualTo(4));
+            // With the range to reach it, it joins: a ring of four.
+            tail = Obelisks(5f, 0, 0, 3, 0, 1.5f, 2.6f, -1.5f, 0);
+            Assert.That(RitualLogic.Solve(tail).Rings.Single().Count, Is.EqualTo(4));
+        }
+
+        [Test]
+        public void RitualDoesNotDependOnBuildOrder()
+        {
+            // A grid with many equal distances, in many orders: always the same rings and links.
+            var grid = Obelisks(5f, 0, 0, 2, 0, 4, 0, 0, 2, 4, 2, 0, 4, 2, 4, 4, 4, 9, 0, 11, 0, 10, 2);
+            RitualSolution first = RitualLogic.Solve(grid);
+            Assert.That(first.Rings.Count, Is.GreaterThanOrEqualTo(1));
+            List<string> shapes = RingShapes(grid, first);
+            var links = first.Links.Select(l => $"{grid[l.A].Pos}-{grid[l.B].Pos}").Select(k => k).ToList();
+            var rng = new System.Random(5);
+            for (int trial = 0; trial < 30; trial++)
+            {
+                List<RitualNode> shuffled = grid.OrderBy(_ => rng.Next()).ToList();
+                RitualSolution s = RitualLogic.Solve(shuffled);
+                Assert.That(RingShapes(shuffled, s), Is.EqualTo(shapes));
+                Assert.That(s.Links.Count, Is.EqualTo(first.Links.Count));
+                foreach (var l in s.Links)
+                {
+                    int a = grid.FindIndex(g => g.Pos == shuffled[l.A].Pos), b = grid.FindIndex(g => g.Pos == shuffled[l.B].Pos);
+                    Assert.That(first.Linked(a, b), Is.True);
+                }
+            }
+            // No obelisk ever holds more than two beams.
+            var degree = new int[grid.Count];
+            foreach (var l in first.Links) { degree[l.A]++; degree[l.B]++; }
+            Assert.That(degree.Max(), Is.LessThanOrEqualTo(RitualLogic.MaxLinks));
+            // Two separate triangles are two rings.
+            RitualSolution two = RitualLogic.Solve(Obelisks(5f, 0, 0, 3, 0, 1.5f, 2.5f, 20, 0, 23, 0, 21.5f, 2.5f));
+            Assert.That(two.Rings.Count, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void RitualBeamCentreRadiusAndStats()
+        {
+            Vector2 c = RitualLogic.Centre(new List<Vector2> { new Vector2(0, 0), new Vector2(4, 0), new Vector2(4, 4), new Vector2(0, 4) });
+            Assert.That(Vector2.Distance(c, new Vector2(2, 2)), Is.LessThan(1e-4f));
+            // A triangle: the centroid.
+            c = RitualLogic.Centre(new List<Vector2> { new Vector2(0, 0), new Vector2(6, 0), new Vector2(0, 3) });
+            Assert.That(Vector2.Distance(c, new Vector2(2, 1)), Is.LessThan(1e-4f));
+            // An L-shaped ring: the centre of its area, not of its corners.
+            var l = new List<Vector2> { new Vector2(0, 0), new Vector2(4, 0), new Vector2(4, 1), new Vector2(1, 1), new Vector2(1, 4), new Vector2(0, 4) };
+            c = RitualLogic.Centre(l);
+            Assert.That(c.x, Is.EqualTo(c.y).Within(1e-4f));
+            Assert.That(c.x, Is.LessThan(1.6f));
+
+            Assert.That(RitualLogic.Radius(3), Is.EqualTo(0.65f).Within(1e-5f));
+            Assert.That(RitualLogic.Radius(7), Is.EqualTo(1.65f).Within(1e-5f));
+            Assert.That(RitualLogic.Radius(40), Is.EqualTo(RitualLogic.MaxRadius));
+            // The crystal easter egg: the centre must lie on the crystal's own cell.
+            Assert.That(RitualLogic.OnCell(new Vector2(4.3f, -2.4f), new Vector2(4f, -2f)), Is.True);
+            Assert.That(RitualLogic.OnCell(new Vector2(4.6f, -2f), new Vector2(4f, -2f)), Is.False);
+
+            // Average damage; burn 100% (+ the cards' burn: members carry 25% + 10% from a card).
+            var members = new List<RitualMemberStats>
+            {
+                new RitualMemberStats { Damage = 8, HealthMult = 5, ArmorMult = 10, ShieldMult = 2, Burn = 0.35f, Interval = 1f / 6f, ManaRate = 0.25f },
+                new RitualMemberStats { Damage = 9, HealthMult = 6, ArmorMult = 10, ShieldMult = 2, Burn = 0.35f, Interval = 1f / 6f, ManaRate = 0.25f },
+                new RitualMemberStats { Damage = 13, HealthMult = 7, ArmorMult = 11, ShieldMult = 3, Burn = 0.35f, Interval = 1f / 6f, ManaRate = 0.25f },
+            };
+            RitualBeamStats b = RitualLogic.Average(members);
+            Assert.That(b.Damage, Is.EqualTo(10f).Within(1e-4f));
+            Assert.That(b.HealthMult, Is.EqualTo(6));
+            Assert.That(b.ArmorMult, Is.EqualTo(10));
+            Assert.That(b.Burn, Is.EqualTo(1.1f).Within(1e-4f));
+            Assert.That(b.Rate, Is.EqualTo(6f).Within(1e-3f));
+            Assert.That(b.Mana, Is.EqualTo(2.5f).Within(1e-4f));
+
+            // Hits of an average of 8.5 land as 8, 9, 8, 9 …: exactly the average over time.
+            float carry = 0f;
+            int total = 0;
+            for (int i = 0; i < 100; i++) total += RitualLogic.Take(ref carry, 8.5f);
+            Assert.That(total, Is.EqualTo(850));
+
+            // Focus Fire: +1 per second in the beam (vanilla multiplier 1), at most double.
+            Assert.That(RitualLogic.FocusBonus(0.5f, 1f, 10), Is.EqualTo(0));
+            Assert.That(RitualLogic.FocusBonus(3.2f, 1f, 10), Is.EqualTo(3));
+            Assert.That(RitualLogic.FocusBonus(30f, 1f, 10), Is.EqualTo(10));
+            Assert.That(RitualLogic.FocusBonus(30f, 0f, 10), Is.EqualTo(0));
+        }
     }
 }

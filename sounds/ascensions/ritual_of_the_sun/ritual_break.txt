@@ -1,0 +1,6 @@
+ascensions/ritual_of_the_sun/ritual_break
+  duration 1.80 s | peak -3.0 dBFS | RMS -17.1 dBFS | loudest 50 ms -7.9 dBFS
+  attack 5 ms | decays to -30 dB at 1.39 s | brightness (spectral centroid) 1.3k
+  envelope per 50 ms (dBFS): -8 -10 -13 -11 -13 -13 -18 -17 -13 -16 -16 -16 -20 -23 -22 -23 -25 -25 -27 -27 -27 -29 -31 -32 -33 -36 -38 -38 -41 -41 -43 -46 -50 -53 -59 -60
+  brightness per 100 ms:    1.1k 1.7k 1.6k 1.6k 1.2k 1.1k 1.1k 981 928 828 744 681 594 592 543 529 520 495
+  dominant pitch per 100 ms: 108 86 86 581 581 581 581 431 581 581 581 581 581 258 237 581 581 581

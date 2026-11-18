@@ -1,0 +1,6 @@
+ascensions/ritual_of_the_sun/sun_link_3
+  duration 1.29 s | peak -5.0 dBFS | RMS -22.9 dBFS | loudest 50 ms -15.3 dBFS
+  attack 60 ms | decays to -30 dB at 0.76 s | brightness (spectral centroid) 2.2k
+  envelope per 50 ms (dBFS): -17 -16 -15 -17 -18 -21 -23 -25 -28 -32 -36 -37 -39 -40 -43 -47 -52 -53 -55 -59 -60 -60 -60 -60 -60 -60
+  brightness per 100 ms:    2.5k 2.4k 1.9k 1.6k 1.4k 1.3k 1.1k 1.2k 1.4k 1.1k 945 949 945
+  dominant pitch per 100 ms: 754 883 883 883 1.2k 1.2k 883 883 754 754 754 883 732

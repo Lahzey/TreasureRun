@@ -16,6 +16,7 @@ namespace TreasureRun.Debugging
         {
             new SawDimensionScenario(), new SawScalingScenario(), new MegaMortarScenario(), new MegaMortarHillScenario(), new LeyLineScenario(), new LeyLineHillScenario(),
             new ParticleAcceleratorScenario(), new AcceleratorMorphScenario(), new ParticleLeyScenario(), new BlackHoleLookScenario(),
+            new RitualSunScenario(), new RitualCrystalScenario(), new RitualLookScenario(),
         };
     }
 

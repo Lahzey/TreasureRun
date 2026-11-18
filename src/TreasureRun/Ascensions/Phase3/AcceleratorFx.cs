@@ -441,6 +441,11 @@ namespace TreasureRun.Ascensions.Phase3
         private static Vector3 offset;
         private static bool hooked, applied;
         private static Vector3 saved;
+        /// <summary>Short shakes from single events (the sun's strike): where, how strong, when (game time), how long.</summary>
+        private static readonly List<(Vector3 At, float Amp, float Start, float Length)> kicks = new List<(Vector3, float, float, float)>();
+
+        /// <summary>A short shake that fades out over <paramref name="seconds"/> (amplitude as for a black hole).</summary>
+        public static void Kick(Vector3 at, float amplitude, float seconds) => kicks.Add((at, amplitude, Time.time, seconds));
 
         /// <summary>This frame's offset (world units), computed once per frame.</summary>
         public static Vector3 Current()
@@ -449,7 +454,8 @@ namespace TreasureRun.Ascensions.Phase3
             frame = Time.frameCount;
             offset = Vector3.zero;
             Camera cam = Camera.main;
-            if (cam == null || BlackHole.Active.Count == 0) return offset;
+            kicks.RemoveAll(k => Time.time - k.Start > k.Length || Time.time < k.Start);
+            if (cam == null || (BlackHole.Active.Count == 0 && kicks.Count == 0)) return offset;
             if (!hooked)
             {
                 hooked = true;
@@ -465,6 +471,13 @@ namespace TreasureRun.Ascensions.Phase3
                 Vector3 vp = cam.WorldToViewportPoint(h.transform.position);
                 float d = new Vector2(vp.x - 0.5f, vp.y - 0.5f).magnitude;
                 amp += h.ShakeAmplitude * Mathf.Clamp01(1.25f - 1.5f * d);
+            }
+            foreach (var k in kicks)
+            {
+                Vector3 vp = cam.WorldToViewportPoint(k.At);
+                float d = new Vector2(vp.x - 0.5f, vp.y - 0.5f).magnitude;
+                float f = 1f - (Time.time - k.Start) / k.Length;
+                amp += k.Amp * f * f * Mathf.Clamp01(1.25f - 1.5f * d);
             }
             if (amp <= 0f) return offset;
             float t = Time.unscaledTime * 24f;
