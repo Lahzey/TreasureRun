@@ -319,6 +319,19 @@ namespace TreasureRun.Tests
         }
 
         [Test]
+        public void AcceleratorShotCostsEighteenHundredManaAndAttackSpeedOnlySpeedsTheTicks()
+        {
+            Assert.That(ParticleAcceleratorLogic.ShotCost, Is.EqualTo(1800f));
+            Assert.That(ParticleAcceleratorLogic.ChargedMana(0.5f), Is.EqualTo(900));
+            Assert.That(ParticleAcceleratorLogic.ChargedMana(1f), Is.EqualTo(1800));
+            Assert.That(ParticleAcceleratorLogic.TickInterval(1f), Is.EqualTo(0.25f).Within(1e-6f), "4 ticks a second normally");
+            Assert.That(ParticleAcceleratorLogic.TickInterval(2f), Is.EqualTo(0.125f).Within(1e-6f), "twice the attack speed, twice the ticks");
+            // the charge doesn't care about attack speed: still 30 s at 60 mana/s
+            int mana = 10_000;
+            Assert.That(ChargeTime(0, ref mana, 10_000), Is.EqualTo(30f).Within(0.2f));
+        }
+
+        [Test]
         public void AcceleratorChargesInThirtySecondsWithEnoughMana()
         {
             Assert.That(ParticleAcceleratorLogic.Drain(0), Is.EqualTo(60f), "60 mana per second");

@@ -13,6 +13,8 @@ namespace TreasureRun.Ascensions.Phase3
     {
         public PooledDamage Pool;
         public float Slow, Bleed, Burn, Poison, Crit, Stun;
+        /// <summary>The core's attack speed (1 = normal): the hole ticks that much faster.</summary>
+        public float Speed;
     }
 
     /// <summary>
@@ -108,6 +110,9 @@ namespace TreasureRun.Ascensions.Phase3
             new Color(1f, 0.97f, 0.8f), new Color(1f, 0.78f, 0.3f), new Color(1f, 0.45f, 0.15f), new Color(0.95f, 0.2f, 0.2f),
             new Color(0.8f, 0.4f, 1f), new Color(1f, 1f, 1f),
         };
+
+        /// <summary>The core's attack speed when it fired (the hole ticks that much faster).</summary>
+        public float Speed => stats.Speed > 0f ? stats.Speed : 1f;
 
         public static BlackHole Open(Vector3 at, HoleStats stats)
         {
@@ -251,7 +256,7 @@ namespace TreasureRun.Ascensions.Phase3
 
         private void Tick(float dt)
         {
-            int ticks = FireClock.Due(ref tickTimer, dt, 1f / ParticleAcceleratorLogic.TicksPerSecond, 3);
+            int ticks = FireClock.Due(ref tickTimer, dt, ParticleAcceleratorLogic.TickInterval(stats.Speed > 0f ? stats.Speed : 1f), 8);
             int dmg = ParticleAcceleratorLogic.TickDamage(stats.Pool.Base);
             for (int k = 0; k < ticks; k++)
                 foreach (Caught c in caught.ToList())

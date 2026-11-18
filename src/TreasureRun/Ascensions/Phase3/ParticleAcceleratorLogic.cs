@@ -27,9 +27,10 @@ namespace TreasureRun.Ascensions.Phase3
     }
 
     /// <summary>
-    /// The charge of the (one) Accelerator core. It drains mana every frame during waves; the charge is the mana drained
-    /// divided by 30 s of the base drain (60 mana/s), so without Ley Line income it can never be full in less than 30 s:
-    /// with less mana coming in it simply takes longer. A Ley Line network plugged into the core adds its income to the
+    /// The charge of the (one) Accelerator core. A black hole costs <see cref="ParticleAcceleratorLogic.ShotCost"/> mana
+    /// (1800), drained during waves at most at the base drain of 60 mana/s, so without Ley Line income a shot can never come
+    /// sooner than every 30 s (attack speed doesn't change that; it makes the hole tick faster). With less mana coming in
+    /// it simply takes longer. A Ley Line network plugged into the core adds its income to the
     /// drain, and that mana charges too (the secret interaction). It never drains mana below 25% of the maximum.
     /// </summary>
     public sealed class AcceleratorCharge
@@ -84,8 +85,10 @@ namespace TreasureRun.Ascensions.Phase3
     public static class ParticleAcceleratorLogic
     {
         public const float ChargeSeconds = 30f;
-        /// <summary>Mana per second the core drains while charging (without Ley Line income): 1800 mana per black hole.</summary>
+        /// <summary>Mana per second the core drains at most while charging (without Ley Line income).</summary>
         public const float BaseDrain = 60f;
+        /// <summary>Mana one black hole costs: 30 s of the base drain.</summary>
+        public const float ShotCost = BaseDrain * ChargeSeconds;
         /// <summary>The charge never takes mana below this share of the maximum.</summary>
         public const float ManaFloor = 0.25f;
 
@@ -114,8 +117,18 @@ namespace TreasureRun.Ascensions.Phase3
         /// <summary>Mana per second drained: the base plus the income of Ley Line networks plugged into the core.</summary>
         public static float Drain(int leyIncome) => BaseDrain + Mathf.Max(0, leyIncome);
 
-        /// <summary>Charge (0..1) gained by draining <paramref name="mana"/>: full after 30 s of the base drain.</summary>
-        public static float ChargeFor(float mana) => mana / (BaseDrain * ChargeSeconds);
+        /// <summary>Charge (0..1) gained by draining <paramref name="mana"/>: full after <see cref="ShotCost"/> mana.</summary>
+        public static float ChargeFor(float mana) => mana / ShotCost;
+
+        /// <summary>Mana in the charge at <paramref name="progress"/> (0..1).</summary>
+        public static int ChargedMana(float progress) => Mathf.FloorToInt(Mathf.Clamp01(progress) * ShotCost + 1e-3f);
+
+        /// <summary>
+        /// Seconds between damage ticks of the black hole: <see cref="TicksPerSecond"/> at the core's normal attack speed,
+        /// faster with attack speed (<paramref name="attackSpeed"/> = 1 + bonus). The hole still lasts 5 s, so attack speed
+        /// adds ticks per hole, never holes per minute.
+        /// </summary>
+        public static float TickInterval(float attackSpeed) => 1f / (TicksPerSecond * Mathf.Max(0.1f, attackSpeed));
 
         /// <summary>Seconds left to full charge at the full drain (mana permitting).</summary>
         public static float SecondsLeft(float progress, int leyIncome) =>

@@ -586,6 +586,7 @@ namespace TreasureRun.Debugging
             BlackHole hole = BlackHole.Active.FirstOrDefault();
             c.Expect(hole != null, "a black hole is open");
             if (hole == null) { Phase2Scenarios.Combat(was); yield break; }
+            float holeSpeed = hole.Speed;
             c.Expect(hole.ShakeAmplitude > 0f, $"it shakes the screen ({hole.ShakeAmplitude:0.0000} of the screen height)");
             c.Expect(SpaceWarp.Texture != null, "space around it is warped (lens texture rendered)");
             yield return c.Wait(1f);
@@ -610,7 +611,10 @@ namespace TreasureRun.Debugging
             float ground = dummies.Where(d => d != null).Max(d => Mathf.Abs(d.transform.position.y - centre.y));
             c.Expect(ground < 0.7f, $"and back on the ground (highest {ground:0.00} off the hole's ground)");
             int caught = BlackHole.TotalCaught - caught0, ticks = BlackHole.TotalTicks - ticks0, bursts = BlackHole.TotalBursts - bursts0;
-            c.Expect(ticks >= caught * 19 && ticks <= caught * 21 && bursts == caught, $"{ticks} ticks and {bursts} burst hits on {caught} caught (20 ticks each)");
+            // 20 ticks per caught monster at normal attack speed; attack speed makes the hole tick faster, not fire more often.
+            float perMonster = ParticleAcceleratorLogic.HoleSeconds * ParticleAcceleratorLogic.TicksPerSecond * holeSpeed;
+            c.Expect(ticks >= caught * (perMonster - 1) && ticks <= caught * (perMonster + 1) && bursts == caught,
+                $"{ticks} ticks and {bursts} burst hits on {caught} caught ({perMonster:0} ticks each at attack speed x{holeSpeed:0.00})");
             // Treasures of the run (crits, mana bonuses) can add to the hits, so only a floor is checked.
             int tick = ParticleAcceleratorLogic.TickDamage(grid.Pool.Base), burst = ParticleAcceleratorLogic.BurstDamage(grid.Pool.Base);
             float expected = (ticks * tick + bursts * burst) * grid.Pool.Health;

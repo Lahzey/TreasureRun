@@ -64,10 +64,10 @@ namespace TreasureRun.Ascensions.Phase3
                 Id = Id, Name = "Particle Accelerator", Rarity = Rarity.Legendary, Kind = AscensionKind.Replace,
                 Target = AscensionTarget.ParticleCannon, Component = typeof(AcceleratorCannon), CardModel = "ascensions/particle/accelerator_card",
                 Description = "Bends the fabric of space itself. Your strongest Particle Cannon becomes the Accelerator: during waves " +
-                              $"it drains {ParticleAcceleratorLogic.BaseDrain:0} mana per second (never below {ParticleAcceleratorLogic.ManaFloor:P0}) and when " +
-                              $"charged (at least {ParticleAcceleratorLogic.ChargeSeconds:0} s) fires a black hole that pulls in every monster near its target for " +
-                              $"{ParticleAcceleratorLogic.HoleSeconds:0} s, then bursts. Every other Particle Cannon becomes a Capacitor: " +
-                              "it stops firing and adds its damage to the black hole.",
+                              $"it charges {ParticleAcceleratorLogic.ShotCost:0} mana at up to {ParticleAcceleratorLogic.BaseDrain:0} per second " +
+                              $"(never below {ParticleAcceleratorLogic.ManaFloor:P0}), then fires a black hole that pulls in every monster near its target for " +
+                              $"{ParticleAcceleratorLogic.HoleSeconds:0} s and bursts. Attack speed makes the hole hit faster. Every other Particle Cannon " +
+                              "becomes a Capacitor: it stops firing and adds its damage to the black hole.",
                 OnAcquire = (run, restoring) => AcceleratorGrid.Ensure(),
             });
             TreasureRunMode.RunStarted += _ => BlackHole.Held.Clear();
@@ -399,6 +399,9 @@ namespace TreasureRun.Ascensions.Phase3
             DrawLinks(all, combat);
         }
 
+        /// <summary>The core's attack speed factor: its vanilla interval over its current one (cards, treasures, buffs).</summary>
+        private static float AttackSpeed(Tower t) => t.rps > 0f && t.rpm > 0f ? Mathf.Clamp(60f / t.rpm / t.rps, 0.1f, 10f) : 1f;
+
         private void Fire(Enemy target)
         {
             Tower t = Core.Tower;
@@ -410,7 +413,7 @@ namespace TreasureRun.Ascensions.Phase3
             var stats = new HoleStats
             {
                 Pool = Pool, Slow = t.slowPercent, Bleed = t.bleedPercent, Burn = t.burnPercent, Poison = t.poisonPercent,
-                Crit = t.critChance, Stun = t.stunChance,
+                Crit = t.critChance, Stun = t.stunChance, Speed = AttackSpeed(t),
             };
             SingularityShot.Launch(from, aim, flight, () => BlackHole.Open(aim, stats));
             SoundLibrary.Play("ascensions/particle_accelerator/accel_fire", from, 0.85f, 0.03f, 2);
@@ -630,9 +633,11 @@ namespace TreasureRun.Ascensions.Phase3
                 int ley = AcceleratorGrid.LeyIncome;
                 float secs = ParticleAcceleratorLogic.SecondsLeft(grid.Charge.Progress, ley);
                 string charge = grid.Charge.Full ? "Charge: READY"
-                    : $"Charge: {Mathf.FloorToInt(grid.Charge.Progress * 100f)}%" + (grid.LowMana ? " (mana low)" : $" ({Mathf.CeilToInt(secs)} s)");
+                    : $"Charge: {ParticleAcceleratorLogic.ChargedMana(grid.Charge.Progress)}/{ParticleAcceleratorLogic.ShotCost:0}";
+                string drain = grid.Charge.Full ? $"Drain: {ParticleAcceleratorLogic.Drain(ley):0}/sec"
+                    : grid.LowMana ? "Drain: mana low" : $"Drain: {ParticleAcceleratorLogic.Drain(ley):0}/sec, {Mathf.CeilToInt(secs)} s";
                 Set(__instance.rpmText, charge);
-                Set(__instance.manaUseText, $"Drain: {ParticleAcceleratorLogic.Drain(ley):0}/sec");
+                Set(__instance.manaUseText, drain);
             }
             else
             {

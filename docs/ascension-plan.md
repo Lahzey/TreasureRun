@@ -411,7 +411,8 @@ Each entry: **effect**, **approach**, **models**, **cards**, **open questions**.
   - If the core is demolished, the strongest capacitor becomes the core and keeps the current charge.
   - Models: the core (ring accelerator and a huge barrel) and the capacitor (the same parts: the barrel stood on end as a battery cell, the base sunk into the ground); a hydraulic transformation between the two.
 - **Approach:**
-  - Charge = mana drained; full at a fixed amount, so faster drain (Ley Line Network) means faster charging.
+  - Charge = mana drained; a black hole costs 1800 mana, drained at most 60 mana/s, so one shot per 30 s at best. Only a faster drain (Ley Line Network) charges faster. The popup shows the charge in mana (`Charge: 1240/1800`) and the drain with the seconds left.
+  - **Attack speed** never adds shots: it makes the black hole tick faster (4 ticks/s × the core's attack speed, over the same 5 s).
   - Black hole: enemies in radius are pulled toward the centre (moving their transform) and slowed to 0. Damage ticks during the 5 s.
   - **They must not end up stacked on one point.** The pull is a spring toward an orbit around the centre (each enemy gets its own random orbit radius and angle, with a little jitter), not toward the exact centre.
   - **End: a mild supernova.** The black hole implodes (shrinks and brightens), then bursts: a final damage hit and a push that throws every caught enemy a random distance (about 1–3 units) in a random direction over about 0.4 s. Then they walk back on their own: vanilla `Pathfinder` walks from the current position straight to the current waypoint.
