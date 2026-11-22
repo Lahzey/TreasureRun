@@ -21,6 +21,9 @@ namespace TreasureRun.Core
         public static ConfigEntry<bool> LoadingAnimation { get; private set; }
         public static ConfigEntry<bool> DragToBuild { get; private set; }
         public static ConfigEntry<int> HwachaRockets { get; private set; }
+        public static ConfigEntry<bool> PoiEnabled { get; private set; }
+        public static ConfigEntry<float> PoiOmenChance { get; private set; }
+        public static ConfigEntry<bool> DebugPoiForce { get; private set; }
 
         /// <summary>The plugin's config file (for the dev console's <c>config</c> command).</summary>
         public static ConfigFile File { get; private set; }
@@ -37,6 +40,13 @@ namespace TreasureRun.Core
                 "Also in the in-game Options menu.");
             HwachaRockets = config.Bind("Ascensions", "HwachaRockets", 20,
                 "Rockets per Hwacha volley (Cannon ascension). The damage per rocket stays the same, so more rockets = more damage.");
+            PoiEnabled = config.Bind("PointsOfInterest", "Enabled", true,
+                "Treasure Run: Points of Interest. After each expansion, every new Expand button may get an omen: the icon of " +
+                "the POI that the button will place (docs/poi-plan.md).");
+            PoiOmenChance = config.Bind("PointsOfInterest", "OmenChance", 0.1f,
+                "Chance (0-1) that a new Expand button gets an omen. Rolled through luck (category POI).");
+            DebugPoiForce = config.Bind("Debug", "PoiForce", false,
+                "Development: every new Expand button gets an omen (when a POI is available at the current wave).");
             ShowDevHud = config.Bind("Debug", "ShowDevHud", true,
                 "Show a small overlay with Treasure Run state while a run is active.");
             DebugTools = config.Bind("Debug", "DebugTools", true,

@@ -553,6 +553,93 @@ namespace TreasureRun.UI
                 }
             });
 
+            Add("dump", "dump <objectName> [depth=6]", "Dumps an object's hierarchy: components, layers, meshes, materials, colliders, waypoint links.", false, a =>
+            {
+                int depth = a.Length > 1 && int.TryParse(a[a.Length - 1], out int d) ? d : 6;
+                string q = a.Length > 1 && int.TryParse(a[a.Length - 1], out _) ? Rest(a.Take(a.Length - 1).ToArray(), 0) : Rest(a, 0);
+                GameObject go = Resources.FindObjectsOfTypeAll<GameObject>().FirstOrDefault(g => g.scene.IsValid() && g.activeInHierarchy && g.name == q)
+                                ?? Resources.FindObjectsOfTypeAll<GameObject>().FirstOrDefault(g => g.scene.IsValid() && Matches(g.name, q));
+                if (go == null) { Print("Not found."); return; }
+                Debugging.ObjectDump.Write(go.transform, depth, Print);
+            });
+
+            Add("poi", "poi [list | omen <id> [all] | next <id> | exits <L|T|R|LT|LR|TR|LTR> | rate <0-15>]",
+                "Points of Interest: list omens and sites; put an omen on the open Expand buttons (first, or all); make the next " +
+                "omen roll succeed; force the exits of the next tile; set the mana per second of the nearest Lightning Trap.", true, a =>
+            {
+                string sub = Arg(a, 0, "list").ToLowerInvariant();
+                Core.RunState run = TreasureRunMode.Run;
+                if (sub == "list")
+                {
+                    if (run == null) { Print("Not a Treasure Run."); return; }
+                    foreach (Core.PoiOmenRecord o in run.PoiOmens) Print($"omen {o.Id} on the Expand button at {o.X},{o.Y} (wave {o.Wave})");
+                    foreach (Pois.PoiSite s in Pois.PoiDirector.Sites)
+                        Print($"site {s.Def.Id} at {s.Record.X},{s.Record.Y} world {s.Center} exits {(Pois.SectionExits)s.Record.Exits} rot {s.Record.Rotation}: {s.Status}");
+                    Print($"{run.PoiOmens.Count} omens, {run.Pois.Count} POIs placed. Defs: " + string.Join(", ", Pois.PoiRegistry.All.Select(d => d.Id)));
+                    return;
+                }
+                if (sub == "omen")
+                {
+                    Pois.PoiDef def = Pois.PoiRegistry.Find(Arg(a, 1, ""));
+                    if (def == null) { Print("Unknown POI."); return; }
+                    bool all = Arg(a, 2, "") == "all";
+                    int n = 0;
+                    foreach (TileSpawnLocation m in FindObjectsOfType<TileSpawnLocation>().OrderBy(m => m.posX).ThenBy(m => m.posY))
+                    {
+                        if (Pois.PoiDirector.PlaceOmen(m, def)) { n++; Print($"Omen {def.Id} on the Expand button at {m.posX},{m.posY} (world {m.transform.position})."); }
+                        if (!all && n > 0) break;
+                    }
+                    if (n == 0) Print("No open Expand button (or POIs are off).");
+                    return;
+                }
+                if (sub == "next")
+                {
+                    Pois.PoiDirector.ForceNextOmen = Arg(a, 1, Pois.LightningTrapLogic.Id);
+                    Print($"The next new Expand button gets the omen {Pois.PoiDirector.ForceNextOmen}.");
+                    return;
+                }
+                if (sub == "exits")
+                {
+                    string s = Arg(a, 1, "").ToUpperInvariant();
+                    Pois.SectionExits e = Pois.SectionExits.None;
+                    if (s.Contains("L")) e |= Pois.SectionExits.Left;
+                    if (s.Contains("T")) e |= Pois.SectionExits.Top;
+                    if (s.Contains("R")) e |= Pois.SectionExits.Right;
+                    Pois.PoiDirector.ForceExits = e == Pois.SectionExits.None ? (Pois.SectionExits?)null : e;
+                    Print($"The next tile gets the exits {e} (if a fitting vanilla tile exists).");
+                    return;
+                }
+                if (sub == "rate")
+                {
+                    Pois.LightningTrap trap = FindObjectsOfType<Pois.LightningTrap>().OrderBy(t => t.Center.sqrMagnitude).FirstOrDefault();
+                    if (trap == null) { Print("No Lightning Trap."); return; }
+                    trap.SetRate(int.Parse(Arg(a, 1, "15")));
+                    Print($"Lightning Trap at {trap.Center}: {trap.Status}");
+                    return;
+                }
+                Print("Unknown subcommand.");
+            });
+
+            Add("cells", "cells <x> <z> [step=1]", "Height map of the 7x7 tile around a cell: first hit layer (G grass, P path, B building, - other) and height in thirds.", false, a =>
+            {
+                int cx = int.Parse(Arg(a, 0, "0")), cz = int.Parse(Arg(a, 1, "0"));
+                float step = float.Parse(Arg(a, 2, "1"), System.Globalization.CultureInfo.InvariantCulture);
+                int n = Mathf.RoundToInt(3f / step);
+                for (int iz = n; iz >= -n; iz--)
+                {
+                    var sb = new StringBuilder();
+                    for (int ix = -n; ix <= n; ix++)
+                    {
+                        var p = new Vector3(cx + ix * step, 40f, cz + iz * step);
+                        if (!Physics.Raycast(p, Vector3.down, out RaycastHit hit, 80f, ~0, QueryTriggerInteraction.Ignore)) { sb.Append("  .   "); continue; }
+                        string l = LayerMask.LayerToName(hit.collider.gameObject.layer);
+                        char c = l == "Grass" ? 'G' : l == "Path" ? 'P' : l == "Building" ? 'B' : '-';
+                        sb.Append($"{c}{hit.point.y * 3f,5:0.00}");
+                    }
+                    Print(sb.ToString());
+                }
+            });
+
             Add("shaders", "shaders [filter]", "Lists loaded shaders (what materials can use at runtime).", false, a =>
             {
                 string f = Rest(a, 0);

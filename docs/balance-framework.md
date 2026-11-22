@@ -457,7 +457,7 @@ B0–B3 give a usable report before M8, with formulas and hand estimates. B4 mak
 1. The horizon of the value curve: 10 waves.
 2. The penalty exponent: 0.3 (b = 0.55 → −16%, b = 0.08 → −53%).
 3. The outlier flag: ±25% of the budget.
-4. A budget for castles and Points of Interest (to set when M8 starts).
+4. A budget for castles and Points of Interest. **Decided for POIs:** 15 points (`Pools.PoiBudget`, between a Common and an Uncommon treasure); a POI with a risk may pay more when it works out. Castles: still open.
 
 ## 12. Inspirations
 
@@ -511,6 +511,8 @@ Everything under `Balance/` except `Balance/Game` is pure and compiled into the 
 
 - **Crowd density, calibrated to the spawner and vanilla prices:** the spawner releases one monster per spawn point every 0.5 s, single file, about one per cell at speed 2 before slows, so there is no extra bunching. The share of them alive inside a tower's reach (0.4) is set so that the plain area towers (Tesla Coil, Mortar) come out even with the single-target ones (Ballista, Obelisk, Particle Cannon) per gold. The probe `BalanceProbe.TowerBalanceByDensity` (explicit test, writes `tests/out/tower-balance.txt`) shows the balance at several densities.
 - **The castle's safety net** (chosen, not derived): late in a run castle health barely changes the headroom, but it saves runs from one bad wave. So it adds `0.35 × 100 × ln(safety with / without)` points, where safety = max health + 10 waves of heals and absorbs, divided by the leak damage (extra leak damage counted at half weight), times a safety factor (Second Wind ×1.5). +5% max health is about +1.7 points, halving it (Glass Cannon) about −24.
+
+- **Points of Interest** (M8, docs/poi-plan.md): rated like treasures against a budget of 15 (`ContentSpecs.Pois`). A POI that deals damage is a **fixed source** (`Spec.FixedSource`, `TowerGroup.Custom`): never bought or sold, unreachable for tower cards and treasures. The attack shape **Trap** works per monster: each monster walking through takes `rate × cells / speed` strikes, `Evaluator.TrapArrival` (0.8, uncalibrated) of them arrive alive, overkill is wasted per strike as for towers. Its mana is paid in mana buildings like any other demand.
 
 **Constants that are hand estimates (uncalibrated, to fit in M8):**
 - the alive share (above), the safety weight 0.35 and leak damage weight 0.5, the mana price 150;

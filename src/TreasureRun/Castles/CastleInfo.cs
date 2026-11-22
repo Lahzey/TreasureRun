@@ -84,7 +84,7 @@ namespace TreasureRun.Castles
         /// The house popup's text box (world-space canvas, text scaled 0.005) fits about four lines. Grows the text box
         /// and its background panel downwards to fit the castle text; the panel's top edge stays where it was.
         /// </summary>
-        private static void Fit(Text text)
+        internal static void Fit(Text text)
         {
             var rt = (RectTransform)text.transform;
             float width = rt.rect.width;

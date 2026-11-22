@@ -1,0 +1,6 @@
+pois/lightning_trap/trap_strike_2
+  duration 0.42 s | peak -3.5 dBFS | RMS -23.0 dBFS | loudest 50 ms -15.5 dBFS
+  attack 0 ms | decays to -30 dB at 0.37 s | brightness (spectral centroid) 10.5k
+  envelope per 50 ms (dBFS): -15 -21 -25 -25 -35 -38 -42 -45 -59
+  brightness per 100 ms:    10.6k 10.9k 9.6k 4.9k 2.9k
+  dominant pitch per 100 ms: 86 86 108 86 108

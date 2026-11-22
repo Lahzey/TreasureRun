@@ -127,6 +127,13 @@ namespace TreasureRun.Balance
 
         // ----- growth -----
 
+        /// <summary>
+        /// A fixed damage source from a Point of Interest (Lightning Trap): one more group on the board that is never
+        /// bought, sold or buffed by tower cards. Its stats may follow the evaluated wave.
+        /// </summary>
+        public Spec FixedSource(string text, Func<int, TowerInfo> info) => Add(Category.Offense, text, c =>
+            c.Board.Groups.Add(new TowerGroup { Kind = TowerKind.Poi, Count = 1, Custom = info(c.Wave) }));
+
         public Spec Levels(double n, TowerKind? t = null) => Tower(Category.Offense, $"+{n} levels", t, x => x.Levels += n);
         public Spec XpPercent(double p, TowerKind? t = null) => Tower(Category.Offense, $"{p:+0%} XP", t, x => x.XpFactor *= 1 + p);
         public Spec HeightFactor(double f) => Tower(Category.Offense, $"height bonus x{f}", null, x => x.HeightFactor *= f);
@@ -320,6 +327,11 @@ namespace TreasureRun.Balance
         }
 
         public const double CardBudget = 4, CardBudgetMin = 2, CardBudgetMax = 6;
+        /// <summary>
+        /// Expected strength of a Point of Interest (decided): between a Common and an Uncommon treasure. A POI with a
+        /// downside or a risk may pay more when it works out (docs/poi-plan.md).
+        /// </summary>
+        public const double PoiBudget = 15;
         /// <summary>Ascensions may be this much stronger than their rarity: they are rolled rarer within it.</summary>
         public const double AscensionAllowance = 1.25;
 

@@ -15,6 +15,7 @@ namespace SfxTool
         {
             RegisterUi();
             RegisterAscensions();
+            RegisterPois();
         }
 
         private static void Add(string name, Func<Sound> recipe) => All[name] = recipe;

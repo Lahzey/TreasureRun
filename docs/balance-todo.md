@@ -62,3 +62,14 @@ From [balance-report.md](balance-report.md) (M7.5). **No balance changes yet:** 
 - **Over:** Infinity Engine 88 vs 54 (twice the attack speed is ln 2 = 69 points by definition); Hoarder 39 vs 18 late (+4% per treasure, about 12 treasures by wave 45); Jackpot 42 vs 24 late; First Strike 24 vs 12 early; Trophy Hunter 27 vs 12 (+0.5 chests per mini-boss, about 7 more treasures per run); Monolith on a small board; the treasure cards Lucky Find and Blood Pact against the card budget of 2–6.
 - **Under:** Prism of Ascendance 2.9 and Lucky Coin 2.2 (a rarity step is about 4 points per treasure, treasures come about every 4 waves); Quick Study 3.6 (one more card every 6 waves, about 4.5 points each); Thunderclap, Shatter and Permafrost (freezes rarely matter without the others); most economy cards late; Time Dilation 29 vs 54.
 - **Mana Bolts** come out slightly negative (−2): the +4 Ballista damage is worth about 5 points, the mana it costs a bit more. Mana generation (Sorcery, siphons) is worth its building price.
+
+## Points of Interest
+
+**Lightning Trap** (docs/poi-plan.md §4): 15.1 points against 15, rated at the best mana rate per wave.
+- **The mana is the main cost:** 15 mana/s is about 2,250 gold of mana buildings. So the best rate on the reference boards is low early (1 mana/s up to wave 5) and on boss waves, and the full 15 late.
+- **Value by wave** at the best rate: about 20–24 points from wave 4 to 10, about 12 late. It is strongest early and mid game.
+- **Check in play:**
+  - Does the slider feel useful, or does everyone just set it to 15 or 0?
+  - Base regeneration is 2/s, so early high rates run in bursts (out of mana, it waits for a second's worth).
+  - On one lane every monster passes through the centre; the model assumes 80% arrive alive (`TrapArrival`).
+- **Uncalibrated:** `TrapArrival` 0.8; the best-rate table depends on the reference boards' mana (re-run the probe after mana or board changes).

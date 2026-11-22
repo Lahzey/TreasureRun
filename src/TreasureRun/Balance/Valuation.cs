@@ -213,6 +213,11 @@ namespace TreasureRun.Balance
                 Requirement = s.Requirement, Variant = s.Variant, Breadth = s.Breadth, OfferFrom = s.OfferFrom, OfferTo = s.OfferTo,
             };
             if (isCard) { r.Budget = Pools.CardBudget; r.BudgetMin = Pools.CardBudgetMin; r.BudgetMax = Pools.CardBudgetMax; }
+            else if (kind == "poi")
+            {
+                r.Budget = Pools.PoiBudget;
+                r.BudgetMin = r.Budget * (1 - BudgetTolerance); r.BudgetMax = r.Budget * (1 + BudgetTolerance);
+            }
             else if (rarity != null)
             {
                 r.Budget = Pools.Budget(rarity.Value) * (ascension ? Pools.AscensionAllowance : 1);

@@ -53,7 +53,7 @@ namespace TreasureRun.Balance
                           "**Early / late** are the value if taken at the first offer wave / at wave 40, **peak** the best wave. " +
                           "**Flag** marks items outside ±25% of their rarity budget (cards: outside 2–6). " +
                           "Source says where the number comes from: *formula*, *estimated* (hand estimate) or a proxy marked for the M8 simulation.").AppendLine();
-            sb.AppendLine("Budgets: cards 2–6, Common 12, Uncommon 18, Rare 24, Epic 30, Legendary 36, Mythical 54; ascensions 25% more than their rarity. " +
+            sb.AppendLine("Budgets: cards 2–6, Common 12, Uncommon 18, Rare 24, Epic 30, Legendary 36, Mythical 54; ascensions 25% more than their rarity; Points of Interest 15. " +
                           "All constants are uncalibrated until M8. The treasures are mostly placeholders: no balance changes until M9.").AppendLine();
 
             int missing = ratings.Count(r => r.Source == "MISSING SPEC");
@@ -76,8 +76,8 @@ namespace TreasureRun.Balance
                 sb.AppendLine("|---|---|---|---|---|---|---|---|---|---|---|");
                 foreach (Rating r in group.OrderBy(r => r.Rarity ?? (Rarity)(-1)).ThenByDescending(r => r.Points))
                 {
-                    string rarity = r.IsCard ? "card" : r.Rarity?.ToString() ?? "";
-                    string budget = r.IsCard ? "2–6" : r.Rarity != null ? N(r.Budget) : "";
+                    string rarity = r.IsCard ? "card" : r.Kind == "poi" ? "POI" : r.Rarity?.ToString() ?? "";
+                    string budget = r.IsCard ? "2–6" : r.Rarity != null || r.Kind == "poi" ? N(r.Budget) : "";
                     string flag = r.Flag == "over" ? "**over**" : r.Flag == "under" ? "under" : r.Flag;
                     string curve = r.Unrated ? "" : $"{N(r.Early)} / {N(r.Late)} / w{r.PeakWave}";
                     string breadth = r.Unrated ? "" : $"{N2(r.Breadth)} · {N2(r.TimingBreadth)}";

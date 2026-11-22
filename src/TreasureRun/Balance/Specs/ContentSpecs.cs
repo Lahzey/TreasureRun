@@ -177,6 +177,20 @@ namespace TreasureRun.Balance
             ["more_bomblets"] = _ => S.DamagePercent(0.2, Mortar).Requires(Mortar).Requires("Cluster Munitions"),
         };
 
+        /// <summary>
+        /// Points of Interest by id (docs/poi-plan.md). Budget: <see cref="Pools.PoiBudget"/> (15) from the wave the POI can
+        /// appear; a POI is rated like a treasure taken when its section is placed.
+        /// </summary>
+        public static readonly Dictionary<string, Func<Spec>> Pois = new Dictionary<string, Func<Spec>>
+        {
+            ["lightning_trap"] = () => S.FixedSource("lightning in the centre cell (damage follows the wave and the mana)", global::TreasureRun.Pois.LightningTrapLogic.Info)
+                .Offered(global::TreasureRun.Pois.LightningTrapLogic.MinWave)
+                .Because("strikes everything in the centre cell 4 times a second; 0-15 mana/s (rated at the best rate per wave), damage in proportion, mana paid in mana buildings; solved for 15 points per wave"),
+        };
+
+        /// <summary>Spec of a Point of Interest (null when missing).</summary>
+        public static Spec Poi(string id) => Pois.TryGetValue(id, out var f) ? f() : null;
+
         /// <summary>Spec of a treasure (null when missing).</summary>
         public static Spec Treasure(string id) => Treasures.TryGetValue(id, out var f) ? f() : null;
 

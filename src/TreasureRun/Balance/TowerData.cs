@@ -8,6 +8,8 @@ namespace TreasureRun.Balance
     {
         Crossbow, Morter, TeslaCoil, Frost, Obelisk, FlameThrower, PoisonSprayer, Radar, ParticleCannon,
         Shredder, Encampment, Lookout, VampireLair, Cannon, Monument,
+        /// <summary>Not a buildable tower: a fixed damage source from a Point of Interest (TowerGroup.Custom).</summary>
+        Poi,
     }
 
     /// <summary>How a tower's attack reaches monsters, for the area model (docs/balance-framework.md section 4.2).</summary>
@@ -35,6 +37,11 @@ namespace TreasureRun.Balance
         Mark,
         /// <summary>A plane that reaches the whole map (Radar).</summary>
         Plane,
+        /// <summary>
+        /// A fixed trap on Area path cells that strikes everything inside at its rate whether or not monsters are there
+        /// (Lightning Trap). Hits = strikes x monsters in the cells.
+        /// </summary>
+        Trap,
     }
 
     /// <summary>Vanilla tower stats (docs/reference/vanilla-towers.md).</summary>

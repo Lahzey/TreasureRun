@@ -72,3 +72,15 @@ Ascensions are treasures with extra rules (`docs/ascension-plan.md`, code `src/T
   - availability: the target tower was built in this run (buildings: unlocked)
 - **Follow-up cards** of an ascension (More Bomblets, More Chains, …) use `CustomCards.AscensionChain(ascensionId, ...)`, so they are only drawable while the ascension is owned. They stay tame (§3).
 - The other content rules (max-health costs, tags, castle exclusivity) apply to ascensions like to any treasure.
+
+## 7. Points of Interest
+
+Points of Interest are map sections with their own function (`docs/poi-plan.md`, code `src/TreasureRun/Pois`).
+
+- **Register through `PoiRegistry`** (`PoiDef`): icon, `MinWave`, a `SectionStyle` and the behaviour (`PoiSite`).
+- **The section must work for every exit combination** (one, two or three exits in any direction). The generator's `Validate` and the offline tests check all seven.
+- **No purely negative POIs:** a risky one must pay more when it works out.
+- **Omens can't be removed;** a POI on a dead end is lost (the vanilla dead end stays).
+- **Balance:** a spec in `ContentSpecs.Pois` (budget 15). Costs in max health still go through `HealthCost`; content tags and castle bans apply to POIs too.
+- Treasure Run only (`TreasureRunMode.Active`).
+

@@ -35,6 +35,7 @@
     <Reference Include="UnityEngine.IMGUIModule" HintPath="$(ManagedPath)\UnityEngine.IMGUIModule.dll" Private="false" />
     <Reference Include="UnityEngine.InputLegacyModule" HintPath="$(ManagedPath)\UnityEngine.InputLegacyModule.dll" Private="false" />
     <Reference Include="UnityEngine.TextRenderingModule" HintPath="$(ManagedPath)\UnityEngine.TextRenderingModule.dll" Private="false" />
+    <Reference Include="UnityEngine.ImageConversionModule" HintPath="$(ManagedPath)\UnityEngine.ImageConversionModule.dll" Private="false" />
     <Reference Include="UnityEngine.UI" HintPath="$(ManagedPath)\UnityEngine.UI.dll" Private="false" />
     <Reference Include="UnityEngine.UIModule" HintPath="$(ManagedPath)\UnityEngine.UIModule.dll" Private="false" />
     <Reference Include="Newtonsoft.Json" HintPath="$(ManagedPath)\Newtonsoft.Json.dll" Private="false" />
@@ -56,13 +57,18 @@
       <SoundFiles Include="$(MSBuildProjectDirectory)\..\..\sounds\**\*.wav" Exclude="$(MSBuildProjectDirectory)\..\..\sounds\previews\**" />
     </ItemGroup>
     <Copy SourceFiles="@(SoundFiles)" DestinationFiles="@(SoundFiles->'$(PluginDeployPath)\sounds\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
-    <!-- Deployed models and sounds whose source is gone (renamed, moved or deleted) are removed; models/overrides (your own
+    <ItemGroup>
+      <!-- Icons rendered from SVG by tools/IconTool (Icons/**.svg -> icons/**.png). -->
+      <IconFiles Include="$(MSBuildProjectDirectory)\..\..\icons\**\*.png" />
+    </ItemGroup>
+    <Copy SourceFiles="@(IconFiles)" DestinationFiles="@(IconFiles->'$(PluginDeployPath)\icons\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <!-- Deployed models, sounds and icons whose source is gone (renamed, moved or deleted) are removed; models/overrides (your own
          replacement models, not in the repository) stay. -->
     <ItemGroup>
-      <DeployedAssets Include="$(PluginDeployPath)\models\**\*.vox;$(PluginDeployPath)\models\**\*.json;$(PluginDeployPath)\models\**\*.txt;$(PluginDeployPath)\sounds\**\*.wav"
+      <DeployedAssets Include="$(PluginDeployPath)\models\**\*.vox;$(PluginDeployPath)\models\**\*.json;$(PluginDeployPath)\models\**\*.txt;$(PluginDeployPath)\sounds\**\*.wav;$(PluginDeployPath)\icons\**\*.png"
                       Exclude="$(PluginDeployPath)\models\overrides\**" />
       <StaleAssets Include="@(DeployedAssets)"
-                   Exclude="@(ModelFiles->'$(PluginDeployPath)\models\%(RecursiveDir)%(Filename)%(Extension)');@(SoundFiles->'$(PluginDeployPath)\sounds\%(RecursiveDir)%(Filename)%(Extension)')" />
+                   Exclude="@(ModelFiles->'$(PluginDeployPath)\models\%(RecursiveDir)%(Filename)%(Extension)');@(SoundFiles->'$(PluginDeployPath)\sounds\%(RecursiveDir)%(Filename)%(Extension)');@(IconFiles->'$(PluginDeployPath)\icons\%(RecursiveDir)%(Filename)%(Extension)')" />
     </ItemGroup>
     <Delete Files="@(StaleAssets)" />
     <Message Condition="'@(StaleAssets)' != ''" Importance="high" Text="Removed stale deployed files: @(StaleAssets->'%(RecursiveDir)%(Filename)%(Extension)', ', ')" />

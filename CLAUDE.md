@@ -14,6 +14,8 @@ Building, regenerating assets (models, the accelerator transformation, sounds) a
 - Castle models are generated from code (`tools/VoxTool/Recipes`, `dotnet run -- build ../../models`). They must be grounded (`VoxCanvas.Grounded()`), because the grass layer hides the lowest ~4 voxels.
 - Ascensions follow `docs/ascension-plan.md`: register through `AscensionRegistry` (exclusion group per tower), behaviour in an `AscendedTower` component, mechanics in a pure `*Logic.cs` file (only `System`, `Vector3`/`Mathf`, `IRng`) with offline tests.
 - Sounds are generated from code (`tools/SfxTool/Recipes`, see `docs/sound-workflow.md`); check the analysis `.png`/`.txt` against `SoundReference/reference.md` before asking the user to listen.
+- Icons are SVG written as text (`tools/IconTool/Icons`), rendered to `icons/` by IconTool (README); check them with `IconTool sheet`.
+- Points of Interest follow `docs/poi-plan.md`: register in `PoiRegistry`, a `SectionStyle` that works for **every** exit combination (the generator and `Validate` must pass for all seven), an icon (`icons/poi/<id>.png`), a spec in `ContentSpecs.Pois` (budget 15), and a scenario. Treasure Run only. No purely negative POIs.
 - Commit only when asked.
 
 ## Testing without the game
@@ -36,4 +38,5 @@ Building, regenerating assets (models, the accelerator transformation, sounds) a
   - `planes` lists Radar planes (ascension, target, bomber phase, blimp deck); `deckbuild <name>` builds on a free War Blimp deck
   - `treasuredoc` writes `console/treasures.md`; copy it to `docs/treasures.md` after treasure changes
   - `balance <id|title>` prints an item's points, curve and breakdown; `balance report` writes the balance report; `balance pathstats` measures the map's path statistics
+  - `poi list | omen <id> [all] | next <id> | exits <L|T|R|LT|LR|TR|LTR> | rate <0-15>` for Points of Interest; `cells <x> <z>` prints a tile's height map; `dump <object>` its hierarchy
 - Test castle mechanics under realistic conditions (e.g. a few ballistas on an early wave) and use `god` so the run survives the test.

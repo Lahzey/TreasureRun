@@ -36,9 +36,15 @@ namespace TreasureRun.Balance
         public TowerKind Kind;
         public double Count, Level, Height;
         public TowerBonus Bonus = new TowerBonus();
-        public TowerInfo Info => TowerData.Get(Kind);
+        /// <summary>
+        /// A fixed damage source that is not a buildable tower (a Point of Interest such as the Lightning Trap): it is
+        /// never bought or sold, has no price, and tower cards and treasures don't reach it.
+        /// </summary>
+        public TowerInfo Custom;
+        public bool Fixed => Custom != null;
+        public TowerInfo Info => Custom ?? TowerData.Get(Kind);
 
-        public TowerGroup Clone() => new TowerGroup { Kind = Kind, Count = Count, Level = Level, Height = Height, Bonus = Bonus.Clone() };
+        public TowerGroup Clone() => new TowerGroup { Kind = Kind, Count = Count, Level = Level, Height = Height, Bonus = Bonus.Clone(), Custom = Custom };
     }
 
     /// <summary>Global modifiers (MonsterManager, GameManager, ResourceManager and the mod's own rules).</summary>
@@ -105,13 +111,14 @@ namespace TreasureRun.Balance
 
         public TowerGroup Group(TowerKind k)
         {
-            foreach (TowerGroup g in Groups) if (g.Kind == k) return g;
+            foreach (TowerGroup g in Groups) if (g.Kind == k && !g.Fixed) return g;
             return null;
         }
 
+        /// <summary>The tower groups a card or treasure reaches (fixed damage sources never).</summary>
         public IEnumerable<TowerGroup> Scope(TowerKind? k)
         {
-            foreach (TowerGroup g in Groups) if (k == null || g.Kind == k) yield return g;
+            foreach (TowerGroup g in Groups) if (!g.Fixed && (k == null || g.Kind == k)) yield return g;
         }
 
         public Board Clone()
@@ -137,10 +144,11 @@ namespace TreasureRun.Balance
         {
             if (Math.Abs(gold) < 1e-9 || Groups.Count == 0) return;
             double total = 0;
-            foreach (TowerGroup g in Groups) total += weight?.Invoke(g) ?? GroupCost(g);
+            foreach (TowerGroup g in Groups) if (!g.Fixed) total += weight?.Invoke(g) ?? GroupCost(g);
             if (total <= 0) return;
             foreach (TowerGroup g in Groups)
             {
+                if (g.Fixed) continue;
                 double share = gold * (weight?.Invoke(g) ?? GroupCost(g)) / total;
                 if (share >= 0) g.Count += Copies(g.Kind, g.Count, share);
                 else g.Count = Math.Max(0, g.Count + share / Price(g.Kind, Math.Max(0, g.Count - 1)));
@@ -149,6 +157,7 @@ namespace TreasureRun.Balance
 
         public double GroupCost(TowerGroup g)
         {
+            if (g.Fixed) return 0;
             TowerInfo t = TowerData.Get(g.Kind);
             return g.Count * t.Price + t.PriceStep * Mods.PriceStepFactor * g.Count * (g.Count - 1) / 2;
         }

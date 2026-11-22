@@ -7,6 +7,8 @@ namespace TreasureRun.Balance
     public sealed class GroupResult
     {
         public TowerKind Kind;
+        /// <summary>Display name (a fixed source's own name).</summary>
+        public string Name;
         public double Count, Coverage, ActiveSeconds, Targets, Shots, Hits, DamagePerHit, Waste, Mana, Removed, BossDamage;
     }
 
@@ -52,6 +54,11 @@ namespace TreasureRun.Balance
         public const double BossAttention = 0.7;
         /// <summary>A Monument sword's stabs survive this share of their count on average (uncalibrated).</summary>
         public const double SwordSurvival = 0.6;
+        /// <summary>
+        /// Share of the monsters that reach a trap (a fixed POI damage source) alive: traps sit wherever their section was
+        /// placed, usually ahead of the main defence (uncalibrated).
+        /// </summary>
+        public const double TrapArrival = 0.8;
         /// <summary>Normalised baseline headroom of every reference board (stream before leaks, and boss).</summary>
         public const double BaselineStream = 1.0, BaselineBoss = 1.1;
 
@@ -154,13 +161,13 @@ namespace TreasureRun.Balance
 
                 foreach (Stats s in stats)
                 {
-                    var r = new GroupResult { Kind = s.G.Kind, Count = s.G.Count };
+                    var r = new GroupResult { Kind = s.G.Kind, Name = s.I.Name, Count = s.G.Count };
                     results.Add(r);
                     if (s.I.Shape == AttackShape.Mark) continue;
                     double c = Coverage(b, s);
                     r.Coverage = c;
-                    r.ActiveSeconds = s.I.Shape == AttackShape.Plane
-                        ? stream + b.PathLength / v
+                    r.ActiveSeconds = s.I.Shape == AttackShape.Plane ? stream + b.PathLength / v
+                        : s.I.Shape == AttackShape.Trap ? stream + c / v
                         : (stream + c / v) * (1 - Math.Exp(-rho * c));
                     double rate = s.Rate;
                     if (s.I.Shape == AttackShape.Dropper) rate *= (10 + PathStats.DropCells(b.Placement)) / 10;
@@ -210,6 +217,15 @@ namespace TreasureRun.Balance
 
                     r.Hits = r.Shots * r.Targets * mf;
                     r.Removed = r.Hits * perHit * (1 - r.Waste);
+                    if (s.I.Shape == AttackShape.Trap)
+                    {
+                        // A trap works per monster, not per crowd: each one that walks through takes rate x time-in-zone
+                        // strikes (capacity, with the towers' overkill waste per strike).
+                        double passes = w.Count / Math.Max(1, b.Lanes) * TrapArrival * s.G.Count;
+                        double strikes = s.Rate * c / v;
+                        r.Hits = passes * strikes * mf;
+                        r.Removed = r.Hits * perHit * (1 - r.Waste);
+                    }
                     removedTotal += r.Removed;
                     allHits += r.Hits;
                     critHits += r.Hits * Math.Min(1, crit);
@@ -291,6 +307,7 @@ namespace TreasureRun.Balance
             switch (s.I.Shape)
             {
                 case AttackShape.Plane: return b.PathLength;
+                case AttackShape.Trap: return s.Area;
                 case AttackShape.Dropper:
                 case AttackShape.Mines: return PathStats.DropCells(b.Placement);
                 default: return PathStats.Coverage(s.Range, b.Placement, b.PathLength);
@@ -307,6 +324,7 @@ namespace TreasureRun.Balance
                 case AttackShape.Line: return 1 + rho * s.Area * s.Range * 0.6;
                 case AttackShape.Pierce: return 1 + rho * s.Area * s.Range * (variant == BoardVariant.CannonLine ? 0.9 : 0.5);
                 case AttackShape.Saw: return 1 + rho * 10;
+                case AttackShape.Trap: return rho * s.Area;
                 default: return 1;
             }
         }
@@ -342,7 +360,7 @@ namespace TreasureRun.Balance
         private static Stats StatsOf(Board b, TowerGroup g)
         {
             TowerInfo t = g.Info;
-            TowerBonus x = g.Bonus, a = b.All;
+            TowerBonus x = g.Bonus, a = g.Fixed ? new TowerBonus() : b.All;
             double level = g.Level + x.Levels + a.Levels;
             double xp = x.XpFactor * a.XpFactor;
             if (Math.Abs(xp - 1) > 1e-9) level = LevelWithXp(level, xp);

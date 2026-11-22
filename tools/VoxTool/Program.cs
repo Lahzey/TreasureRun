@@ -146,6 +146,7 @@ namespace VoxTool
             { "planes/war_blimp", VoxTool.Recipes.PlaneRecipes.WarBlimp },
             { "planes/gatling_mount", VoxTool.Recipes.PlaneRecipes.GatlingMount },
             { "planes/gatling_barrels", VoxTool.Recipes.PlaneRecipes.GatlingBarrels },
+            { "pois/lightning_pole", VoxTool.Recipes.PoiRecipes.LightningPole },
         };
 
         /// <summary>build &lt;modelsDir&gt; [recipe|all]: writes &lt;modelsDir&gt;/&lt;recipe&gt;.vox and a preview .png next to it.</summary>
