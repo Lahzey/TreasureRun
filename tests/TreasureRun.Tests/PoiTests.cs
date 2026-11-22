@@ -23,7 +23,7 @@ namespace TreasureRun.Tests
         {
             for (int seed = 0; seed < 25; seed++)
             {
-                foreach (SectionStyle style in new[] { new SectionStyle(), new LightningTrapStyle() })
+                foreach (SectionStyle style in new SectionStyle[] { new SectionStyle(), new LightningTrapStyle(), new MerchantStyle { Rotation = 90 * (seed % 4) } })
                 {
                     SectionLayout l = PoiSectionLogic.Generate(exits, style, new SystemRng(seed));
                     Assert.That(PoiSectionLogic.Validate(l), Is.Null, $"{exits} seed {seed} {style.GetType().Name}");
@@ -175,6 +175,93 @@ namespace TreasureRun.Tests
             Assert.That(trap.Count, Is.EqualTo(1));
             Assert.That(b.GroupCost(trap), Is.EqualTo(0));
             Assert.That(b.Scope(null).Contains(trap), Is.False);
+        }
+
+        [Test]
+        public void MerchantWagonParksLevelByThePathOpeningSouthWest([ValueSource(nameof(AllExits))] SectionExits exits)
+        {
+            foreach (int rotation in new[] { 0, 90, 180, 270 })
+            {
+                SectionLayout l = PoiSectionLogic.Generate(exits, new MerchantStyle { Rotation = rotation }, new SystemRng(rotation + 5));
+                var opening = MerchantStyle.OpeningFor(rotation);
+                var corner = MerchantStyle.CornerOf(l);
+                Assert.That(corner, Is.EqualTo(MerchantStyle.Corner(opening, exits)));
+                bool touches = false;
+                foreach (var (x, z) in MerchantStyle.Footprint(corner))
+                {
+                    Assert.That(l.Cells[x, z], Is.EqualTo(SectionCell.Reserved), $"rotation {rotation}: ({x},{z})");
+                    Assert.That(l.Height[x, z], Is.EqualTo(1), "level");
+                    touches |= l.IsPath(x + 1, z) || l.IsPath(x - 1, z) || l.IsPath(x, z + 1) || l.IsPath(x, z - 1);
+                }
+                Assert.That(touches, Is.True, $"rotation {rotation}: beside the path");
+                // The opening faces a path segment: always for openings across the trunk, and with a side exit otherwise.
+                bool sideExit = (exits & (SectionExits.Left | SectionExits.Right)) != 0;
+                if (opening.dx != 0 || sideExit)
+                    foreach (var (x, z) in MerchantStyle.Footprint(corner))
+                    {
+                        var (nx, nz) = (x + opening.dx, z + opening.dz);
+                        bool front = !MerchantStyle.Footprint(corner).Contains((nx, nz));
+                        if (front) Assert.That(l.IsPath(nx, nz), Is.True, $"rotation {rotation}: path in front of ({x},{z})");
+                    }
+                // The opening points to world +z (south-west on screen): Unity turns (x, z) by r as (x cos r + z sin r, -x sin r + z cos r).
+                double a = rotation * System.Math.PI / 180.0;
+                double wx = opening.dx * System.Math.Cos(a) + opening.dz * System.Math.Sin(a);
+                double wz = -opening.dx * System.Math.Sin(a) + opening.dz * System.Math.Cos(a);
+                Assert.That(wx, Is.EqualTo(0).Within(1e-9), $"rotation {rotation}");
+                Assert.That(wz, Is.EqualTo(1).Within(1e-9), $"rotation {rotation}");
+            }
+        }
+
+        private static readonly int[] Waves = { 1, 3, 5, 8, 10, 15, 20, 25, 30, 35, 40, 45 };
+
+        [Test]
+        public void MerchantPricesFollowTheFairValue()
+        {
+            // Formula vs. the balance framework: the price whose payment costs as many points as the treasure's budget.
+            foreach (int w in Waves)
+            {
+                for (int r = 0; r < 6; r++)
+                {
+                    double ratio = MerchantLogic.FairValue(r, w, false) / FairPrice.Of(Pools.Budget((Rarity)r), w);
+                    Assert.That(ratio, Is.InRange(0.88, 1.12), $"rarity {r} wave {w}");
+                }
+                for (int r = 1; r < 5; r++)
+                {
+                    double ratio = MerchantLogic.FairValue(r, w, true) / FairPrice.Of(Pools.Budget((Rarity)r) * Pools.AscensionAllowance, w);
+                    Assert.That(ratio, Is.InRange(0.88, 1.12), $"ascension rarity {r} wave {w}");
+                }
+            }
+        }
+
+        [Test]
+        public void MerchantPricesRiseWithRarityAndWaveAndFollowTheRules()
+        {
+            foreach (MerchantKind kind in new[] { MerchantKind.Normal, MerchantKind.Legendary, MerchantKind.Ascension })
+                for (int w = 1; w <= 60; w++)
+                    for (int r = 0; r < 6; r++)
+                    {
+                        int p = MerchantLogic.Price(kind, r, w, false, false);
+                        Assert.That(p % 5, Is.EqualTo(0));
+                        if (r > 0) Assert.That(p, Is.GreaterThan(MerchantLogic.Price(kind, r - 1, w, false, false)));
+                        if (w > 1) Assert.That(p, Is.GreaterThanOrEqualTo(MerchantLogic.Price(kind, r, w - 1, false, false)));
+                        int disc = MerchantLogic.Price(kind, r, w, false, true);
+                        Assert.That(disc, Is.EqualTo(p * (1 - MerchantLogic.Discount)).Within(5));
+                        Assert.That(MerchantLogic.SellPrice(kind, r, w, false), Is.EqualTo(p / 2.0).Within(5));
+                        Assert.That(MerchantLogic.Price(kind, r, w, true, false), Is.GreaterThan(p));
+                    }
+            Assert.That(MerchantLogic.LeavesAfterPurchase(MerchantKind.Normal, 1), Is.False);
+            Assert.That(MerchantLogic.LeavesAfterPurchase(MerchantKind.Normal, 0), Is.True);
+            Assert.That(MerchantLogic.LeavesAfterPurchase(MerchantKind.Legendary, 0), Is.True);
+            Assert.That(MerchantLogic.LeavesAfterPurchase(MerchantKind.Ascension, 2), Is.True, "the Ascension Merchant leaves after one purchase");
+        }
+
+        [Test]
+        public void MerchantsAreRatedAtThePoiBudget([Values("merchant", "legendary_merchant", "ascension_merchant")] string id)
+        {
+            Spec s = ContentSpecs.Poi(id);
+            Assert.That(s, Is.Not.Null);
+            Rating r = Valuation.Rate(id, id, "poi", null, false, s);
+            Assert.That(r.Flag, Is.EqualTo(""), $"{r.Points:0.0} points");
         }
 
         private static bool PathCellsReachable(SectionLayout l)

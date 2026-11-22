@@ -1,0 +1,6 @@
+pois/merchant/shutter
+  duration 1.70 s | peak -1.9 dBFS | RMS -16.6 dBFS | loudest 50 ms -6.8 dBFS
+  attack 855 ms | decays to -30 dB at 1.20 s | brightness (spectral centroid) 2.5k
+  envelope per 50 ms (dBFS): -36 -14 -12 -16 -27 -35 -35 -26 -26 -20 -21 -15 -11 -15 -18 -20 -8 -7 -15 -19 -23 -25 -29 -33 -37 -39 -44 -42 -43 -45 -49 -60 -60 -60
+  brightness per 100 ms:    2.1k 2.1k 1.8k 2.3k 2.5k 1.5k 2.4k 4.1k 3.0k 1.4k 1.3k 1.7k 2.8k 3.5k 3.3k 3.2k -
+  dominant pitch per 100 ms: 108 108 108 86 108 151 108 65 65 65 65 65 65 65 65 65 -

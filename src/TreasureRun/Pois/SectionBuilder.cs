@@ -27,7 +27,9 @@ namespace TreasureRun.Pois
         {
             var exits = (SectionExits)record.Exits;
             SectionLayout layout;
-            try { layout = PoiSectionLogic.Generate(exits, def.Style(), new SystemRng(record.Seed)); }
+            SectionStyle style = def.Style();
+            style.Rotation = record.Rotation;
+            try { layout = PoiSectionLogic.Generate(exits, style, new SystemRng(record.Seed)); }
             catch (System.Exception e) { Plugin.Log.LogError($"POI section {def.Id} ({exits}) failed: {e.Message}"); return null; }
             string problem = PoiSectionLogic.Validate(layout);
             if (problem != null) { Plugin.Log.LogError($"POI section {def.Id} ({exits}) is invalid: {problem}"); return null; }

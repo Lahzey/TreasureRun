@@ -30,6 +30,11 @@ namespace SfxTool
                 {
                     case "build": return Build(args.Skip(1).ToArray());
                     case "analyze": return Analyze(args.Skip(1).ToArray());
+                    case "compare": return Compare.Run(args.Skip(1).ToArray());
+                    case "inspect": return Inspect.Run(args.Skip(1).ToArray());
+                    case "envelope": return Inspect.Envelope(args.Skip(1).ToArray());
+                    case "levels": return Inspect.Levels(args.Skip(1).ToArray());
+                    case "fit": return Fitter.Run(args.Skip(1).ToArray());
                     case "reference": return Reference(args.Skip(1).ToArray());
                     case "play": Process.Start(new ProcessStartInfo(Path.GetFullPath(args[1])) { UseShellExecute = true }); return 0;
                     case "morphpreview": return MorphPreview.Run(args.Skip(1).ToArray());

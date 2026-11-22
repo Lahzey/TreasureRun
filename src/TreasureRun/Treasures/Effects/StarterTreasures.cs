@@ -26,7 +26,7 @@ namespace TreasureRun.Treasures.Effects
 
             Add("piggy_bank", "Piggy Bank", Rarity.Common,
                 "At the end of each wave, gain 5% of your unspent gold (max 10 × level).",
-                (run, restoring) => GameEvents.WaveEnded += PiggyBankInterest,
+                (run, restoring) => { }, // interest paid in StarterTreasurePatches.Hook (per copy owned)
                 "economy");
 
             // ---------- Uncommon ----------
@@ -74,6 +74,7 @@ namespace TreasureRun.Treasures.Effects
                 (run, restoring) =>
                 {
                     SpawnManager sm = SpawnManager.instance;
+                    if (!restoring && run.GetCounter(QuickStudyBeforeKey) <= 0) run.SetCounter(QuickStudyBeforeKey, sm.cardDrawFrequency);
                     sm.cardDrawFrequency = Mathf.Max(1, Mathf.Min(sm.cardDrawFrequency, 2));
                 },
                 "cards");
@@ -89,7 +90,26 @@ namespace TreasureRun.Treasures.Effects
                 "Gold from monsters, income buildings and trees is doubled.",
                 (run, restoring) => { },
                 "economy");
+
+            // Selling (Wandering Merchant): undo the vanilla bonuses; one-time gains can't be sold.
+            Kit.OnSell("whetstone", () => TowerManager.instance.AddBonusBaseDamage(TowerType.Global, -1));
+            Kit.NoSale("sturdy_walls", "Its health is already in your walls.");
+            Kit.OnSell("long_sight", () => TowerManager.instance.AddBonusRange(TowerType.Global, -1f));
+            Kit.OnSell("bounty_board", () => MonsterManager.instance.extraGoldDrop -= 1);
+            Kit.OnSell("keen_eye", () => TowerManager.instance.AddCritChance(TowerType.Global, -0.05f));
+            Kit.OnSell("thunderclap", () => TowerManager.instance.AddStunChance(TowerType.Global, -0.06f));
+            Kit.NoSale("treasure_hoard", "Its gold was paid out when you took it.");
+            Kit.OnSell("quick_study", () =>
+            {
+                // The last copy gone: back to the draw frequency the run had before it.
+                if (TreasureInventory.CountOf("quick_study") > 1) return;
+                int before = TreasureRunMode.Run?.GetCounter(QuickStudyBeforeKey) ?? 0;
+                if (before > 0) SpawnManager.instance.cardDrawFrequency = before;
+            });
         }
+
+        /// <summary>The card draw frequency before Quick Study (restored when it is sold).</summary>
+        private const string QuickStudyBeforeKey = "quick_study.before";
 
         private static void Add(string id, string name, Rarity rarity, string description,
                                 System.Action<RunState, bool> onAcquire, params string[] tags)
@@ -105,7 +125,7 @@ namespace TreasureRun.Treasures.Effects
             });
         }
 
-        private static void PiggyBankInterest(int level)
+        internal static void PiggyBankInterest(int level)
         {
             int interest = Mathf.Min(GameHelpers.Gold * 5 / 100, 10 * level);
             if (interest <= 0) return;
@@ -141,6 +161,12 @@ namespace TreasureRun.Treasures.Effects
         // ----- Midas Touch: double "earned" gold (kills, income, trees; not refunds) -----
         internal static void Hook()
         {
+            // Piggy Bank: interest once per copy owned (ownership is checked at the wave end, so a sold copy stops paying).
+            GameEvents.Resubscribe += () => GameEvents.WaveEnded += level =>
+            {
+                for (int i = 0; i < TreasureInventory.CountOf("piggy_bank"); i++) StarterTreasures.PiggyBankInterest(level);
+            };
+
             GoldEconomy.Multipliers.Add(src =>
             {
                 int stacks = TreasureInventory.CountOf("midas_touch");

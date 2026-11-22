@@ -563,9 +563,11 @@ namespace TreasureRun.UI
                 Debugging.ObjectDump.Write(go.transform, depth, Print);
             });
 
-            Add("poi", "poi [list | omen <id> [all] | next <id> | exits <L|T|R|LT|LR|TR|LTR> | rate <0-15>]",
+            Add("poi", "poi [list | omen <id> [all] | next <id> | exits <L|T|R|LT|LR|TR|LTR> | rate <0-15> | shop | buy <slot> | sell <id> | press <buy n|sell id> | close]",
                 "Points of Interest: list omens and sites; put an omen on the open Expand buttons (first, or all); make the next " +
-                "omen roll succeed; force the exits of the next tile; set the mana per second of the nearest Lightning Trap.", true, a =>
+                "omen roll succeed; force the exits of the next tile; set the mana per second of the nearest Lightning Trap; open the " +
+                "nearest open merchant's shop, buy an offer or sell a treasure there directly, press a button of the open shop " +
+                "(confirmations need two presses), close the shop window.", true, a =>
             {
                 string sub = Arg(a, 0, "list").ToLowerInvariant();
                 Core.RunState run = TreasureRunMode.Run;
@@ -615,6 +617,30 @@ namespace TreasureRun.UI
                     if (trap == null) { Print("No Lightning Trap."); return; }
                     trap.SetRate(int.Parse(Arg(a, 1, "15")));
                     Print($"Lightning Trap at {trap.Center}: {trap.Status}");
+                    return;
+                }
+                if (sub == "shop" || sub == "buy" || sub == "sell")
+                {
+                    Pois.Merchant m = FindObjectsOfType<Pois.Merchant>().Where(x => !x.Closed).OrderBy(x => x.Center.sqrMagnitude).FirstOrDefault();
+                    if (m == null) { Print("No open merchant."); return; }
+                    if (sub == "shop") Pois.MerchantShopUI.Open(m);
+                    else if (sub == "buy") Print(m.Buy(int.Parse(Arg(a, 1, "0"))) ? "Bought." : "Can't buy that.");
+                    else
+                    {
+                        Treasures.TreasureDef d = Treasures.TreasureRegistry.Get(Arg(a, 1, ""));
+                        Print(d == null ? "Unknown treasure." : m.Sell(d) ? "Sold." : $"Can't sell: {Treasures.TreasureSale.WhyNot(d) ?? "not owned"}");
+                    }
+                    Print($"{m.Def.Name} at {m.Center}: {m.Status}");
+                    return;
+                }
+                if (sub == "press")
+                {
+                    Print(Pois.MerchantShopUI.Press(Rest(a, 1)) ? "Pressed." : "No shop open (or unknown button).");
+                    return;
+                }
+                if (sub == "close")
+                {
+                    Pois.MerchantShopUI.Close();
                     return;
                 }
                 Print("Unknown subcommand.");
@@ -773,6 +799,7 @@ namespace TreasureRun.UI
             Add("closeui", "closeui", "Closes the open building/tower popup.", true, a =>
             {
                 if (UIManager.instance != null && UIManager.instance.currentUI != null) UIManager.instance.CloseUI(UIManager.instance.currentUI);
+                Pois.MerchantShopUI.Close();
                 Print("Closed.");
             });
 

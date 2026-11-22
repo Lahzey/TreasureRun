@@ -26,6 +26,20 @@ namespace TreasureRun.Treasures.Effects
             });
         }
 
+        /// <summary>Selling (Wandering Merchant): what undoes one copy's lasting vanilla changes.</summary>
+        public static void OnSell(string id, Action undo)
+        {
+            TreasureDef d = TreasureRegistry.Get(id);
+            if (d != null) d.OnSell = undo; else Plugin.Log.LogWarning($"OnSell: unknown treasure '{id}'.");
+        }
+
+        /// <summary>Selling (Wandering Merchant): this treasure can't be sold, and why.</summary>
+        public static void NoSale(string id, string reason)
+        {
+            TreasureDef d = TreasureRegistry.Get(id);
+            if (d != null) d.NoSale = reason; else Plugin.Log.LogWarning($"NoSale: unknown treasure '{id}'.");
+        }
+
         public static bool Has(string id) => TreasureInventory.Owns(id);
         public static int Count(string id) => TreasureInventory.CountOf(id);
 

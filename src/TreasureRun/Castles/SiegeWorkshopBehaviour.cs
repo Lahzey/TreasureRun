@@ -185,7 +185,17 @@ namespace TreasureRun.Castles
 
         private void EnsureWeapon(string treasure, Func<SiegeWeapon> create)
         {
-            if (!Has(treasure) || weapons.Any(w => w.Treasure == treasure)) return;
+            if (!Has(treasure))
+            {
+                // Sold at a merchant: the weapon comes off the castle.
+                foreach (SiegeWeapon old in weapons.Where(w => w != null && w.Treasure == treasure).ToList())
+                {
+                    weapons.Remove(old);
+                    Destroy(old.gameObject);
+                }
+                return;
+            }
+            if (weapons.Any(w => w.Treasure == treasure)) return;
             SiegeWeapon w = create();
             if (w != null) weapons.Add(w);
         }

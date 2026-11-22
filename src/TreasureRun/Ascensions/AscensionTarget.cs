@@ -146,14 +146,25 @@ namespace TreasureRun.Ascensions
 
         /// <summary>
         /// True if this target is relevant in the current run: towers once built (same rule as other tower treasures),
-        /// buildings once unlocked (their build button is shown).
+        /// buildings once unlocked (their build button is in TowerUnlockManager's unlocked list; an active button alone
+        /// doesn't mean unlocked, e.g. the Mana Siphon's).
         /// </summary>
         public static bool InPlay(AscensionTarget t)
         {
             TowerType? type = TowerTypeOf(t);
             if (type.HasValue) return Treasures.Effects.Kit.TowerUsed(type.Value);
             BuildButtonUI button = BuildButton(t);
-            return button != null && button.gameObject.activeSelf;
+            return button != null && Unlocked(button.gameObject);
+        }
+
+        /// <summary>Is this build button unlocked in the current run?</summary>
+        public static bool Unlocked(GameObject button)
+        {
+            TowerUnlockManager m = TowerUnlockManager.instance;
+            if (m == null) return button.activeInHierarchy;
+            foreach (GameObject u in m.unlockedBuildings.Concat(m.unlockedTowers))
+                if (u != null && (u == button || button.transform.IsChildOf(u.transform))) return true;
+            return false;
         }
     }
 }

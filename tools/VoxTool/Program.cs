@@ -147,6 +147,15 @@ namespace VoxTool
             { "planes/gatling_mount", VoxTool.Recipes.PlaneRecipes.GatlingMount },
             { "planes/gatling_barrels", VoxTool.Recipes.PlaneRecipes.GatlingBarrels },
             { "pois/lightning_pole", VoxTool.Recipes.PoiRecipes.LightningPole },
+            { "pois/merchant/normal_wagon", VoxTool.Recipes.MerchantRecipes.NormalWagon },
+            { "pois/merchant/normal_awning", VoxTool.Recipes.MerchantRecipes.NormalAwning },
+            { "pois/merchant/normal_shutter", VoxTool.Recipes.MerchantRecipes.NormalShutter },
+            { "pois/merchant/legendary_wagon", VoxTool.Recipes.MerchantRecipes.LegendaryWagon },
+            { "pois/merchant/legendary_awning", VoxTool.Recipes.MerchantRecipes.LegendaryAwning },
+            { "pois/merchant/legendary_shutter", VoxTool.Recipes.MerchantRecipes.LegendaryShutter },
+            { "pois/merchant/ascension_wagon", VoxTool.Recipes.MerchantRecipes.AscensionWagon },
+            { "pois/merchant/ascension_awning", VoxTool.Recipes.MerchantRecipes.AscensionAwning },
+            { "pois/merchant/ascension_shutter", VoxTool.Recipes.MerchantRecipes.AscensionShutter },
         };
 
         /// <summary>build &lt;modelsDir&gt; [recipe|all]: writes &lt;modelsDir&gt;/&lt;recipe&gt;.vox and a preview .png next to it.</summary>

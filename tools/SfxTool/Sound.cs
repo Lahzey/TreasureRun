@@ -158,6 +158,55 @@ namespace SfxTool
             return o;
         }
 
+        /// <summary>
+        /// A brickwall low-pass (windowed-sinc FIR, Blackman window): almost nothing passes above <paramref name="cutoff"/>.
+        /// Biquads roll off at 12 dB per octave; this matches hard cuts such as an MP3's 16 kHz edge.
+        /// </summary>
+        public Sound BrickWall(float cutoff, int taps = 255)
+        {
+            int half = taps / 2;
+            var h = new double[taps];
+            double fc = cutoff / Rate, sum = 0;
+            for (int i = 0; i < taps; i++)
+            {
+                int n = i - half;
+                double sinc = n == 0 ? 2 * fc : Math.Sin(2 * Math.PI * fc * n) / (Math.PI * n);
+                double w = 0.42 - 0.5 * Math.Cos(2 * Math.PI * i / (taps - 1)) + 0.08 * Math.Cos(4 * Math.PI * i / (taps - 1));
+                h[i] = sinc * w;
+                sum += h[i];
+            }
+            var o = new float[Length];
+            for (int i = 0; i < Length; i++)
+            {
+                double acc = 0;
+                for (int k = 0; k < taps; k++)
+                {
+                    int j = i + k - half;
+                    if (j >= 0 && j < Length) acc += S[j] * h[k];
+                }
+                o[i] = (float)(acc / sum);
+            }
+            return new Sound(o);
+        }
+
+        /// <summary>
+        /// Zero-phase FFT equaliser from (frequency, dB) points (linear in dB over log frequency, flat outside), e.g.
+        /// <c>Eq((125, -20), (1000, 0), (4000, 6), (16000, -10))</c>: any measured spectral shape in one step.
+        /// </summary>
+        public Sound Eq(params (float hz, float db)[] points) => new Sound(Dsp.Eq(S, points));
+
+        /// <summary>A resonator (Dsp.Resonate): this signal excites a mode at <paramref name="hz"/> decaying by the given dB per second.</summary>
+        public Sound Resonate(float hz, float decayDbPerSecond) => new Sound(Dsp.Resonate(S, hz, decayDbPerSecond));
+
+        /// <summary>A single-sample impulse of the given height at <paramref name="at"/> seconds in a buffer of <paramref name="seconds"/>.</summary>
+        public static Sound Impulse(float seconds, float at = 0f, float height = 1f)
+        {
+            var s = new Sound(Samples(seconds));
+            int i = (int)(at * Rate);
+            if (i >= 0 && i < s.Length) s.S[i] = height;
+            return s;
+        }
+
         /// <summary>Soft saturation (tanh). 1 = mild, 5+ = heavy.</summary>
         public Sound Drive(float amount) => Map((x, _) => (float)(Math.Tanh(x * amount) / Math.Tanh(amount)));
 

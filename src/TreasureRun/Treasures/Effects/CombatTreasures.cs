@@ -57,6 +57,7 @@ namespace TreasureRun.Treasures.Effects
                 },
                 new[] { "damage", "risk" });
             TreasureRegistry.Get("glass_cannon").MaxHealthCost = GlassCannonCost;
+            NoSale("glass_cannon", "The health it took doesn't come back.");
 
             // ----- Legendary -----
             Add("domino_effect", "Domino Effect", Rarity.Legendary,

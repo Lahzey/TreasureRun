@@ -32,6 +32,9 @@ namespace TreasureRun.Treasures.Effects
 
             Add("time_dilation", "Time Dilation", Rarity.Mythical,
                 "All enemies move 30% slower.", tags: new[] { "slow" });
+
+            OnSell("lucky_coin", () => Luck.AddExtraRolls(LuckCategory.TreasureRarity, -1));
+            OnSell("four_leaf_clover", () => Luck.AddExtraRolls("All", -1));
         }
 
         public static void Hook()

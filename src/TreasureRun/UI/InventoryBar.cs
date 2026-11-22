@@ -30,6 +30,7 @@ namespace TreasureRun.UI
         internal static void Initialize()
         {
             TreasureInventory.TreasureGained += _ => Refresh();
+            TreasureInventory.TreasureRemoved += _ => Refresh();
             TreasureRunMode.RunEnded += _ => Destroy();
         }
 

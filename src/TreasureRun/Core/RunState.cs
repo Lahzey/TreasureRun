@@ -74,6 +74,8 @@ namespace TreasureRun.Core
         public int Wave;
         /// <summary>POI state (e.g. "active" = 1, "kills").</summary>
         public Dictionary<string, float> Data = new Dictionary<string, float>();
+        /// <summary>Ids the POI holds (e.g. the merchant's stock of treasure ids, in slot order).</summary>
+        public List<string> Items = new List<string>();
 
         public float Get(string key) => Data.TryGetValue(key, out float v) ? v : 0f;
         public void Set(string key, float value) => Data[key] = value;

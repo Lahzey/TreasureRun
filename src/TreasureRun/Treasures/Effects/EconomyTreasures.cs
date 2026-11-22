@@ -45,6 +45,8 @@ namespace TreasureRun.Treasures.Effects
 
             Add("jackpot", "Jackpot", Rarity.Rare,
                 "Every 40th enemy killed drops 15 × level gold.", tags: new[] { "economy" });
+
+            NoSale("loan_shark", "Its gold was paid out when you took it.");
         }
 
         public static void Hook()

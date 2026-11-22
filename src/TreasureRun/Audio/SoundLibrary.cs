@@ -126,7 +126,34 @@ namespace TreasureRun.Audio
         public static void PlayUi(string name, float volume = 1f)
         {
             Vector3 at = MusicManager.instance != null ? MusicManager.instance.transform.position : Vector3.zero;
-            Play(name, at, volume, 0f, 2);
+            if (volume <= 1f) { Play(name, at, volume, 0f, 2); return; }
+
+            // Above full volume (an AudioSource caps at 1): the clip on several sources with the pool's settings, started on
+            // the same DSP sample, so they add up coherently (2 sources = +6 dB).
+            SFXManager sfx = SFXManager.instance;
+            AudioClip clip = Get(name);
+            if (sfx == null || clip == null || sfx.volume <= 0f) return;
+            AudioSource template = sfx.sourceObject != null ? sfx.sourceObject.GetComponentInChildren<AudioSource>() : null;
+            int copies = Mathf.CeilToInt(volume);
+            double start = AudioSettings.dspTime + 0.02;
+            for (int i = 0; i < copies; i++)
+            {
+                var go = new GameObject("TR_UiSound_" + name);
+                go.transform.position = at;
+                var src = go.AddComponent<AudioSource>();
+                if (template != null)
+                {
+                    src.spatialBlend = template.spatialBlend;
+                    src.rolloffMode = template.rolloffMode;
+                    src.minDistance = template.minDistance;
+                    src.maxDistance = template.maxDistance;
+                    src.outputAudioMixerGroup = template.outputAudioMixerGroup;
+                }
+                src.clip = clip;
+                src.volume = sfx.volume * volume / copies;
+                src.PlayScheduled(start);
+                UnityEngine.Object.Destroy(go, clip.length + 0.2f);
+            }
         }
 
         /// <summary>Drops loaded clips; the next use reads the files again.</summary>

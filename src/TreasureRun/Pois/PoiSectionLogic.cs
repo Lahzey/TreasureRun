@@ -91,6 +91,8 @@ namespace TreasureRun.Pois
         public (int x, int z) Hub = (SectionLayout.Half, SectionLayout.Half);
         /// <summary>Random hill blobs on free grass (vanilla-like decoration).</summary>
         public int MinHills = 1, MaxHills = 3;
+        /// <summary>World rotation of the tile in degrees around y (set before generating), for styles that turn a structure towards the camera.</summary>
+        public int Rotation;
 
         /// <summary>Cells reserved before routing (routes go around them).</summary>
         public virtual void Reserve(SectionLayout layout) { }

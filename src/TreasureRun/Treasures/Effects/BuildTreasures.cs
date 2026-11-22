@@ -61,6 +61,8 @@ namespace TreasureRun.Treasures.Effects
                 "Additional towers of a type no longer cost more. Towers attack 3% faster for every other tower within 3 range, but deal 15% less damage.",
                 (run, restoring) => { if (!restoring) RemovePriceIncreases(); },
                 new[] { "many-towers" }, exclusionGroup: "army-size");
+            // Selling Legion would raise the refunds of towers bought without price increases.
+            NoSale("legion", "Your towers were bought at its prices.");
         }
 
         public static void Hook()

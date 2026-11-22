@@ -37,6 +37,18 @@ namespace TreasureRun.Treasures
         /// the cost can be paid; the effect must pay it via Cards.HealthCost.Pay (free for castles that ignore health).
         /// </summary>
         public Func<int> MaxHealthCost;
+
+        /// <summary>
+        /// Why the treasure can't be sold (Wandering Merchant), or null if it can. Treasures whose effect is used up or locked
+        /// in when taken (gold, health, a paid cost) are not sellable.
+        /// </summary>
+        public string NoSale;
+
+        /// <summary>
+        /// Undoes one copy's lasting changes to the vanilla state when it is sold (e.g. -1 base damage). Effects that check
+        /// ownership (<see cref="TreasureInventory.Owns"/>) need nothing: they stop once the copy is gone.
+        /// </summary>
+        public Action OnSell;
     }
 
     /// <summary>Runtime behaviour of an owned treasure. One instance per owned copy.</summary>

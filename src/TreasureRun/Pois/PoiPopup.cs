@@ -29,6 +29,17 @@ namespace TreasureRun.Pois
         /// <summary>Makes an object clickable for this popup: a collider (trigger or solid) on the given layer.</summary>
         public void AddTarget(GameObject go) => go.AddComponent<Target>().Popup = this;
 
+        /// <summary>Makes an object clickable with its own action (a collider on a clickable layer), e.g. to open a custom window.</summary>
+        public static void AddClick(GameObject go, Action onClick) => go.AddComponent<ClickTarget>().OnClick = onClick;
+
+        private sealed class ClickTarget : MonoBehaviour, IBuildable
+        {
+            public Action OnClick;
+            public void SetStats() { }
+            public void Demolish() { }
+            public void SpawnUI() => OnClick?.Invoke();
+        }
+
         /// <summary>The first layer UIManager treats as clickable.</summary>
         public static int ClickableLayer()
         {

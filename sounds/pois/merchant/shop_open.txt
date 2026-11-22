@@ -1,0 +1,6 @@
+pois/merchant/shop_open
+  duration 2.35 s | peak -7.4 dBFS | RMS -27.3 dBFS | loudest 50 ms -15.7 dBFS
+  attack 0 ms | decays to -30 dB at 1.35 s | brightness (spectral centroid) 5.4k
+  envelope per 50 ms (dBFS): -16 -22 -25 -22 -21 -23 -22 -24 -25 -24 -21 -29 -31 -32 -33 -29 -30 -32 -33 -38 -40 -42 -45 -45 -48 -42 -40 -49 -45 -49 -50 -55 -57 -56 -60 -59 -56 -60 -60 -60 -60 -60 -60 -60 -60 -60 -60
+  brightness per 100 ms:    6.1k 6.5k 5.8k 5.4k 4.8k 5.0k 3.9k 2.8k 2.5k 2.5k 2.4k 2.4k 2.3k 2.3k 2.3k 2.3k 2.3k 2.3k 2.5k 2.9k 2.4k 2.2k 2.2k 2.1k
+  dominant pitch per 100 ms: 2.3k 2.2k 2.3k 2.3k 2.3k 2.3k 2.3k 2.3k 2.3k 2.3k 2.3k 2.3k 2.2k 2.3k 2.3k 2.3k 2.3k 2.3k 2.3k 2.3k 2.3k 2.3k 2.3k 2.3k

@@ -13,6 +13,8 @@ namespace TreasureRun.Treasures
         public static IReadOnlyList<TreasureEffect> Active => active;
 
         public static event Action<TreasureDef> TreasureGained;
+        /// <summary>A copy was removed (sold at a merchant).</summary>
+        public static event Action<TreasureDef> TreasureRemoved;
 
         /// <summary>Fast ownership check (called from hot combat paths). False outside a Treasure Run.</summary>
         public static bool Owns(string id) => TreasureRunMode.Active && counts.ContainsKey(id);
@@ -45,6 +47,21 @@ namespace TreasureRun.Treasures
             run.OwnedTreasures.RemoveAll(x => x == id);
             active.RemoveAll(e => e.Def != null && e.Def.Id == id);
             Plugin.Log.LogInfo($"Treasure revoked: {id}");
+        }
+
+        /// <summary>Removes one copy of a treasure (selling): ownership checks see one copy fewer at once.</summary>
+        public static bool RemoveOne(TreasureDef def)
+        {
+            RunState run = TreasureRunMode.Run;
+            if (run == null || def == null || !counts.TryGetValue(def.Id, out int n)) return false;
+            if (n <= 1) counts.Remove(def.Id); else counts[def.Id] = n - 1;
+            run.OwnedTreasures.Remove(def.Id);
+            int i = active.FindLastIndex(e => e.Def != null && e.Def.Id == def.Id);
+            if (i >= 0) active.RemoveAt(i);
+            Plugin.Log.LogInfo($"Treasure removed: {def.Name} ({def.Rarity})");
+            try { TreasureRemoved?.Invoke(def); }
+            catch (Exception e) { Plugin.Log.LogError($"TreasureRemoved handler failed: {e}"); }
+            return true;
         }
 
         public static void Grant(TreasureDef def)

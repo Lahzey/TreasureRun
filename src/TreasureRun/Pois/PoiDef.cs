@@ -42,6 +42,9 @@ namespace TreasureRun.Pois
         {
             if (all.Count > 0) return;
             all.Add(LightningTrap.Create());
+            all.Add(Merchant.Create(MerchantKind.Normal));
+            all.Add(Merchant.Create(MerchantKind.Legendary));
+            all.Add(Merchant.Create(MerchantKind.Ascension));
         }
 
         /// <summary>POIs whose omen can appear at a wave.</summary>

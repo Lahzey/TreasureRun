@@ -105,6 +105,7 @@ bin/Release/net8.0/SfxTool.exe build ../../sounds ascensions/particle_accelerato
 - The prefix picks the sounds (a folder, or one name); without it, everything is rendered.
 - Each sound gets a `.wav`, an analysis `.png` (waveform, spectrogram) and a `.txt` report.
 - Then build the mod and press F6 (or restart).
+- Matching an example recording: `compare`, `inspect`, `envelope` and `levels` analyse it, and `fit <model> <recording>` fits a model's parameters to it (the cash register: `fit register`; the shutter: `fit door` and `fit cloth`), then build SfxTool again and render. See [docs/sound-workflow.md](docs/sound-workflow.md).
 - More in [docs/sound-workflow.md](docs/sound-workflow.md).
 
 #### Review mix of the transformation

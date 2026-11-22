@@ -186,7 +186,42 @@ namespace TreasureRun.Balance
             ["lightning_trap"] = () => S.FixedSource("lightning in the centre cell (damage follows the wave and the mana)", global::TreasureRun.Pois.LightningTrapLogic.Info)
                 .Offered(global::TreasureRun.Pois.LightningTrapLogic.MinWave)
                 .Because("strikes everything in the centre cell 4 times a second; 0-15 mana/s (rated at the best rate per wave), damage in proportion, mana paid in mana buildings; solved for 15 points per wave"),
+            ["merchant"] = () => Merchant(global::TreasureRun.Pois.MerchantKind.Normal),
+            ["legendary_merchant"] = () => Merchant(global::TreasureRun.Pois.MerchantKind.Legendary),
+            ["ascension_merchant"] = () => Merchant(global::TreasureRun.Pois.MerchantKind.Ascension),
         };
+
+        /// <summary>
+        /// A Wandering Merchant: the treasures a player is assumed to buy, at their budgets, minus the gold they cost
+        /// (Pois.MerchantLogic). Normal and Legendary: the discounted offer and one more (the last offer stays, so the shop
+        /// stays open for selling). Ascension: one purchase, the discounted one half the time.
+        /// </summary>
+        private static Spec Merchant(global::TreasureRun.Pois.MerchantKind kind)
+        {
+            const double d = global::TreasureRun.Pois.MerchantLogic.Discount;
+            bool asc = kind == global::TreasureRun.Pois.MerchantKind.Ascension;
+            // Expected budget and price of an offer at the wave the merchant arrives.
+            (double budget, double price) Offer(int wave)
+            {
+                double wsum = 0, b = 0, p = 0;
+                for (Rarity r = Rarity.Common; r <= Rarity.Legendary; r++)
+                {
+                    double weight = kind == global::TreasureRun.Pois.MerchantKind.Legendary ? (r == Rarity.Legendary ? 1 : 0)
+                        : Pools.Weight(r, wave) * (asc ? global::TreasureRun.Pois.MerchantLogic.AscensionsPerRarity[(int)r] : 1);
+                    wsum += weight;
+                    b += weight * Pools.Budget(r) * (asc ? Pools.AscensionAllowance : 1);
+                    p += weight * global::TreasureRun.Pois.MerchantLogic.Price(kind, (int)r, wave, asc, false);
+                }
+                return (b / wsum, p / wsum);
+            }
+            int bought = asc ? 1 : 2;
+            double paid = asc ? 1 - d / 2 : (1 - d) + 1;
+            return S.Custom(Category.Meta, $"{bought} {(asc ? "ascension" : "treasures")} bought", c => c.Mods.DirectPoints += bought * Offer(c.Acquired).budget)
+                .GoldNow(a => -paid * Offer(a).price, "their price")
+                .Offered(global::TreasureRun.Pois.MerchantLogic.MinWave(kind))
+                .Because(asc ? "one ascension bought (the discounted one half the time), rated at its budget; price from MerchantLogic"
+                             : "the discounted offer and one more bought, rated at their budgets; price from MerchantLogic");
+        }
 
         /// <summary>Spec of a Point of Interest (null when missing).</summary>
         public static Spec Poi(string id) => Pois.TryGetValue(id, out var f) ? f() : null;

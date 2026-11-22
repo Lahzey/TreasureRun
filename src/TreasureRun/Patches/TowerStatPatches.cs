@@ -30,6 +30,7 @@ namespace TreasureRun.Patches
 
             // Treasures may change stat providers' output: refresh after each gain.
             TreasureInventory.TreasureGained += _ => StatLayer.Refresh();
+            TreasureInventory.TreasureRemoved += _ => StatLayer.Refresh();
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(Tower), nameof(Tower.SetStats))]

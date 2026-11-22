@@ -73,3 +73,12 @@ From [balance-report.md](balance-report.md) (M7.5). **No balance changes yet:** 
   - Base regeneration is 2/s, so early high rates run in bursts (out of mana, it waits for a second's worth).
   - On one lane every monster passes through the centre; the model assumes 80% arrive alive (`TrapArrival`).
 - **Uncalibrated:** `TrapArrival` 0.8; the best-rate table depends on the reference boards' mana (re-run the probe after mana or board changes).
+
+**Wandering Merchant** (docs/poi-plan.md §5): Normal 15.0, Legendary 15.2, Ascension 14.9 points against 15.
+- **Prices** follow the fair price from the framework (`Balance.FairPrice`: the gold whose payment costs as many points as the rarity's budget) within 9% at every rarity and wave; the markups (Normal 75%, Legendary 92%, Ascension 65%) are what brings each merchant to 15 under the assumed purchases.
+- **Assumed purchases** (chosen, not measured): Normal and Legendary, the discounted offer and one more; Ascension, one ascension, the discounted one half the time. A player who buys all three at the Normal merchant gets about 19.
+- **Paying hurts more than gaining helps:** the board loses towers it relies on, so the fair *price* is about 0.8 of the gold whose *gain* is worth the budget. Selling at 50% of the price therefore returns roughly 40% of a treasure's worth in gold.
+- **Check in play:**
+  - Early merchants (waves 2–8): a Legendary at about 500–800 gold against an income of 30–170 a wave. Is saving up for it (prices rise with the wave) fun or frustrating?
+  - Is selling used? Sell prices differ per merchant (half of *this* merchant's price), so the Legendary Merchant pays more for the same treasure than the Normal one.
+  - Ascension Merchant at 65%: is one cheap ascension of your choice too strong compared to finding it in an offer?
