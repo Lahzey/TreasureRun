@@ -23,7 +23,7 @@ namespace TreasureRun.Tests
         {
             for (int seed = 0; seed < 25; seed++)
             {
-                foreach (SectionStyle style in new SectionStyle[] { new SectionStyle(), new LightningTrapStyle(), new MerchantStyle { Rotation = 90 * (seed % 4) } })
+                foreach (SectionStyle style in new SectionStyle[] { new SectionStyle(), new LightningTrapStyle(), new MerchantStyle { Rotation = 90 * (seed % 4) }, new SoulUrnStyle() })
                 {
                     SectionLayout l = PoiSectionLogic.Generate(exits, style, new SystemRng(seed));
                     Assert.That(PoiSectionLogic.Validate(l), Is.Null, $"{exits} seed {seed} {style.GetType().Name}");
@@ -261,6 +261,82 @@ namespace TreasureRun.Tests
             Spec s = ContentSpecs.Poi(id);
             Assert.That(s, Is.Not.Null);
             Rating r = Valuation.Rate(id, id, "poi", null, false, s);
+            Assert.That(r.Flag, Is.EqualTo(""), $"{r.Points:0.0} points");
+        }
+
+        [Test]
+        public void SoulUrnStandsOnOneRandomGrassCell([ValueSource(nameof(AllExits))] SectionExits exits)
+        {
+            var cells = new HashSet<(int, int)>();
+            for (int seed = 0; seed < 40; seed++)
+            {
+                SectionLayout l = PoiSectionLogic.Generate(exits, new SoulUrnStyle(), new SystemRng(seed));
+                int reserved = 0;
+                for (int x = 0; x < 7; x++) for (int z = 0; z < 7; z++) if (l.Cells[x, z] == SectionCell.Reserved) reserved++;
+                Assert.That(reserved, Is.EqualTo(1), $"{exits} seed {seed}");
+                var (cx, cz) = SoulUrnStyle.CellOf(l);
+                Assert.That(l.IsPath(cx, cz), Is.False);
+                Assert.That(l.Height[cx, cz], Is.EqualTo(1), "the urn stands on plain grass");
+                cells.Add((cx, cz));
+            }
+            Assert.That(cells.Count, Is.GreaterThan(10), "the cell is random");
+        }
+
+        [Test]
+        public void SoulUrnCapacityFollowsTheWavesAndTheLane()
+        {
+            Assert.That(SoulUrnLogic.Capacity(3, 1), Is.EqualTo(SoulUrnLogic.MinCapacity));
+            Assert.That(SoulUrnLogic.Capacity(15, 1), Is.InRange(170, 250), "about twice the 100 souls of the first design at mid-game");
+            int prev = 0;
+            for (int w = 1; w <= 45; w++)
+            {
+                int c = SoulUrnLogic.Capacity(w, 1);
+                Assert.That(c % 5, Is.EqualTo(0));
+                Assert.That(c, Is.GreaterThanOrEqualTo(prev - 5), $"wave {w}");
+                prev = c;
+            }
+            Assert.That(SoulUrnLogic.Capacity(20, 0.5), Is.EqualTo(SoulUrnLogic.Capacity(20, 1) / 2.0).Within(5));
+            Assert.That(SoulUrnLogic.Capacity(20, 0.1), Is.EqualTo(SoulUrnLogic.Capacity(20, SoulUrnLogic.MinLaneShare)));
+            Assert.That(SoulUrnLogic.LaneShare(1, 3), Is.EqualTo(1 / 3.0).Within(1e-9));
+            Assert.That(SoulUrnLogic.LaneShare(0, 0), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void SoulUrnGoldIsWorthAChestAndTheRuneIsFixed()
+        {
+            foreach (int w in Waves)
+            {
+                double chest = Pools.TreasurePick(w);
+                double gold = SoulUrnLogic.ChestGold(w) / FairPrice.GainOf(chest, w);
+                Assert.That(gold, Is.InRange(0.9, 1.1), $"gold worth a chest at wave {w}");
+                Assert.That(SoulUrnLogic.Gold(w), Is.EqualTo(SoulUrnLogic.GoldFactor * SoulUrnLogic.ChestGold(w)).Within(5));
+            }
+            Assert.That(SoulUrnLogic.RuneBonus, Is.EqualTo(1.0), "+100% attack speed, whatever the wave");
+            int[] counts = new int[4];
+            for (int i = 0; i < 300; i++) counts[(int)SoulUrnLogic.Pick(i / 300.0)]++;
+            Assert.That(counts[1], Is.EqualTo(100)); Assert.That(counts[2], Is.EqualTo(100)); Assert.That(counts[3], Is.EqualTo(100));
+        }
+
+        [Test]
+        public void SoulsFlyFromTheBodyIntoTheMouth()
+        {
+            var from = new Vector3(3f, 0f, -4f);
+            var mouth = new Vector3(-1f, 1.6f, 2f);
+            Assert.That((SoulUrnLogic.SoulPoint(from, mouth, 0f, 1f) - (from + Vector3.up * 0.3f)).magnitude, Is.LessThan(1e-4f));
+            Assert.That((SoulUrnLogic.SoulPoint(from, mouth, 1f, 1f) - mouth).magnitude, Is.LessThan(1e-4f));
+            // It arcs above both ends on the way and comes down into the mouth from above.
+            Assert.That(SoulUrnLogic.SoulPoint(from, mouth, 0.5f, 1f).y, Is.GreaterThan(mouth.y + 0.5f));
+            Assert.That(SoulUrnLogic.SoulPoint(from, mouth, 0.95f, 1f).y, Is.GreaterThan(mouth.y));
+            Assert.That(SoulUrnLogic.InReach(new Vector3(4.9f, 3f, 4.9f)), Is.True);
+            Assert.That(SoulUrnLogic.InReach(new Vector3(5f, 0f, 5f)), Is.False);
+        }
+
+        [Test]
+        public void SoulUrnIsRatedAtThePoiBudget()
+        {
+            Spec s = ContentSpecs.Poi(SoulUrnLogic.Id);
+            Assert.That(s, Is.Not.Null);
+            Rating r = Valuation.Rate(SoulUrnLogic.Id, "Soul Urn", "poi", null, false, s);
             Assert.That(r.Flag, Is.EqualTo(""), $"{r.Points:0.0} points");
         }
 

@@ -11,3 +11,9 @@ Visual improvements noticed in playtests, collected for a later polish pass (lik
 | **Mega Mortar** | Overhaul the steam effect: replace the round steam-cloud particles with small blocky steam particles. | `SteamFx` in `MegaMortar.cs` |
 | **Mega Mortar** | The corner vents (3x3 and up) should no longer release steam; instead they briefly glow deep blue when the mortar fires. | `SteamFx.Blast` vents, `MortarModule.VentPositions`, vent grilles in `MortarBody` |
 | **Ritual of the Sun** | Ideas not built yet: heat shimmer round the sun column (the Particle Accelerator's `SpaceWarp` camera could bend the scene behind it slightly); a small rainbow fan where a beam leaves a prism (prism dispersion); the prism's crystal is hard to make out under its glint at close zoom; the powered crystal's gold overlay is unlit (flat gold). | `SunRing.cs`, `SunFx`, `RitualGrid.Glint`, `CrystalPower` |
+
+## Points of Interest
+
+| POI | Change | Where |
+|---|---|---|
+| **Soul Urn** | The soul fire in the urn's mouth is small at low fill and easy to miss; a ring of runes on the plinth that lights up with the fill would show the progress at a glance. The souls read as comets (bright trail, small head); a wispier, flickering head would look more like a soul. | `SoulFx.SoulFire`, `SoulWisp`, `PoiRecipes.SoulUrn` |

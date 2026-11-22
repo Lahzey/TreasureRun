@@ -1,0 +1,6 @@
+pois/soul_urn/soul_absorb_1
+  duration 0.70 s | peak -10.0 dBFS | RMS -25.4 dBFS | loudest 50 ms -18.3 dBFS
+  attack 245 ms | decays to -30 dB at 0.62 s | brightness (spectral centroid) 2.7k
+  envelope per 50 ms (dBFS): -40 -33 -29 -26 -22 -18 -22 -24 -26 -30 -34 -39 -47 -60
+  brightness per 100 ms:    2.2k 3.0k 3.1k 2.4k 1.6k 1.4k 1.3k
+  dominant pitch per 100 ms: 624 1.1k 883 883 883 883 883

@@ -13,6 +13,9 @@ namespace SfxTool
             Add("pois/merchant/shop_open", ShopOpen);
             Add("pois/merchant/register", ShopRegister);
             Add("pois/merchant/shutter", ShopShutter);
+            Variants("pois/soul_urn/soul_absorb", 3, SoulAbsorb);
+            Add("pois/soul_urn/urn_fill", UrnFill);
+            Add("pois/soul_urn/rune_ignite", RuneIgnite);
         }
 
         /// <summary>One coin: a short metallic tick (two high partials) with a noise click.</summary>
@@ -127,6 +130,88 @@ namespace SfxTool
             Sound hum = Sound.Tone(Wave.Saw, length, Env.Sweep(260f, 50f, length), Env.Points(0f, 1f, 0.45f, 0.4f, 0.55f, 0f))
                 .LowPass(Env.Sweep(2500f, 400f, length), 1.1f);
             return Sound.Layer(clunk, hum.Gain(0.5f)).Fade(0f, 0.08f).Normalize(-9f);
+        }
+            // ------------------------------------------------------------------ Soul Urn (A minor, resolving to A major when it fills)
+
+        private const float UrnA3 = 220f, UrnE4 = 329.63f, UrnA4 = 440f, UrnC5 = 523.25f, UrnCs5 = 554.37f, UrnE5 = 659.26f,
+                            UrnA5 = 880f, UrnC6 = 1046.5f, UrnCs6 = 1108.73f, UrnE6 = 1318.51f, UrnA6 = 1760f;
+
+        /// <summary>
+        /// A soul flying into the urn (subtle; it plays for every kill nearby): a breath of air rising as the soul swoops in
+        /// (band noise 500 Hz → 2.2 kHz over 0.25 s), then at the mouth a soft glassy plip (a short bell on a note of A minor,
+        /// one per variant, with its fifth an octave up very quietly) and a faint low "whum". 0.7 s with a small room.
+        /// Quiet: loudest 50 ms ≈ −18 dBFS, the breath about 8 dB under the plip; played at a low volume besides.
+        /// </summary>
+        private static Sound SoulAbsorb(int seed)
+        {
+            float[] notes = { UrnA5, UrnC6, UrnE6 };
+            float note = notes[(seed - 1) % notes.Length];
+            const float entry = 0.24f;
+            Sound breath = Sound.Noise(NoiseColor.Pink, 0.34f, 410 + seed).BandPass(Env.Sweep(500f, 2200f, entry), 1.4f)
+                .Envelope(Env.Points(0f, 0f, entry * 0.8f, 1f, entry + 0.03f, 0.25f, 0.34f, 0f)).Gain(2.2f);
+            Sound plip = Bell(note, 0.45f, 1.2f, 9f).Mix(Bell(note * 1.5f * 2f, 0.3f, 0.8f, 14f), 0f, 0.12f);
+            Sound whum = Sound.Tone(Wave.Sine, 0.18f, Env.Sweep(260f, 140f, 0.12f), Env.Exp(22f, 0.001f));
+            return Sound.Silence(0.7f)
+                .Mix(breath, 0f)
+                .Mix(plip, entry, 0.5f)
+                .Mix(whum, entry, 0.25f)
+                .Reverb(room: 0.45f, damp: 0.4f, mix: 0.2f, tail: 0.3f).Trim(0.7f).Fade(0f, 0.12f).Normalize(-10f);
+        }
+
+        /// <summary>
+        /// The urn is full and bursts. A swell (0–0.9 s): a ghostly choir on A minor (A3, E4, A4, C5, darkened to an "ooh")
+        /// rising in pitch by a quarter tone, and a rush of air sweeping up (300 Hz → 3 kHz). At 0.9 s the burst: a deep boom
+        /// (70 Hz → 45 Hz with a low noise thump), the urn's glaze cracking (a sparse clatter of bright ticks over 0.25 s), and
+        /// the chord turns major: bells A5, C#6, E6, A6 struck one after another, ringing out with the choir on A major.
+        /// 2.8 s. Loudness of a reward (loudest 50 ms ≈ −10 dBFS, like an explosion's).
+        /// </summary>
+        private static Sound UrnFill()
+        {
+            const float length = 2.8f, burst = 0.9f;
+            Sound swell = Choir(burst + 0.15f, new[] { UrnA3, UrnE4, UrnA4, UrnC5 }, 511, t => 1f + 0.03f * Math.Min(1f, t / burst), 0.01f)
+                .LowPass(1600f).Envelope(Env.Points(0f, 0f, burst * 0.85f, 1f, burst + 0.15f, 0f));
+            Sound rush = Sound.Noise(NoiseColor.Pink, burst + 0.1f, 512).BandPass(Env.Sweep(300f, 3000f, burst), 1.2f)
+                .Envelope(Env.Points(0f, 0f, burst * 0.9f, 1f, burst + 0.1f, 0f)).Gain(0.45f);
+            Sound boom = Sound.Tone(Wave.Sine, 1.1f, Env.Sweep(70f, 45f, 0.6f), Env.Exp(4.5f, 0.002f))
+                .Mix(Sound.Noise(NoiseColor.Brown, 0.4f, 513).LowPass(220f).Envelope(Env.Exp(12f, 0.002f)), 0f, 0.8f);
+            var rng = new Random(514);
+            Sound crack = Strike(515, 2500f, 300f, 0.03f).Mix(Clatter(rng, 9, 0.028f), 0.01f, 0.6f).HighPass(1500f);
+            Sound bells = Sound.Silence(0.2f);
+            float[] chord = { UrnA5, UrnCs6, UrnE6, UrnA6 };
+            for (int i = 0; i < chord.Length; i++) bells = bells.Mix(Bell(chord[i], 1.8f, 1.6f, 2.2f), 0.05f * i, 0.3f);
+            Sound major = Choir(length - burst, new[] { UrnA3, UrnE4, UrnA4, UrnCs5, UrnE5 }, 516, t => 1.03f - 0.03f * Math.Min(1f, t / 0.15f), 0.008f)
+                .LowPass(2200f).Envelope(Env.Points(0f, 0f, 0.05f, 1f, 0.5f, 0.6f, length - burst, 0f)).Gain(0.7f);
+            return Sound.Silence(length)
+                .Mix(swell, 0f, 4f)
+                .Mix(rush, 0f, 4f)
+                .Mix(boom, burst, 0.75f)
+                .Mix(crack, burst, 0.55f)
+                .Mix(bells, burst + 0.02f)
+                .Mix(major, burst)
+                .Reverb(room: 0.7f, damp: 0.45f, mix: 0.25f, tail: 0.6f).Trim(length).Fade(0f, 0.4f)
+                .Normalize(-1.5f).Drive(1.6f).Normalize(-2f);
+        }
+
+        /// <summary>
+        /// The soulfire rune lights up where the urn stood: a soft "whoomp" of a flame catching (low noise swelling and
+        /// falling, 150 → 600 Hz), a quick rising sparkle of three bells (E6, A6, C#7) and a hum on A that fades. 1.4 s.
+        /// Loudest 50 ms ≈ −14 dBFS.
+        /// </summary>
+        private static Sound RuneIgnite()
+        {
+            const float length = 1.4f;
+            Sound whoomp = Sound.Noise(NoiseColor.Pink, 0.5f, 520).BandPass(Env.Sweep(150f, 600f, 0.3f), 1.0f)
+                .Envelope(Env.Points(0f, 0f, 0.07f, 1f, 0.5f, 0f));
+            Sound sparkle = Sound.Silence(0.2f);
+            float[] run = { UrnE6, UrnA6, UrnCs6 * 2f };
+            for (int i = 0; i < run.Length; i++) sparkle = sparkle.Mix(Bell(run[i], 0.9f, 1.4f, 4.5f), 0.07f * i, 0.28f - 0.05f * i);
+            Sound hum = Sound.Layer(Sound.Tone(Wave.Sine, length, UrnA3), Sound.Tone(Wave.Sine, length, UrnA4 * 1.003f).Gain(0.4f))
+                .Envelope(Env.Points(0f, 0f, 0.15f, 1f, length, 0f)).Gain(0.25f);
+            return Sound.Silence(length)
+                .Mix(whoomp, 0f, 0.9f)
+                .Mix(sparkle, 0.08f)
+                .Mix(hum, 0.03f)
+                .Reverb(room: 0.55f, damp: 0.4f, mix: 0.22f, tail: 0.45f).Trim(length).Fade(0f, 0.3f).Normalize(-6f);
         }
     }
 }

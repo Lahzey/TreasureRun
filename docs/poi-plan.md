@@ -1,6 +1,6 @@
 # Points of Interest (M8): design and system
 
-**Status:** the system is built; the **Lightning Trap** (§4) and the **Wandering Merchant** (§5, three kinds) are in the game. Decisions are in §2. Code is in `src/TreasureRun/Pois`, and PLAN.md §7 links here.
+**Status:** the system is built; the **Lightning Trap** (§4), the **Wandering Merchant** (§5, three kinds) and the **Soul Urn** (§6) are in the game. Decisions are in §2. Code is in `src/TreasureRun/Pois`, and PLAN.md §7 links here.
 
 Points of Interest (POIs) are special map sections that turn up while the map grows tile by tile. Each one has its own function. Their randomness and rarity make every map feel like a place with a story.
 
@@ -94,6 +94,7 @@ From the vanilla code (`TileManager`, `TileSpawnLocation`, `SpawnManager`):
 | `PoiPopup.cs` | click target and popup (the vanilla building popup with a title, a text and one action button) |
 | `LightningTrap.cs`, `LightningTrapLogic.cs` | the first POI |
 | `Merchant.cs`, `MerchantLogic.cs`, `MerchantShopUI.cs` | the Wandering Merchant: site and stock, prices and section style (pure), the shop window |
+| `SoulUrn.cs`, `SoulUrnLogic.cs`, `SoulRune.cs`, `SoulFx.cs` | the Soul Urn: site, charging and rewards; size, rewards, soul flight and section style (pure); the soulfire rune (attack speed, War Blimp deck); effects |
 | `Treasures/TreasureSale.cs` | selling treasures (used by the merchant) |
 | `Core/RunState.cs` | `PoiOmens`, `Pois` (plain records, for M10 save/resume) |
 | `UI/IconLibrary.cs` | loads `plugins/TreasureRun/icons/**.png` as sprites |
@@ -113,12 +114,14 @@ From the vanilla code (`TileManager`, `TileSpawnLocation`, `SpawnManager`):
   - `poi exits <L|T|R|LT|LR|TR|LTR>` forces the shape of the next tile.
   - `poi rate <0-15>` sets the mana per second of the nearest Lightning Trap.
   - `poi shop` opens the nearest open merchant; `poi buy <slot>` and `poi sell <id>` trade there directly; `poi press <buy n|sell id>` presses a button of the open shop (confirmations need two presses); `poi close` closes it.
+  - `poi souls [n]` sends n souls into the nearest charging Soul Urn (from random points around it); `poi fill [chest|gold|rune]` fills it at once, with that reward or a random one.
   - `cells <x> <z> [step]` prints a tile's height map.
   - `dump <object>` prints its hierarchy.
 - **Settings:** `PointsOfInterest.Enabled`, `PointsOfInterest.OmenChance`, `Debug.PoiForce` (every new button gets an omen).
 - **Scenarios:**
   - `poi-sections`: an omen, then each exit combination as a section, checked by raycast against the layout, with its waypoint links.
   - `poi-lightning-trap`: the pole cells are blocked; strikes per second, damage per strike and mana per second at 15 and 5 mana/s; at 0; out of mana; close-up and popup screenshots.
+  - `poi-soul-urn`: the urn's cell blocked; its size for the wave and lane; souls from kills in reach (dummies on its path); the popup and its reach circle (radius 7, gone with the popup); gold (the formula at the urn's first wave, the cell free afterwards), a chest, a rune (+100%: a Ballista on it shoots twice as fast and wears the shell, its neighbour doesn't); a War Blimp's Radar on the rune (the deck shows the rune, the deck's Ballista gets the bonus, both wear the shell); screenshots of souls, reach, burst, chest, rune, shell and deck.
   - `poi-merchant`: all three merchants; wagon cells blocked; stock by kind; prices by the formula; selling (with the confirmation, unsellable treasures refused); buying all three at the Normal merchant (the last asks first, then it packs up, the closed wagon still blocks); one purchase at the Legendary (it stays) and at the Ascension Merchant (it leaves); wagon and shop screenshots per skin.
 
 ### 3.6 Balance
@@ -244,7 +247,29 @@ Three POIs share the code, each with its own omen icon, wagon and shop skin:
 
 ---
 
-## 6. POI ideas (for later batches)
+## 6. Soul Urn (built)
+
+- **Section:** generic (paths from every exit meet in the centre, random hills). The urn stands on **one random grass cell that no path uses** (`SoulUrnStyle`, chosen after the paths are laid, so always at plain height 1). A solid box over the cell (Building layer) blocks building there until the urn is gone; a click opens the popup.
+- **Model** (`pois/soul_urn`, 10 x 10 x 13 voxels, one cell): a funerary urn in a dark blue glaze on a square stone plinth, with a bronze foot, a bronze band on the shoulder, a band of glowing runes round the belly and a flared bronze lip round a pool of soul light. Omen icon `poi/soul_urn`: the urn with a soul diving into it.
+- **Charging:** every monster that dies within **7 cells** (horizontal distance) of the urn gives it its soul (`Combat.EnemyKilled`, so every kill counts, whatever killed it).
+  - The soul flies from the body into the urn's mouth (`SoulUrnLogic.SoulPoint`: it rises, arcs over and dives in, weaving a little; 0.75 s + 0.09 s per cell): a glowing head with a bright core and a fading trail, a small puff where it leaves the body and a flash where it enters.
+  - Sound `pois/soul_urn/soul_absorb` (3 variants, quiet, at most 3 at once): a breath of air rising as it swoops in, then a soft glassy plip on a note of A minor and a faint low "whum".
+  - The soul fire in the urn's mouth (rising soft flames and a glow) grows with the fill; every soul arriving flashes it; above 85% the urn trembles.
+- **Size** (`SoulUrnLogic.Capacity`), set when its first wave starts: all the monsters its lane sends that wave and the next two (the balance wave model), times the lane's share of the spawn points (the spawn points whose path runs through the section, at least a quarter), rounded to 5, at least 30. About 30 at wave 3, 120 at wave 10, 210 at wave 15, 280 at wave 20, 450 at wave 30 on one lane. A kill zone in its reach that takes three quarters of its lane's monsters fills it in about four waves, one that takes half in about six; towers elsewhere barely charge it.
+- **Popup:** what it does, `Souls: n / size (p%)` and a bar of 20 blocks (cyan for the filled part); refreshed while open. While it is open, the urn's **reach** shows as a circle of 7 round it, drawn like a tower's range (the vanilla TowerUI line's material, width and colour).
+- **Full:** it bursts and leaves one of three rewards at random (a third each, `Luck.Raw01`):
+  - the fill sound `pois/soul_urn/urn_fill` (2.8 s): a ghostly choir on A minor and a rush of air swell for 0.9 s while the souls whirl into the mouth and the urn shakes and glows; then the burst, a deep boom, the glaze cracking, and the chord turns major (bells A, C#, E, A ringing out with the choir). Played loud (minimum distance 12), so it carries at any zoom;
+  - at the burst: glaze and bronze shards fly, soul light bursts upwards, a shock ring runs over the ground and a beam of light shoots up; the urn is gone and its cell is free;
+  - **a treasure chest** (the vanilla chest, a treasure offer in Treasure Run) on the cell;
+  - **gold** (`SoulUrnLogic.Gold` at the urn's **first wave**, so stalling the fill pays nothing; paid at once, with a burst of gold voxels and the vanilla coin sound);
+  - **a soulfire rune** on the cell (`SoulRune`): the tower built on it attacks **+100% faster** (`SoulUrnLogic.RuneBonus`, fixed whatever the wave; StatLayer, percent attack speed), with the sound `pois/soul_urn/rune_ignite` (a flame catching, a rising sparkle, a hum). The cell stays buildable; the rune can't be removed.
+  - A floating text names the reward ("A treasure chest!", "+1200 gold", "Soulfire rune: +100% attack speed").
+- **The rune's look:** a circle of light just above the ground (a soft halo, an outer ring of twelve runes, a three-bladed sigil turning in the middle) with motes of soulfire rising. It is a little wider than the cell, so it shows round a tower's base. With a tower on it, the sigil turns faster, the circle brightens and more motes rise.
+- **The soulfire shell:** every tower the rune powers (the one on it, a Radar on it and the tower on that Radar's blimp deck) wears a ghostly shell (`RuneShell`): each of its meshes drawn again 0.045 larger on every side, unlit and translucent in the soul colours, flickering like plasma. The copies are children of the tower's parts, so they turn with its turret; a model change (an ascension) rebuilds them; the shell goes out when the tower no longer draws on a rune. Cost: one extra draw per tower part, for the one or two towers on runes.
+- **War Blimp:** a Radar (the War Blimp's air mast) on a rune gets the bonus itself (its planes fire faster, `owner.rps`), and **the tower on the blimp's deck gets it too** (`SoulRune.For`: a deck passenger takes the rune under its blimp's Radar, never one the blimp happens to hover over). The deck then carries the same circle, sized to the deck, flying with the blimp (`RuneDeckGlow`); it goes out when the Radar no longer stands on a rune.
+- **Balance:** the chest is a treasure pick (18.5-23 points); the gold is 1.5 times the gold worth a chest at the urn's first wave (`FairPrice.GainOf`, fitted within 8%; `GoldFactor` makes up for the late payout); the rune's +100% is rated with its tower counted as three average towers (`RuneTowerShare`: the strongest tower, kept busy with slows). Rated from four waves after the omen (`FillDelay`): **12.8 points** against 15, inside the budget. Probes `BalanceProbe.SoulUrnRewards` and `SoulUrnLevers` (rating by fill delay, gold factor and tower share). Omens from wave 3 to 40 (later urns would have no time to fill). Notes in balance-todo.md.
+
+## 7. POI ideas (for later batches)
 
 Rule check: none is purely negative. Each risky one pays more when handled. The size is now the whole section; "structure" says what the POI places in it.
 
@@ -291,8 +316,9 @@ Rule check: none is purely negative. Each risky one pays more when handled. The 
 
 ---
 
-## 7. Next
+## 8. Next
 - Play the Lightning Trap: drag its slider with the mouse, check the arcs and the X-ray in play, the strike sound, and its damage against the real waves (balance-todo.md).
 - Play the merchants: the prices against the real gold (early Legendary Merchants especially), whether selling gets used, the shop window with the mouse.
+- Play the Soul Urn: how long it takes to fill with a real kill zone, the rune on strong towers and on a War Blimp's Radar.
 - The next POIs, one at a time; each needs an icon, a spec and a scenario.
 - The balance simulation (framework B4) alongside, as planned for M8.

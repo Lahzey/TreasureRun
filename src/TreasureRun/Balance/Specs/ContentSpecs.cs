@@ -189,7 +189,32 @@ namespace TreasureRun.Balance
             ["merchant"] = () => Merchant(global::TreasureRun.Pois.MerchantKind.Normal),
             ["legendary_merchant"] = () => Merchant(global::TreasureRun.Pois.MerchantKind.Legendary),
             ["ascension_merchant"] = () => Merchant(global::TreasureRun.Pois.MerchantKind.Ascension),
+            ["soul_urn"] = SoulUrn,
         };
+
+        /// <summary>
+        /// The Soul Urn: full after about <c>FillDelay</c> waves of kills in its reach, it leaves one of three rewards: a
+        /// treasure chest (a treasure pick), gold worth 1.5 chests at the wave the urn appeared (Pois.SoulUrnLogic.Gold), or a
+        /// rune that gives one tower +100% attack speed (<c>RuneBonus</c>; the tower counts <c>RuneTowerShare</c> average
+        /// towers). Each counts a third, from the wave the urn fills.
+        /// </summary>
+        private static Spec SoulUrn()
+        {
+            const int d = global::TreasureRun.Pois.SoulUrnLogic.FillDelay;
+            return S.Custom(Category.Meta, "a treasure chest (1 in 3)", c =>
+                    { if (c.Wave >= c.Acquired + d) c.Mods.DirectPoints += Pools.TreasurePick(c.Wave) / 3; })
+                .Custom(Category.Economy, "gold worth 1.5 chests (1 in 3)", c =>
+                    { if (c.Wave >= c.Acquired + d) c.Mods.ExtraGold += global::TreasureRun.Pois.SoulUrnLogic.Gold(c.Acquired) / 3.0; })
+                .Custom(Category.Offense, "a rune: one tower +100% attack speed (1 in 3)", c =>
+                {
+                    if (c.Wave < c.Acquired + d) return;
+                    double bonus = global::TreasureRun.Pois.SoulUrnLogic.RuneBonus * global::TreasureRun.Pois.SoulUrnLogic.RuneTowerShare;
+                    c.Board.All.RateFactor *= 1 + bonus / Math.Max(1, c.Board.TowerCount) / 3;
+                })
+                .Offered(global::TreasureRun.Pois.SoulUrnLogic.MinWave, global::TreasureRun.Pois.SoulUrnLogic.LastOmenWave)
+                .Because("fills after about 4 waves of kills in its reach (all its lane's monsters over 3 waves), then a chest, gold " +
+                         "worth 1.5 chests at the wave it appeared, or a rune: +100% attack speed for the strongest tower (counted as three average towers), a third each");
+        }
 
         /// <summary>
         /// A Wandering Merchant: the treasures a player is assumed to buy, at their budgets, minus the gold they cost

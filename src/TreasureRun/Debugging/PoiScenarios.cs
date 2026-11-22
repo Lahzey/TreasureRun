@@ -11,7 +11,7 @@ namespace TreasureRun.Debugging
     /// <summary>Points of Interest (docs/poi-plan.md): omens, generated sections for every exit combination, the Lightning Trap.</summary>
     internal static class PoiScenarios
     {
-        public static IEnumerable<Scenario> All => new Scenario[] { new PoiSectionsScenario(), new LightningTrapScenario(), new MerchantScenario() };
+        public static IEnumerable<Scenario> All => new Scenario[] { new PoiSectionsScenario(), new LightningTrapScenario(), new MerchantScenario(), new SoulUrnScenario() };
 
         /// <summary>Lets the running wave end (killing everything) so the Expand buttons are open again.</summary>
         public static IEnumerator OpenButtons(ScenarioContext c)
@@ -156,7 +156,7 @@ namespace TreasureRun.Debugging
             foreach (var (x, z) in LightningTrapLogic.PoleCells)
             {
                 Vector3 p = trap.CellWorld(x, z);
-                if (c.BuildAt("Ballista", Mathf.RoundToInt(p.x), Mathf.RoundToInt(p.z)) == null) blocked++;
+                if (c.BuildAt("CrossbowTower", Mathf.RoundToInt(p.x), Mathf.RoundToInt(p.z)) == null) blocked++;
             }
             c.Expect(blocked == 4, $"the four pole cells can't be built on ({blocked}/4)");
 
@@ -275,7 +275,7 @@ namespace TreasureRun.Debugging
                 foreach (var (x, z) in MerchantStyle.Footprint(MerchantStyle.CornerOf(m.Layout)))
                 {
                     Vector3 p = m.CellWorld(x, z);
-                    if (c.BuildAt("Ballista", Mathf.RoundToInt(p.x), Mathf.RoundToInt(p.z)) == null) blocked++;
+                    if (c.BuildAt("CrossbowTower", Mathf.RoundToInt(p.x), Mathf.RoundToInt(p.z)) == null) blocked++;
                 }
                 c.Expect(blocked == 4, $"{def.Name}: the four wagon cells can't be built on ({blocked}/4)");
 
@@ -361,7 +361,7 @@ namespace TreasureRun.Debugging
                 c.Expect(!MerchantShopUI.IsOpen, "a closed merchant's shop doesn't open");
                 var corner = MerchantStyle.CornerOf(normal.Layout);
                 Vector3 p = normal.CellWorld(corner.x, corner.z);
-                c.Expect(c.BuildAt("Ballista", Mathf.RoundToInt(p.x), Mathf.RoundToInt(p.z)) == null, "the closed wagon still blocks its cells");
+                c.Expect(c.BuildAt("CrossbowTower", Mathf.RoundToInt(p.x), Mathf.RoundToInt(p.z)) == null, "the closed wagon still blocks its cells");
                 ZoomOn(normal, 2.6f);
                 yield return c.Wait(1.4f);
                 c.Shot("wagon_normal_closed");
@@ -408,6 +408,224 @@ namespace TreasureRun.Debugging
                 yield return c.Wait(0.3f);
             }
             MerchantShopUI.Close();
+        }
+    }
+
+    /// <summary>
+    /// The Soul Urn: its cell is blocked, its size follows the wave, kills in its reach charge it (and only those), the
+    /// popup shows the fill, and each reward works: gold, a chest, and a soulfire rune that speeds up the tower on it and,
+    /// through a War Blimp's Radar standing on it, the tower on the blimp's deck.
+    /// </summary>
+    internal sealed class SoulUrnScenario : Scenario
+    {
+        public override string Name => "poi-soul-urn";
+        public override string Description => "Soul Urn: blocked cell, capacity, souls from kills in reach, popup, gold / chest / rune rewards, the rune on a War Blimp deck.";
+        public override bool Permanent => true;
+
+        private static string F(float v) => v.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+
+        private static IEnumerator NewUrn(ScenarioContext c, List<SoulUrn> into)
+        {
+            // A level-up draw after the last wave can hold the Expand buttons back: wait until one is open.
+            for (int i = 0; i < 4 && PoiScenarios.OpenMarker() == null; i++) yield return PoiScenarios.OpenButtons(c);
+            for (int i = 0; i < 3 && into.Count == 0; i++) yield return PoiScenarios.Expand(c, SectionExits.Top, PoiRegistry.Get(SoulUrnLogic.Id), into);
+            yield return c.Wait(0.5f);
+        }
+
+        /// <summary>The build prefab of a built tower.</summary>
+        private static GameObject PrefabOf(GameObject built)
+        {
+            BuildButtonUI button = Resources.FindObjectsOfTypeAll<BuildButtonUI>()
+                .FirstOrDefault(btn => btn.gameObject.scene.IsValid() && btn.tower != null && built != null && built.name.StartsWith(btn.tower.name));
+            return button != null ? button.tower : null;
+        }
+
+        public override IEnumerator Run(ScenarioContext c)
+        {
+            c.Expect(PoiDirector.Enabled, "Points of Interest are on (Treasure Run)");
+            if (!PoiDirector.Enabled) yield break;
+            DevConsole.Execute("god");
+            if (GameHelpers.Level < 12) DevConsole.Execute("level 12");
+
+            // ----- the first urn: charging, popup, gold
+            var urns = new List<SoulUrn>();
+            yield return NewUrn(c, urns);
+            SoulUrn urn = urns.FirstOrDefault();
+            if (urn == null) yield break;
+            PoiScenarios.CheckSection(c, urn);
+            Vector3 g = urn.Ground;
+            int gx = Mathf.RoundToInt(g.x), gz = Mathf.RoundToInt(g.z);
+            var cell = SoulUrnStyle.CellOf(urn.Layout);
+            c.Expect(!urn.Layout.IsPath(cell.x, cell.z), "the urn stands beside the path");
+            c.Expect(c.BuildAt("CrossbowTower", gx, gz) == null, "the urn's cell can't be built on");
+            int wave = Mathf.Max(1, GameHelpers.Level);
+            c.Expect(urn.Capacity > 0, $"its size is set when the wave starts ({urn.Capacity} souls at wave {wave}, lane share {F(urn.Record.Get("share"))})");
+            c.Expect(urn.Capacity == SoulUrnLogic.Capacity(wave, urn.Record.Get("share")), "size = Capacity(wave, lane share)");
+
+            // Kills: four dummies on the section's path (in reach), one by the castle (out of reach).
+            int before = urn.Souls;
+            var inReach = new List<Enemy>();
+            SectionLayout l = urn.Layout;
+            for (int x = 0; x < SectionLayout.Size && inReach.Count < 4; x++)
+                for (int z = 0; z < SectionLayout.Size && inReach.Count < 4; z++)
+                    if (l.IsPath(x, z) && (x + z) % 2 == 0) inReach.Add(c.Dummy(urn.CellWorld(x, z), 5));
+            Vector3 castle = GameHelpers.CastlePosition;
+            Enemy far = SoulUrnLogic.InReach(castle - g) ? null : c.Dummy(castle + new Vector3(0f, 0f, -1f), 5);
+            var victims = new List<Enemy>(inReach);
+            if (far != null) victims.Add(far);
+            foreach (Enemy e in victims.Where(e => e != null))
+                e.TakeDamage(TowerType.Global, 1000000, 1, 1, 1, 0f, 0f, 0f, 0f, 0f, 0f);
+            yield return c.Wait(0.3f);
+            DevConsole.Execute($"zoom 3.5 {F(g.x)} {F(g.z)}");
+            Time.timeScale = 0.15f;
+            yield return new WaitForSecondsRealtime(0.25f);
+            c.Shot("souls_flying");
+            Time.timeScale = Scenarios.SpeedUp;
+            yield return c.Wait(2.5f);
+            int gained = urn.Souls - before;
+            c.Info($"souls {before} -> {urn.Souls} ({inReach.Count} dummies in reach{(far != null ? ", one out of reach" : "")}; wave monsters may add more)");
+            c.Expect(gained >= inReach.Count, "every kill in reach sent a soul");
+            c.Expect(urn.InFlight == 0, "the souls have arrived");
+
+            // Many souls at once, close up, then the popup.
+            urn.AddSouls(Mathf.Min(12, urn.Capacity - urn.Souls - 1));
+            yield return c.Wait(0.4f);
+            Time.timeScale = 0.15f;
+            yield return new WaitForSecondsRealtime(0.25f);
+            c.Shot("souls_many");
+            Time.timeScale = Scenarios.SpeedUp;
+            yield return c.Wait(2f);
+            DevConsole.Execute($"towerui {gx} {gz}");
+            yield return c.Wait(1.2f);
+            LineRenderer reach = urn.GetComponentsInChildren<LineRenderer>(true).FirstOrDefault(lr => lr.name == "TR_UrnReach");
+            c.Expect(reach != null && reach.enabled && reach.positionCount == 61, "the popup shows the urn's reach as a circle");
+            if (reach != null) c.ExpectNear(new Vector2(reach.GetPosition(0).x - g.x, reach.GetPosition(0).z - g.z).magnitude, SoulUrnLogic.Radius, 0.01f, "the circle's radius");
+            DevConsole.Execute("zoom 7.5");
+            yield return c.Wait(0.4f);
+            c.Shot("popup");
+            DevConsole.Execute("closeui");
+            yield return c.Wait(0.5f);
+            c.Expect(reach == null || !reach.enabled, "the circle goes away with the popup");
+
+            int gold0 = GameHelpers.Gold;
+            int urnWave = Mathf.RoundToInt(urn.Record.Get("wave"));
+            c.Expect(urnWave == wave, $"the urn remembers its first wave ({urnWave})");
+            int expectedGold = SoulUrnLogic.Gold(urnWave);
+            urn.ForceFill(UrnReward.Gold);
+            yield return new WaitForSeconds(0.97f);
+            Time.timeScale = 0.1f;
+            yield return new WaitForSecondsRealtime(0.15f);
+            c.Shot("burst");
+            Time.timeScale = Scenarios.SpeedUp;
+            yield return c.Wait(1.5f);
+            c.Expect(urn.Full && urn.Reward == UrnReward.Gold, $"full, reward gold: {urn.Status}");
+            c.Expect(GameHelpers.Gold - gold0 >= expectedGold, $"paid {expectedGold} gold (gold {gold0} -> {GameHelpers.Gold})");
+            GameObject free = c.BuildAt("CrossbowTower", gx, gz);
+            c.Expect(free != null, "the cell is free once the urn is gone");
+            if (free != null) Object.Destroy(free);
+
+            // ----- the second urn: a chest
+            urns.Clear();
+            yield return NewUrn(c, urns);
+            SoulUrn chestUrn = urns.FirstOrDefault();
+            if (chestUrn != null)
+            {
+                int chests = Object.FindObjectsOfType<TreasureChest>().Length;
+                chestUrn.ForceFill(UrnReward.Chest);
+                yield return c.Wait(1.5f);
+                TreasureChest chest = Object.FindObjectsOfType<TreasureChest>().OrderBy(t => (t.transform.position - chestUrn.Ground).sqrMagnitude).FirstOrDefault();
+                c.Expect(Object.FindObjectsOfType<TreasureChest>().Length == chests + 1 && chest != null &&
+                         (chest.transform.position - chestUrn.Ground).magnitude < 1f, "a treasure chest stands where the urn was");
+                DevConsole.Execute($"zoom 3 {F(chestUrn.Ground.x)} {F(chestUrn.Ground.z)}");
+                yield return c.Wait(0.4f);
+                c.Shot("chest");
+                yield return c.Wait(0.2f);
+                if (chest != null) Object.Destroy(chest.gameObject);
+            }
+
+            // ----- the third urn: a rune
+            urns.Clear();
+            yield return NewUrn(c, urns);
+            SoulUrn runeUrn = urns.FirstOrDefault();
+            if (runeUrn == null) yield break;
+            runeUrn.ForceFill(UrnReward.Rune);
+            yield return c.Wait(1.5f);
+            Vector3 rg = runeUrn.Ground;
+            int rx = Mathf.RoundToInt(rg.x), rz = Mathf.RoundToInt(rg.z);
+            SoulRune rune = SoulRune.At(rg);
+            c.Expect(rune != null, $"a soulfire rune lies on the cell: {runeUrn.Status}");
+            if (rune == null) yield break;
+            float bonus = rune.Bonus;
+            c.ExpectNear(bonus, (float)SoulUrnLogic.RuneBonus, 0.001f, "its bonus is the fixed +100%");
+            DevConsole.Execute($"zoom 2.5 {F(rg.x)} {F(rg.z)}");
+            yield return c.Wait(0.6f);
+            c.Shot("rune_empty");
+
+            GameObject onRune = c.BuildAt("CrossbowTower", rx, rz);
+            GameObject plain = c.BuildNear("CrossbowTower", rg, 2f, 6f);
+            c.Expect(onRune != null && plain != null, "a Ballista on the rune and one elsewhere");
+            if (onRune == null || plain == null) yield break;
+            Tower a = onRune.GetComponent<Tower>(), b = plain.GetComponent<Tower>();
+            TowerManager.instance.UpdateAllTowers();
+            c.Info($"rune Ballista: {F(a.rps)} s per shot, plain: {F(b.rps)} s (heights {a.heightBonus}/{b.heightBonus})");
+            c.ExpectNear(b.rps / a.rps, 1f + bonus, 0.05f, $"the tower on the rune shoots {1f + bonus:0.00}x as fast");
+            yield return c.Wait(0.8f);
+            c.Expect(onRune.GetComponent<RuneShell>() != null && onRune.GetComponentsInChildren<MeshRenderer>().Any(r => r.name == "TR_RuneShell"),
+                     "the tower on the rune wears the soulfire shell");
+            c.Expect(plain.GetComponent<RuneShell>() == null, "the tower beside it doesn't");
+            DevConsole.Execute($"zoom 1.4 {F(rg.x)} {F(rg.z)}");
+            yield return c.Wait(0.3f);
+            c.Shot("rune_tower");
+            yield return c.Wait(0.2f); // the screenshot is taken at the end of the frame
+            GameObject ballista = PrefabOf(onRune);
+            Object.Destroy(onRune);
+            yield return c.Wait(0.2f);
+
+            // ----- a War Blimp's Radar on the rune: the deck's tower gets the bonus too
+            c.Ascend(Ascensions.PlaneAscensions.WarBlimpId);
+            GameObject radar = c.BuildAt("RadarTower", rx, rz);
+            c.Expect(radar != null, "a Radar on the rune");
+            if (radar == null) yield break;
+            Ascensions.BlimpDeck deck = null;
+            for (int i = 0; i < 40 && deck == null; i++)
+            {
+                yield return c.Wait(0.25f);
+                deck = Ascensions.BlimpDeck.All.FirstOrDefault(dk => dk != null && dk.Blimp != null && dk.Blimp.Owner != null && dk.Blimp.Owner.gameObject == radar);
+            }
+            c.Expect(deck != null, "the Radar's War Blimp has a deck");
+            if (deck == null) yield break;
+            yield return c.Wait(1.2f);
+            c.Expect(RuneDeckGlow.On(deck), "the deck shows the rune");
+            c.Expect(ballista != null, "the Ballista prefab");
+            if (ballista == null) yield break;
+            GameObject passenger = deck.Build(ballista);
+            c.Track(passenger);
+            yield return c.Wait(0.3f);
+            Tower p = passenger != null ? passenger.GetComponent<Tower>() : null;
+            if (p != null)
+            {
+                c.Info($"deck Ballista: {F(p.rps)} s per shot, plain: {F(b.rps)} s");
+                c.ExpectNear(b.rps / p.rps, 1f + bonus, 0.05f, "the deck's tower gets the rune's attack speed");
+                yield return c.Wait(1f);
+                c.Expect(p.GetComponent<RuneShell>() != null, "the deck's tower wears the soulfire shell");
+                c.Expect(radar.GetComponent<RuneShell>() != null, "so does the Radar on the rune");
+            }
+            Time.timeScale = 0.1f;
+            Vector3 d = deck.transform.position;
+            DevConsole.Execute($"zoom 4 {F((d.x + rg.x) / 2f)} {F((d.z + rg.z) / 2f)}");
+            yield return new WaitForSecondsRealtime(0.3f);
+            c.Shot("blimp_rune");
+            yield return new WaitForSecondsRealtime(0.1f);
+            // The deck flies 4.4 up: aim at the ground point behind it on the camera's line of sight.
+            d = deck.transform.position;
+            Vector3 f = Camera.main != null ? Camera.main.transform.forward : Vector3.down;
+            if (f.y < -0.1f) d += f * (d.y / -f.y);
+            DevConsole.Execute($"zoom 1.8 {F(d.x)} {F(d.z)}");
+            yield return new WaitForSecondsRealtime(0.3f);
+            c.Shot("blimp_deck");
+            yield return new WaitForSecondsRealtime(0.1f);
+            Time.timeScale = Scenarios.SpeedUp;
+            c.Info(runeUrn.Status);
         }
     }
 }

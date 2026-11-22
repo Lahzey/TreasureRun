@@ -120,5 +120,66 @@ namespace TreasureRun.Tests
             Directory.CreateDirectory(dir);
             File.WriteAllText(Path.Combine(dir, "lightning-trap.txt"), sb.ToString());
         }
+            /// <summary>Soul Urn: monsters per wave (with death spawns), for the charge it needs. Writes tests/out/soul-urn.txt.</summary>
+        [Test, Explicit]
+        public void SoulUrnCounts()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("wave | monsters | next 2 | next 3 | income");
+            for (int w = 1; w <= WaveModel.LastWave; w++)
+            {
+                double n = WaveModel.Get(w).Count, n2 = n + (w < WaveModel.LastWave ? WaveModel.Get(w + 1).Count : 0);
+                double n3 = n2 + (w + 1 < WaveModel.LastWave ? WaveModel.Get(w + 2).Count : 0);
+                sb.AppendLine($"{w,4} | {n,7:0} | {n2,7:0} | {n3,7:0} | {ReferenceBoards.Income(w),7:0}");
+            }
+            string dir = Path.Combine(TestContext.CurrentContext.TestDirectory, "..", "..", "..", "..", "out");
+            Directory.CreateDirectory(dir);
+            File.WriteAllText(Path.Combine(dir, "soul-urn.txt"), sb.ToString());
+        }
+            /// <summary>Soul Urn rewards: a chest's points, the gold worth as much, and one tower's attack speed. Writes tests/out/soul-urn-rewards.txt.</summary>
+        [Test, Explicit]
+        public void SoulUrnRewards()
+        {
+            var sb = new StringBuilder();
+            double[] xs = { 0.25, 0.5, 0.75, 1.0, 1.5 };
+            Rating rating = Valuation.Rate("soul_urn", "Soul Urn", "poi", null, false, ContentSpecs.Poi("soul_urn"));
+            sb.AppendLine($"Soul Urn rating: {rating.Points:0.0} points (P80 {rating.P80:0.0}, early {rating.Early:0.0}, late {rating.Late:0.0}, peak {rating.PeakWave})");
+            sb.AppendLine("wave | towers | chest pts | gold worth it | one tower +25% +50% +75% +100% +150% (x1 share) | best x for chest");
+            for (int w = 1; w <= WaveModel.LastWave; w++)
+            {
+                double chest = Pools.TreasurePick(w);
+                Board b = ReferenceBoards.Get(w, BoardVariant.Mixed);
+                sb.Append($"{w,4} | {b.TowerCount,5:0.0} | {chest,5:0.0} | {FairPrice.GainOf(chest, w),7:0} |");
+                double Pts(double x) => Valuation.Value(new Spec().Custom(Category.Offense, "one tower", c => c.Board.All.RateFactor *= 1 + x / System.Math.Max(1, c.Board.TowerCount)), w, BoardVariant.Mixed);
+                foreach (double x in xs) sb.Append($" {Pts(x),5:0.0}");
+                double lo = 0, hi = 20;
+                for (int i = 0; i < 30; i++) { double m = (lo + hi) / 2; if (Pts(m) < chest) lo = m; else hi = m; }
+                sb.AppendLine($" | {lo,5:0.00}");
+            }
+            string dir = Path.Combine(TestContext.CurrentContext.TestDirectory, "..", "..", "..", "..", "out");
+            Directory.CreateDirectory(dir);
+            File.WriteAllText(Path.Combine(dir, "soul-urn-rewards.txt"), sb.ToString());
+        }
+            /// <summary>Soul Urn rating by fill delay, gold multiplier and rune tower share. Writes tests/out/soul-urn-levers.txt.</summary>
+        [Test, Explicit]
+        public void SoulUrnLevers()
+        {
+            var sb = new StringBuilder();
+            foreach (int d in new[] { 3, 4, 5, 6 })
+                foreach (double g in new[] { 1.0, 1.5, 2.0 })
+                    foreach (double share in new[] { 2.0, 3.0 })
+                    {
+                        Spec s = new Spec()
+                            .Custom(Category.Meta, "chest", c => { if (c.Wave >= c.Acquired + d) c.Mods.DirectPoints += Pools.TreasurePick(c.Wave) / 3; })
+                            .Custom(Category.Economy, "gold", c => { if (c.Wave >= c.Acquired + d) c.Mods.ExtraGold += g * Pois.SoulUrnLogic.Gold(c.Acquired) / 3.0; })
+                            .Custom(Category.Offense, "rune", c => { if (c.Wave >= c.Acquired + d) c.Board.All.RateFactor *= 1 + share / System.Math.Max(1, c.Board.TowerCount) / 3; })
+                            .Offered(3, 40);
+                        Rating r = Valuation.Rate("u", "u", "poi", null, false, s);
+                        sb.AppendLine($"delay {d} gold x{g} share {share}: {r.Points:0.0} (split {string.Join("/", r.Split.Select(x => x.ToString("0")))})");
+                    }
+            string dir = Path.Combine(TestContext.CurrentContext.TestDirectory, "..", "..", "..", "..", "out");
+            Directory.CreateDirectory(dir);
+            File.WriteAllText(Path.Combine(dir, "soul-urn-levers.txt"), sb.ToString());
+        }
     }
 }

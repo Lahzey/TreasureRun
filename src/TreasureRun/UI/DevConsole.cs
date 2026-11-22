@@ -563,11 +563,12 @@ namespace TreasureRun.UI
                 Debugging.ObjectDump.Write(go.transform, depth, Print);
             });
 
-            Add("poi", "poi [list | omen <id> [all] | next <id> | exits <L|T|R|LT|LR|TR|LTR> | rate <0-15> | shop | buy <slot> | sell <id> | press <buy n|sell id> | close]",
+            Add("poi", "poi [list | omen <id> [all] | next <id> | exits <L|T|R|LT|LR|TR|LTR> | rate <0-15> | shop | buy <slot> | sell <id> | press <buy n|sell id> | close | souls [n] | fill [chest|gold|rune]]",
                 "Points of Interest: list omens and sites; put an omen on the open Expand buttons (first, or all); make the next " +
                 "omen roll succeed; force the exits of the next tile; set the mana per second of the nearest Lightning Trap; open the " +
                 "nearest open merchant's shop, buy an offer or sell a treasure there directly, press a button of the open shop " +
-                "(confirmations need two presses), close the shop window.", true, a =>
+                "(confirmations need two presses), close the shop window; send souls into the nearest Soul Urn, or fill it at once " +
+                "(with a given reward, else a random one).", true, a =>
             {
                 string sub = Arg(a, 0, "list").ToLowerInvariant();
                 Core.RunState run = TreasureRunMode.Run;
@@ -641,6 +642,20 @@ namespace TreasureRun.UI
                 if (sub == "close")
                 {
                     Pois.MerchantShopUI.Close();
+                    return;
+                }
+                if (sub == "souls" || sub == "fill")
+                {
+                    Pois.SoulUrn urn = FindObjectsOfType<Pois.SoulUrn>().Where(u => !u.Full && !u.Bursting).OrderBy(u => u.Center.sqrMagnitude).FirstOrDefault();
+                    if (urn == null) { Print("No charging Soul Urn."); return; }
+                    if (sub == "souls") Print($"Sent {urn.AddSouls(int.Parse(Arg(a, 1, "10")))} souls.");
+                    else
+                    {
+                        string r = Arg(a, 1, "").ToLowerInvariant();
+                        urn.ForceFill(r == "chest" ? Pois.UrnReward.Chest : r == "gold" ? Pois.UrnReward.Gold : r == "rune" ? Pois.UrnReward.Rune : (Pois.UrnReward?)null);
+                        Print("Filling.");
+                    }
+                    Print($"Soul Urn: {urn.Status}");
                     return;
                 }
                 Print("Unknown subcommand.");

@@ -82,3 +82,17 @@ From [balance-report.md](balance-report.md) (M7.5). **No balance changes yet:** 
   - Early merchants (waves 2–8): a Legendary at about 500–800 gold against an income of 30–170 a wave. Is saving up for it (prices rise with the wave) fun or frustrating?
   - Is selling used? Sell prices differ per merchant (half of *this* merchant's price), so the Legendary Merchant pays more for the same treasure than the Normal one.
   - Ascension Merchant at 65%: is one cheap ascension of your choice too strong compared to finding it in an offer?
+
+**Soul Urn** (docs/poi-plan.md §6): 12.8 points against 15.
+- **Size:** all the monsters its lane sends over three waves (the wave model, death spawns included), times the lane's share of the spawn points: 30 at wave 3, 120 at wave 10, about 210 at wave 15, 280 at wave 20, 450 at wave 30. Twice the first version (half of three waves), to make filling it a real effort.
+- **Rewards**, one in three each, valued at the urn's **first wave**, so stalling the fill to wait for a later wave pays nothing:
+  - a treasure chest (18.5-23 points);
+  - gold, 1.5 chests' worth at that wave (`GoldFactor`): about 1,000 at wave 10, 2,120 at 20, 5,430 at 30. The extra half makes up for the payout coming about four waves late; it is what brings the urn into the budget (without it 11.0, just under);
+  - the soulfire rune: a fixed +100% attack speed for the tower on it. Rated with that tower as three average towers (`RuneTowerShare`): players put their strongest tower there (an Obelisk) and keep monsters in its range with slows.
+- **The fill delay dominates the rating:** the framework values an item over its next 10 waves, so rewards that arrive after 4 waves count for 6 of them (probe `SoulUrnLevers`: delay 3 → 13.1 without the gold factor, 4 → 11.0, 5 → 9.1, 6 → 7.1).
+- **Check in play:**
+  - How long does it really take to fill with a reasonable kill zone (the rating assumes 4 waves)? Kills in its reach count wherever the monster dies within 7 cells.
+  - Few-tower and single-tower builds (treasures allow them): there the rune doubles a large share of the board. It should be a highroll, not decisive.
+  - The rune on a War Blimp's Radar powers the Radar's planes and the deck's tower, two towers for one rune (not in the rating).
+  - Several lanes: the size is fixed at the lane share when its first wave starts; later splits elsewhere don't change it.
+- **Uncalibrated:** `RuneTowerShare` 3, `KillShare` 1, `FillDelay` 4, `GoldFactor` 1.5.

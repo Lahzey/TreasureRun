@@ -1,0 +1,6 @@
+pois/soul_urn/rune_ignite
+  duration 1.40 s | peak -6.0 dBFS | RMS -20.1 dBFS | loudest 50 ms -13.8 dBFS
+  attack 155 ms | decays to -30 dB at 1.26 s | brightness (spectral centroid) 2.5k
+  envelope per 50 ms (dBFS): -36 -19 -16 -14 -14 -14 -16 -18 -19 -20 -20 -21 -21 -22 -23 -24 -25 -26 -27 -28 -29 -30 -32 -35 -39 -45 -52 -60
+  brightness per 100 ms:    2.9k 3.2k 3.6k 2.8k 1.9k 1.3k 956 785 674 639 564 605 476 448
+  dominant pitch per 100 ms: 215 215 215 215 215 215 215 215 215 215 215 215 215 215

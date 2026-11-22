@@ -6,7 +6,7 @@ How to read it (docs/balance-framework.md): **points** ≈ % tougher monsters th
 
 Budgets: cards 2–6, Common 12, Uncommon 18, Rare 24, Epic 30, Legendary 36, Mythical 54; ascensions 25% more than their rarity; Points of Interest 15. All constants are uncalibrated until M8. The treasures are mostly placeholders: no balance changes until M9.
 
-**Summary:** 649 items, 30 over budget, 466 under, 1 unrated, 0 missing specs.
+**Summary:** 650 items, 30 over budget, 466 under, 1 unrated, 0 missing specs.
 
 ## Treasures
 
@@ -213,6 +213,7 @@ Budgets: cards 2–6, Common 12, Uncommon 18, Rare 24, Epic 30, Legendary 36, My
 | **Lightning Trap** (`lightning_trap`) | POI | 15.1 | 15.0 |  | 9.2 / 12.8 / w8 | 1.00 · 0.79 |  | 100/0/0/0/0 | formula | strikes everything in the centre cell 4 times a second; 0-15 mana/s (rated at the best rate per wave), damage in proportion, mana paid in mana buildings; solved for 15 points per wave |
 | **Wandering Merchant** (`merchant`) | POI | 15.0 | 15.0 |  | 12.9 / 15.5 / w36 | 1.00 · 0.92 |  | 0/0/-38/0/62 | formula | the discounted offer and one more bought, rated at their budgets; price from MerchantLogic |
 | **Ascension Merchant** (`ascension_merchant`) | POI | 14.9 | 15.0 |  | 13.2 / 15.2 / w36 | 1.00 · 0.96 |  | 0/0/-32/0/68 | formula | one ascension bought (the discounted one half the time), rated at its budget; price from MerchantLogic |
+| **Soul Urn** (`soul_urn`) | POI | 12.8 | 15.0 |  | 13.7 / 6.3 / w3 | 1.00 · 0.92 |  | 26/0/42/0/31 | formula | fills after about 4 waves of kills in its reach (all its lane's monsters over 3 waves), then a chest, gold worth 1.5 chests at the wave it appeared, or a rune: +100% attack speed for the strongest tower (counted as three average towers), a third each |
 
 ## Vanilla cards (Treasure Run pool)
 
