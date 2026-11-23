@@ -70,6 +70,8 @@ namespace TreasureRun.Castles
     /// <summary>
     /// A risen monster: a renderer-only copy of the slain enemy (not targetable, not counted as an enemy) that walks
     /// the path backwards. Splits are chosen at random. Touching a monster detonates it for its health in damage.
+    /// Raised by the Necropolis castle, or by the Wizard's Tower's necromancy (<see cref="Fixed"/>: its blast is fixed
+    /// damage, untouched by treasures).
     /// </summary>
     internal sealed class RisenMinion : MonoBehaviour
     {
@@ -84,14 +86,24 @@ namespace TreasureRun.Castles
         private float speed;
         private int health;
         private NecropolisBehaviour owner;
+        /// <summary>Raised by a Point of Interest: the blast is fixed damage (Combat.FixedTrue), and <see cref="OnDetonate"/> counts it.</summary>
+        public bool Fixed;
+        public System.Action<int> OnDetonate;
+        private static readonly System.Collections.Generic.Dictionary<int, int> raisedFrame = new System.Collections.Generic.Dictionary<int, int>();
+
+        /// <summary>Was this slain monster already raised this frame (the castle and the wizard both raise near them)?</summary>
+        public static bool WasRaised(Enemy source) =>
+            source != null && raisedFrame.TryGetValue(source.GetInstanceID(), out int f) && f == Time.frameCount;
         private float life = 60f;
         private const float GraceTime = 0.6f; // rise first, then hunt (monsters are often bunched up at the kill spot)
         private float age;
 
-        public static RisenMinion Raise(Enemy source, int health, NecropolisBehaviour owner)
+        public static RisenMinion Raise(Enemy source, int health, NecropolisBehaviour owner, bool isFixed = false)
         {
             Waypoint current = source.pathfinder != null ? source.pathfinder.currentWaypoint : null;
-            if (current == null) return null;
+            if (current == null || WasRaised(source)) return null;
+            if (raisedFrame.Count > 256) raisedFrame.Clear();
+            raisedFrame[source.GetInstanceID()] = Time.frameCount;
 
             // Renderer-only copy: built while the source is inactive so no enemy script ever runs on the copy.
             GameObject src = source.gameObject;
@@ -127,6 +139,7 @@ namespace TreasureRun.Castles
             var minion = copy.AddComponent<RisenMinion>();
             minion.health = health;
             minion.owner = owner;
+            minion.Fixed = isFixed;
             minion.speed = Mathf.Max(0.6f, source.baseSpeed * 0.8f);
             // Walk back towards where the monster came from.
             Waypoint[] back = current.GetPreviousWaypoints();
@@ -177,8 +190,10 @@ namespace TreasureRun.Castles
         private void Detonate(Enemy e)
         {
             int dealt = health;
-            Combat.TrueDamage(e, dealt);
+            if (Fixed) Combat.FixedTrue(e, dealt);
+            else Combat.TrueDamage(e, dealt);
             if (owner != null) { owner.Detonations++; owner.DamageDealt += dealt; }
+            OnDetonate?.Invoke(dealt);
             Fx.Burst(transform.position + Vector3.up * 0.3f, Ghost, 26, 0.13f, 2.4f);
             GameHelpers.FloatingText(transform.position + Vector3.up, dealt.ToString(), "Blue", 1f, 0.6f);
             Destroy(gameObject);

@@ -154,48 +154,13 @@ namespace TreasureRun.Pois
         }
 
         private LineRenderer reach;
-        private static readonly FieldInfo TowerUiLine = AccessTools.Field(typeof(TowerUI), "line");
 
-        /// <summary>
-        /// The urn's reach while its popup is open: a circle of <see cref="SoulUrnLogic.Radius"/> drawn like a tower's range
-        /// (the vanilla TowerUI line: its material, width and colour, 60 segments at the same height).
-        /// </summary>
+        /// <summary>The urn's reach while its popup is open: a circle of <see cref="SoulUrnLogic.Radius"/> drawn like a tower's range.</summary>
         private void ShowReach(bool show)
         {
             if (!show) { if (reach != null) reach.enabled = false; return; }
             if (urn == null) return;
-            if (reach == null)
-            {
-                var go = new GameObject("TR_UrnReach");
-                go.transform.SetParent(urn.transform, false);
-                reach = go.AddComponent<LineRenderer>();
-                LineRenderer template = null;
-                foreach (TowerUI ui in Resources.FindObjectsOfTypeAll<TowerUI>())
-                    if ((template = TowerUiLine?.GetValue(ui) as LineRenderer) != null && template.sharedMaterial != null) break;
-                if (template != null)
-                {
-                    reach.sharedMaterial = template.sharedMaterial;
-                    reach.widthCurve = template.widthCurve;
-                    reach.widthMultiplier = template.widthMultiplier;
-                    reach.colorGradient = template.colorGradient;
-                    reach.numCapVertices = template.numCapVertices;
-                }
-                else
-                {
-                    reach.sharedMaterial = Fx.LineMaterial ?? Fx.GlowMaterial;
-                    reach.startWidth = reach.endWidth = 0.05f;
-                }
-                reach.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                reach.receiveShadows = false;
-                reach.useWorldSpace = true;
-                reach.positionCount = 61;
-                Vector3 centre = new Vector3(ground.x, 0.4f, ground.z);
-                for (int i = 0; i < 61; i++)
-                {
-                    float a = i * 6f * Mathf.Deg2Rad;
-                    reach.SetPosition(i, centre + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * SoulUrnLogic.Radius);
-                }
-            }
+            if (reach == null) reach = PoiReach.Create("TR_UrnReach", urn.transform, ground, SoulUrnLogic.Radius);
             reach.enabled = true;
         }
 

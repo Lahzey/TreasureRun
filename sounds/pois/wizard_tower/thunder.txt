@@ -1,0 +1,6 @@
+pois/wizard_tower/thunder
+  duration 1.90 s | peak -1.0 dBFS | RMS -16.5 dBFS | loudest 50 ms -8.7 dBFS
+  attack 95 ms | decays to -30 dB at 1.62 s | brightness (spectral centroid) 3.6k
+  envelope per 50 ms (dBFS): -28 -10 -9 -10 -13 -9 -10 -13 -15 -14 -14 -17 -19 -22 -20 -20 -21 -23 -24 -23 -25 -26 -26 -26 -28 -29 -31 -32 -33 -36 -35 -38 -40 -42 -46 -50 -57 -60
+  brightness per 100 ms:    8.6k 5.3k 1.5k 435 270 206 292 233 192 166 167 174 162 168 168 152 156 146 155
+  dominant pitch per 100 ms: 4.7k 86 65 65 86 65 65 65 108 86 65 108 65 65 65 65 108 65 108

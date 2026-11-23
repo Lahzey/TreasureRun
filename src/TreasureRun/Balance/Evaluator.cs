@@ -268,6 +268,9 @@ namespace TreasureRun.Balance
                 }
                 removedTotal += dotRemoved;
 
+                // Hit points taken by other means (a Wizard's Tower's minions and goldify).
+                removedTotal += w.Total * m.ExtraRemoved;
+
                 // On-death blasts (Volatile Corpses) hit the neighbours of each dying monster.
                 if (m.DeathBlast > 0)
                     removedTotal += w.Total * m.DeathBlast * m.OnDeathFactor * Math.Min(4, rho * 2 * m.DeathBlastRadius);

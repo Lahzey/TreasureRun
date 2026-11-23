@@ -43,6 +43,16 @@ namespace TreasureRun.Ascensions.Phase3
         public int NetworkCrystals { get; private set; }
         /// <summary>The network is plugged into the Particle Accelerator's core.</summary>
         public bool FeedsAccelerator { get; private set; }
+        /// <summary>This siphon touches a Wizard's Tower (it feeds him from the mana bank).</summary>
+        public bool FeedsWizard
+        {
+            get
+            {
+                foreach (Pois.WizardTower w in Pois.WizardTower.All)
+                    if (w != null && Cell.Touches(new LeyCell(w.Grid.x, w.Grid.y, 0))) return true;
+                return false;
+            }
+        }
         public long Gathered { get; private set; }
         public bool Lit { get; private set; }
         /// <summary>The pipe parts currently shown (frames and glass), named "TR_Ley_&lt;part&gt;" (for tests).</summary>
@@ -147,7 +157,7 @@ namespace TreasureRun.Ascensions.Phase3
                 int start = arm.Rise > 0 ? 10 : 11; // from a corner (4 wide) or from the hub (6 wide)
                 float y = arm.Rise * Step;
                 if (arm.Kind == LeyNeighbourKind.Siphon) { Part($"pipe_{start}", () => LeyGeometry.Pipe(start), y, d); continue; }
-                bool feed = arm.Kind == LeyNeighbourKind.Accelerator;
+                bool feed = arm.Kind == LeyNeighbourKind.Accelerator || arm.Kind == LeyNeighbourKind.Wizard;
                 if (arm.Drop == 0)
                 {
                     if (feed) Part($"feed_{start}", () => LeyGeometry.Feed(start), y, d);
@@ -359,6 +369,9 @@ namespace TreasureRun.Ascensions.Phase3
             var crystalCells = crystals.Select(c => CellOf(c.transform.position)).ToList();
             int rate = siphons.Count > 0 ? siphons[0].Rate : 1;
             LeyCell? core = AcceleratorGrid.CoreCell;
+            // Wizard's Towers (POIs) take a feed pipe like the core; they draw their mana from the bank themselves.
+            var wizards = Pois.WizardTower.All.Where(w => w != null)
+                .Select(w => new LeyCell(w.Grid.x, w.Grid.y, Mathf.RoundToInt(w.TowerBase.y * 3f))).ToList();
             LeyLineLogic.Result r = LeyLineLogic.Solve(siphonCells, crystalCells, rate, core);
             AcceleratorIncome = r.AcceleratorIncome;
 
@@ -378,9 +391,11 @@ namespace TreasureRun.Ascensions.Phase3
                     int other = siphonCells.FindIndex(c => c.X == me.X + dx && c.Z == me.Z + dz);
                     int crystal = other >= 0 ? -1 : crystalCells.FindIndex(c => c.X == me.X + dx && c.Z == me.Z + dz);
                     bool accelerator = core.HasValue && core.Value.X == me.X + dx && core.Value.Z == me.Z + dz;
+                    int wizard = wizards.FindIndex(c => c.X == me.X + dx && c.Z == me.Z + dz);
                     around[d] = other >= 0 ? new LeyNeighbour(LeyNeighbourKind.Siphon, siphonCells[other].Level)
                               : crystal >= 0 ? new LeyNeighbour(LeyNeighbourKind.Crystal, crystalCells[crystal].Level)
                               : accelerator ? new LeyNeighbour(LeyNeighbourKind.Accelerator, core.Value.Level)
+                              : wizard >= 0 ? new LeyNeighbour(LeyNeighbourKind.Wizard, wizards[wizard].Level)
                               : new LeyNeighbour(LeyNeighbourKind.None, 0);
                 }
                 LeyPlan plan = LeyLineLogic.Plan(me, around);
@@ -402,10 +417,11 @@ namespace TreasureRun.Ascensions.Phase3
                         else AddLink(P(arm.Rise, mouth), P(arm.Rise, 0f), P(0, 0));
                         continue;
                     }
-                    if (arm.Kind == LeyNeighbourKind.Accelerator)
+                    if (arm.Kind == LeyNeighbourKind.Accelerator || arm.Kind == LeyNeighbourKind.Wizard)
                     {
-                        // Mana flows out of the network into the core (only if the network gathers anything).
-                        if (net.Income <= 0) continue;
+                        // Mana flows out of the network into the core (only if the network gathers anything); into a
+                        // Wizard's Tower always (it draws from the bank).
+                        if (arm.Kind == LeyNeighbourKind.Accelerator && net.Income <= 0) continue;
                         if (arm.Drop > 0) AddLink(P(0, 0), P(0, elbow), P(-arm.Drop, elbow), P(-arm.Drop, mouth));
                         else AddLink(P(0, 0), P(arm.Rise, 0f), P(arm.Rise, mouth));
                         continue;
@@ -522,7 +538,8 @@ namespace TreasureRun.Ascensions.Phase3
                           (ley.NetworkCrystals == 0 ? "No crystal in this network"
                            : ley.Income > 0 ? $"This siphon: {ley.Income} mana/s\nNetwork: {ley.NetworkIncome} mana/s"
                            : $"Connector (no crystal next to it)\nNetwork: {ley.NetworkIncome} mana/s") +
-                          (ley.FeedsAccelerator ? "\nFeeds the Particle Accelerator" : "");
+                          (ley.FeedsAccelerator ? "\nFeeds the Particle Accelerator" : "") +
+                          (ley.FeedsWizard ? $"\nFeeds the Wizard's Tower ({Pois.WizardTowerLogic.LeyManaPerSecond} mana/s)" : "");
             Text label = ui.discriptionText;
             if (label != null)
             {

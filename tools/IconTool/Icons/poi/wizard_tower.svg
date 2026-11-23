@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Wizard's Tower: the tower under its hat with all six gadgets, as the game places them: the arcane chimney on the left (set into the tower, behind the brim), the lightning rod and orb behind the hat, the anemometer high on the right, the ice crystal on its balcony, the gold alembic on the ground, the skull lantern on its bracket. The hat's tip is exactly at x = 32. Colours: stone #8c869a, hat #4a3488, chimney #33264f, gold #e0b848, fire and light #ffa53c, ice and orb #8fe6ff, necromancy #78ff96, iron #5c6070, wood #7a5634, cloth #e8e4d8, outlines on night violet #1c1630. -->
+  <circle cx="32" cy="32" r="30" fill="#1c1630" stroke="#b48cff" stroke-width="3"/>
+  <g transform="translate(0 0.75)" fill="none" stroke="#1c1630" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round">
+    <!-- lightning rod behind the hat: iron, a gold coil, the orb -->
+    <path d="M39.5 30 V14.5" stroke="#5c6070" stroke-width="1.8"/>
+    <path d="M38 19.5 H41 M38 22 H41 M38 24.5 H41" stroke="#e0b848" stroke-width="1.2"/>
+    <circle cx="39.5" cy="12" r="3" fill="#8fe6ff"/>
+    <!-- arcane chimney, partly sunk into the tower's side, runes glowing, its brazier of embers -->
+    <path d="M20 22 H27.3 V53.5 H20 Z" fill="#33264f"/>
+    <path d="M22 24.2 h1.6 v1.6 h-1.6 Z M22 34.2 h1.6 v1.6 h-1.6 Z M22 48.6 h1.6 v1.6 h-1.6 Z" fill="#ffa53c" stroke="none"/>
+    <path d="M18 18.5 H29.3 L28.3 22 H19 Z" fill="#e0b848"/>
+    <path d="M19.1 18.5 Q23.65 14.6 28.2 18.5 Z" fill="#ffa53c"/>
+    <!-- the anemometer's arm, from the wall -->
+    <path d="M38.5 34 H48 V27.5" stroke="#5c6070" stroke-width="1.6"/>
+    <!-- the tower -->
+    <path d="M24.5 53.5 L25.5 31 H38.5 L39.5 53.5 Z" fill="#8c869a"/>
+    <path d="M29.2 53.5 V48.6 Q32 45.6 34.8 48.6 V53.5 Z" fill="#7a5634"/>
+    <path d="M30.6 40.2 V37.2 Q32 35.6 33.4 37.2 V40.2 Z" fill="#ffa53c"/>
+    <!-- the hat: cone, gold band, brim, two stars -->
+    <path d="M22.5 29.5 L32 9 L41.5 29.5 Z" fill="#4a3488"/>
+    <path d="M22.5 29.5 L23.9 26.5 H40.1 L41.5 29.5 Z" fill="#e0b848"/>
+    <ellipse cx="32" cy="30" rx="11.5" ry="2.4" fill="#4a3488"/>
+    <circle cx="30.4" cy="19.5" r="0.8" fill="#e0b848" stroke="none"/>
+    <circle cx="33.8" cy="23.2" r="0.7" fill="#e0b848" stroke="none"/>
+    <!-- the anemometer's rotor: two cups on a bar, a gold hub -->
+    <path d="M43 27 H53" stroke="#5c6070" stroke-width="1.4"/>
+    <circle cx="43" cy="27" r="1.8" fill="#e8e4d8"/>
+    <circle cx="53" cy="27" r="1.8" fill="#e8e4d8"/>
+    <circle cx="48" cy="27" r="1.3" fill="#e0b848"/>
+    <!-- the ice balcony: a wooden ledge, a stone pedestal, the crystal -->
+    <path d="M39 44 H47 V46 H39.1 Z" fill="#7a5634"/>
+    <path d="M41.6 42 H44 V44 H41.6 Z" fill="#8c869a"/>
+    <path d="M42.8 35 L45.2 38.5 L42.8 42 L40.4 38.5 Z" fill="#8fe6ff"/>
+    <!-- the alembic: a gold flask on iron legs, a gold ring round it -->
+    <path d="M42.6 51.6 L41.8 53.5 M46.4 51.6 L47.2 53.5" stroke="#5c6070" stroke-width="1.2"/>
+    <path d="M43.9 46 H45.1 V47.7 H43.9 Z" fill="#e0b848"/>
+    <circle cx="44.5" cy="50.1" r="2.8" fill="#e0b848"/>
+    <ellipse cx="44.5" cy="50.1" rx="4.8" ry="1.5" fill="none" stroke="#e0b848" stroke-width="1"/>
+    <!-- the skull lantern on its bracket, glowing green -->
+    <path d="M25.5 38 H21 V39.5" stroke="#5c6070" stroke-width="1.4"/>
+    <path d="M18.5 39.5 H23.5 V46 H18.5 Z" fill="#5c6070"/>
+    <path d="M19.8 41 H22.2 V44.5 H19.8 Z" fill="#78ff96" stroke="none"/>
+  </g>
+</svg>

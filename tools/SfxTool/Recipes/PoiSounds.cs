@@ -16,6 +16,7 @@ namespace SfxTool
             Variants("pois/soul_urn/soul_absorb", 3, SoulAbsorb);
             Add("pois/soul_urn/urn_fill", UrnFill);
             Add("pois/soul_urn/rune_ignite", RuneIgnite);
+            RegisterWizard();
         }
 
         /// <summary>One coin: a short metallic tick (two high partials) with a noise click.</summary>

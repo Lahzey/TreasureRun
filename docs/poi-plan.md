@@ -1,6 +1,6 @@
 # Points of Interest (M8): design and system
 
-**Status:** the system is built; the **Lightning Trap** (§4), the **Wandering Merchant** (§5, three kinds) and the **Soul Urn** (§6) are in the game. Decisions are in §2. Code is in `src/TreasureRun/Pois`, and PLAN.md §7 links here.
+**Status:** the system is built; the **Lightning Trap** (§4), the **Wandering Merchant** (§5, three kinds), the **Soul Urn** (§6) and the **Wizard's Tower** (§7) are in the game. Decisions are in §2. Code is in `src/TreasureRun/Pois`, and PLAN.md §7 links here.
 
 Points of Interest (POIs) are special map sections that turn up while the map grows tile by tile. Each one has its own function. Their randomness and rarity make every map feel like a place with a story.
 
@@ -95,6 +95,9 @@ From the vanilla code (`TileManager`, `TileSpawnLocation`, `SpawnManager`):
 | `LightningTrap.cs`, `LightningTrapLogic.cs` | the first POI |
 | `Merchant.cs`, `MerchantLogic.cs`, `MerchantShopUI.cs` | the Wandering Merchant: site and stock, prices and section style (pure), the shop window |
 | `SoulUrn.cs`, `SoulUrnLogic.cs`, `SoulRune.cs`, `SoulFx.cs` | the Soul Urn: site, charging and rewards; size, rewards, soul flight and section style (pure); the soulfire rune (attack speed, War Blimp deck); effects |
+| `WizardTower.cs`, `WizardTowerLogic.cs`, `WizardSpells.cs`, `WizardLand.cs` | the Wizard's Tower: site, casting and the ley link; spells, weights, targeting, damage, section style and balance inputs (pure); the spells and their effects; his land (blocked building, the shine) |
+| `PoiReach.cs` | a POI's reach drawn like a tower's range (Soul Urn, Wizard's Tower) |
+| `Core/FixedDamageLogic.cs`, `Combat.FixedHit` | fixed POI damage: exact, split over the layers like vanilla, untouched by treasures and cards |
 | `Treasures/TreasureSale.cs` | selling treasures (used by the merchant) |
 | `Core/RunState.cs` | `PoiOmens`, `Pois` (plain records, for M10 save/resume) |
 | `UI/IconLibrary.cs` | loads `plugins/TreasureRun/icons/**.png` as sprites |
@@ -115,6 +118,7 @@ From the vanilla code (`TileManager`, `TileSpawnLocation`, `SpawnManager`):
   - `poi rate <0-15>` sets the mana per second of the nearest Lightning Trap.
   - `poi shop` opens the nearest open merchant; `poi buy <slot>` and `poi sell <id>` trade there directly; `poi press <buy n|sell id>` presses a button of the open shop (confirmations need two presses); `poi close` closes it.
   - `poi souls [n]` sends n souls into the nearest charging Soul Urn (from random points around it); `poi fill [chest|gold|rune]` fills it at once, with that reward or a random one.
+  - `poi cast [fireball|lightning|ice|tornado|necromancy|goldify]` makes the nearest Wizard's Tower cast now (that spell, if it has a target; else a random one).
   - `cells <x> <z> [step]` prints a tile's height map.
   - `dump <object>` prints its hierarchy.
 - **Settings:** `PointsOfInterest.Enabled`, `PointsOfInterest.OmenChance`, `Debug.PoiForce` (every new button gets an omen).
@@ -122,6 +126,7 @@ From the vanilla code (`TileManager`, `TileSpawnLocation`, `SpawnManager`):
   - `poi-sections`: an omen, then each exit combination as a section, checked by raycast against the layout, with its waypoint links.
   - `poi-lightning-trap`: the pole cells are blocked; strikes per second, damage per strike and mana per second at 15 and 5 mana/s; at 0; out of mana; close-up and popup screenshots.
   - `poi-soul-urn`: the urn's cell blocked; its size for the wave and lane; souls from kills in reach (dummies on its path); the popup and its reach circle (radius 7, gone with the popup); gold (the formula at the urn's first wave, the cell free afterwards), a chest, a rune (+100%: a Ballista on it shoots twice as fast and wears the shell, its neighbour doesn't); a War Blimp's Radar on the rune (the deck shows the rune, the deck's Ballista gets the bonus, both wear the shell); screenshots of souls, reach, burst, chest, rune, shell and deck.
+  - `poi-wizard-tower`: the tower's cell (off the edge and the path); its gadgets (16 chimney segments, the anemometer turning by itself); a spell winding up first (no second one meanwhile), the bulge travelling up the chimney, the fireball flying as the Magma Lobber's ball, lightning spiralling up the rod; every grass cell of his land refused; the shine, the motes, the popup and its reach; each spell on dummies: the fireball on the group (blast and burn exact), lightning on the shield (exact), the same with four damage treasures owned (still exact; a Lightning Trap strike too), three ice spikes on three dummies (exact, slowed), the tornado dragging a dummy back up the path but not a boss, a slain dummy rising in the aura, goldify on the toughest (not the boss; a statue, then 25 times its kill gold); an ascension that can't be sold or removed; the ley link (a siphon on his land next to the tower, a feed pipe; between waves idle without mana and ready with it; the popup naming its 10 mana per second; 10 mana/s drained in a wave, a spell every 4 s); screenshots of the tower, land, popup, the chimney's bulge, the rod's spiral, the crystal winding up, each spell and the link.
   - `poi-merchant`: all three merchants; wagon cells blocked; stock by kind; prices by the formula; selling (with the confirmation, unsellable treasures refused); buying all three at the Normal merchant (the last asks first, then it packs up, the closed wagon still blocks); one purchase at the Legendary (it stays) and at the Ascension Merchant (it leaves); wagon and shop screenshots per skin.
 
 ### 3.6 Balance
@@ -129,6 +134,7 @@ From the vanilla code (`TileManager`, `TileSpawnLocation`, `SpawnManager`):
   - Coverage is checked: `balance coverage`, the `balance` scenario and an offline test.
   - The budget is 15 ±25%.
 - A POI that deals damage is a **fixed source** on the board (`Spec.FixedSource`): a tower group that is never bought or sold and that tower cards don't reach.
+- **In game its damage is fixed too** (`Combat.FixedHit`, §7): no treasure, card or crit changes a POI's hits, and nothing procs on them. Hit points a POI takes by other means (risen minions, monsters turned to gold) go into `BoardMods.ExtraRemoved`.
 - The **Trap** attack shape works per monster:
   - Each monster that walks through takes `rate × cells / speed` strikes.
   - `TrapArrival` (0.8) of them reach the trap alive.
@@ -182,7 +188,7 @@ Three POIs share the code, each with its own omen icon, wagon and shop skin:
 - **Selling:** every owned treasure is listed. Selling pays **half of what this merchant would ask** for it (undiscounted). These can't be sold, and the shop shows why:
   - one-time effects: Treasure Hoard and Loan Shark (gold), Sturdy Walls (health), Glass Cannon (its health cost);
   - Legion (towers bought at its prices would refund more than they cost);
-  - ascensions (bound to the towers that carry them: their models, planes, decks and grids).
+  - ascensions (bound to the towers that carry them: their models, planes, decks and grids). `TreasureInventory.RemoveOne` refuses them too, so no other path can take one away.
 - A sold copy is removed (`TreasureInventory.RemoveOne`). Treasures that changed the vanilla state undo it (`TreasureDef.OnSell`): Whetstone, Long Sight, Keen Eye, Thunderclap, Bounty Board, Lucky Coin, Four-Leaf Clover, Quick Study. Piggy Bank now pays per copy owned at the wave end, and the Siege Workshop takes a sold treasure's weapon off the castle.
 - Selling ends with the merchant, so buying the last offer is a trade-off.
 
@@ -269,14 +275,80 @@ Three POIs share the code, each with its own omen icon, wagon and shop skin:
 - **War Blimp:** a Radar (the War Blimp's air mast) on a rune gets the bonus itself (its planes fire faster, `owner.rps`), and **the tower on the blimp's deck gets it too** (`SoulRune.For`: a deck passenger takes the rune under its blimp's Radar, never one the blimp happens to hover over). The deck then carries the same circle, sized to the deck, flying with the blimp (`RuneDeckGlow`); it goes out when the Radar no longer stands on a rune.
 - **Balance:** the chest is a treasure pick (18.5-23 points); the gold is 1.5 times the gold worth a chest at the urn's first wave (`FairPrice.GainOf`, fitted within 8%; `GoldFactor` makes up for the late payout); the rune's +100% is rated with its tower counted as three average towers (`RuneTowerShare`: the strongest tower, kept busy with slows). Rated from four waves after the omen (`FillDelay`): **12.8 points** against 15, inside the budget. Probes `BalanceProbe.SoulUrnRewards` and `SoulUrnLevers` (rating by fill delay, gold factor and tower share). Omens from wave 3 to 40 (later urns would have no time to fill). Notes in balance-todo.md.
 
-## 7. POI ideas (for later batches)
+## 7. Wizard's Tower (built)
+
+An erratic wizard's crooked tower. Named with the possessive: someone lives there, and the land is his.
+
+- **Section:** generic (paths from every exit meet in the centre, random hills).
+  - The tower stands on a random grass cell that is **neither on the section's edge nor next to a path** (8 neighbours; `WizardTowerStyle`, chosen after the paths are laid, so at plain height 1).
+  - If no cell qualifies: one with a path only diagonally next to it, then any inner grass cell. A four-way section leaves the four inner corner cells.
+- **The wizard's land** is the whole section (`WizardLand`):
+  - its grass shimmers blue (a translucent copy of the section's terrain mesh, breathing slowly) and motes of blue light rise from it;
+  - **nothing can be built on it**: the build ghost doesn't show there, and a click says "This land belongs to the wizard" (a red floating text, like a closed shop's "Closed"); drag-building skips its cells;
+  - exception: with the Ley Line Network, mana siphons may be built there (the ley link below).
+- **Model:** a plain wizard's tower with one gadget per spell (`tools/VoxTool/Recipes/WizardRecipes.cs`, the layout and animation in `WizardGadgets`).
+  - **The tower** (`pois/wizard_tower`, 14 x 14 x 42 voxels): a round fieldstone tower on a plinth, a stone band halfway up and a corbelled ring under the roof, an arched oak door facing the camera, three glowing arched windows, and a tall indigo wizard's hat with a gold band and a few stars, its tip bending a little.
+  - **The gadgets** (`pois/wizard/…`) are each neat and symmetric. Their placement round the tower, at different sides and heights, is what makes it look erratic:
+
+| Spell | Gadget | Where | Idle | Wind-up before the spell leaves it |
+|---|---|---|---|---|
+| Fireball | an arcane chimney: a stack of 16 round segments of dark arcane stone (every third with glowing runes), the same from the ground up, under a flared brazier of embers | on the camera's left, a third of it sunk into the tower's side like a round stair turret set into a keep (it cuts through the brim, its brazier against the hat) | embers rise | a **bulge travels up the chimney** (each segment widens as it passes, up to 1.7x, with a glow inside), as if the fireball, a little wider than the chimney, pressed its walls apart (0.75 s) |
+| Lightning | an iron rod with a copper coil and a glass orb | behind the hat, strapped under the brim, the orb above the tip | the orb glows | **two strands of lightning spiral up the rod** into the orb, which swells (0.6 s) |
+| Ice Spikes | a small round balcony with a railing and a pedestal, an ice crystal floating over it | under the window on the front right | the crystal turns and bobs | the crystal **spins up** in a swirl of frost, glowing (0.6 s) |
+| Tornado | an anemometer: an iron arm with a mast, three white cups on a brass hub | high on the right | the cups turn | the cups **whirl** to a blur in a swirl of wind (0.6 s) |
+| Necromancy | a skull lantern hanging from a bracket | by the window on the front left | it sways | it **swings harder and harder**, its green glow flaring (0.6 s) |
+| Goldify | an alembic: a gold flask on an iron tripod, two gold rings crossing round it | on the ground at the front right | the rings turn | the rings **spin up** in a swirl of gold (0.5 s) |
+
+  - Every part is its own model on the tower, world-aligned (not turned with the tile), so the door and gadgets always face the camera. Some gadgets reach onto neighbouring cells, which are always his land.
+  - A spell picks its targets when it leaves the gadget, after the wind-up; with nobody left in range it fizzles. No second spell starts while one winds up.
+  - `VoxTool preview <file.vox> --game` renders a model as the in-game camera sees it.
+  - Omen icon `poi/wizard_tower`: the tower under its hat with all six gadgets as the game places them, simplified (the chimney behind the brim on the left with the lantern in front of it, the rod and orb behind the hat, the anemometer high on the right, the crystal on its balcony, the alembic on the ground); nothing the tower doesn't have, every part touching the next, the hat's tip exactly at the centre line. Colours: stone, the hat's violet, a darker violet for the chimney, gold, one warm orange (fire, runes, the window), cyan (ice, the orb), green (the lantern), iron, wood and the cups' white.
+- **Spells:** during waves he casts every **5 s** (`WizardTowerLogic.Interval`) at monsters within **10 cells** of the tower. With nobody in range the spell waits until someone comes. He picks at random by weight among the spells that have a target:
+
+| Spell | Weight | Target | Effect | Base damage (x Power), multipliers |
+|---|---|---|---|---|
+| **Fireball** | 3 (26%) | the largest group (monsters within 1.5 of each one; ties: furthest along), aimed where it will be when the ball lands | blast of radius 1.5, then a burn: half the blast again in 4 ticks over 2 s (his own burn, not vanilla's), flames on the burning | x1, 5/8/3 (fire bites armor) |
+| **Lightning** | 3 (26%) | the most shield; with no shields in range the most health and armor | one big hit: a bolt with forks from the orb, an X-ray flash | x4, 6/3/12 |
+| **Ice Spikes** | 3 (26%) | the fastest (ties: furthest along), three different monsters while there are enough | three spikes, each a hit and +25% slow (vanilla slow) | x1.2 each, 6/6/6 |
+| **Tornado** | 1 (9%) | the furthest along that isn't a boss | a funnel that drifts back up the path at 1 cell a second for 3.5 s; monsters it touches (not bosses) whirl inside it, are carried back, and are ground 4 times a second; released, they walk on from there | x0.5 per second, 5/5/5 |
+| **Necromancy** | 1 (9%) | none (his whole reach) | an aura for 4 s: monsters slain inside rise as the Necropolis's minions (`RisenMinion`: a fifth of their max health, walk back up the path, blow up on the first monster); a green circle at the reach, a sigil round the tower, wisps | none (the minions' blasts) |
+| **Goldify** | 0.4 (4%) | the toughest (shield + armor + health) that isn't a boss | the monster dies at once and stands for 1 s as a gold statue (a gilded copy), then bursts into coins: 25 times its kill gold in all | none |
+
+  - Mini-bosses count as bosses.
+  - Goldify: a monster turned to gold doesn't split or spawn anything, and the wizard counts as a tower type for its kill gold. The 24 extra kill golds are paid outside the kill, so gold multipliers count once (they are in the kill's own gold).
+  - Spells in flight: glowing heads with trails. The fireball is the Magma Lobber's ball (`ascensions/flame/magma_ball` at 0.85, 0.6 across, a little wider than the chimney), tumbling and trailing embers and smoke; it lands as the wizard's blast, with no lava pool. An ice spike is a shard. Every cast flashes its gadget; impacts bloom (`Bloom`, `GroundFlash`).
+  - **Sounds:** the fireball and the ice spikes reuse the Magma Lobber's lob and impact and the Icicle Cannon's launch and shatter. New (`tools/SfxTool/Recipes/WizardSounds.cs`, `pois/wizard_tower/…`):
+    - `thunder`: a sizzle, the crack with crackles, a boom and rolling thunder (1.9 s, as loud as an explosion);
+    - `tornado`: wind whirling 2.2 times a second over a low roar, a whistle, grit (3.6 s);
+    - `necro_aura`: a beating low drone, a ghostly choir on a diminished chord sinking, whispers (4.2 s);
+    - `goldify`: a rising run of bells, a metallic clink as it sets, glitter (1.5 s); the vanilla coin sound at the coins.
+- **Fixed damage:** every hit goes through `Combat.FixedHit` (`Core/FixedDamageLogic.cs`):
+  - base damage x the layer's multiplier, split over shield, armor and health like vanilla (the excess of a broken layer carries on as base damage);
+  - **exact**: no crits, no treasure or card modifiers (First Strike, Executioner, Hex of Frailty, Master of Elements…), no damage-over-time or mark bonuses, and nothing procs on it;
+  - the burn is his own and the minions' blasts are fixed too. Only fortify (a monster's own trait) lowers it, as for every hit.
+  - Treasures that act on a monster's *death* (Volatile Corpses, Overkill) still fire on the monsters he kills.
+  - **The Lightning Trap now uses it too:** its strikes used to take treasure modifiers (First Strike, Executioner, Static Arc procs).
+- **Damage by wave:** `WizardTowerLogic.Power(w)`, about 6 at wave 5, 35 at 10, 190 at 20, 450 at 30 and 795 at 40; a lightning bolt is four times that.
+- **Texts keep the details hidden.** The omen: an erratic wizard lives here and lends you a hand against nearby monsters with whatever spell comes to his mind, from the everyday to the very rare; his land can't be built on. The popup says the same, then the ley link (below), then his spells cast, monsters slain and gold. While it is open his reach shows as a circle of 10, like a tower's range (`PoiReach`, shared with the Soul Urn).
+- **Ley link:** with the Ley Line Network, siphons may be built on his land.
+  - A siphon next to the tower (4 neighbours, any height) **links** it. The siphon grows a feed pipe into the tower, like the Particle Accelerator's core, and mana motes flow in. It needs no crystal in its network.
+  - During waves the tower then draws **10 mana a second** from your mana (metered like the Lightning Trap: out of mana it waits until a second's worth is there again) and casts **every 4 s** while it is paid.
+  - The popup says what the link costs: "he draws 10 mana per second during waves and casts a little faster", or that he would but your mana has run dry. With the ascension and no link it says a siphon next to the tower would feed him. The siphon's popup shows the link too.
+  - Between waves the link shows as it will start: ready if the bank holds a second's worth (10). Before, it kept the last wave's state, so after a wave that ran the mana dry it showed 5 s until the next wave had paid again.
+- **Balance** (`ContentSpecs.WizardTower`): 17.6 points (P80 19.3, early 19.3, late 7.1) against 15. Omens from wave 3. Notes in balance-todo.md.
+  - Each damaging spell is a fixed source with its share of the casts. The fireball counts 30% more targets for aiming at the largest group, and all his spells count 85% (`Reach`: he stands where his section landed, not where the defence is).
+  - The tornado's drag counts as a slow. The minions and goldify's kills count as hit points taken (`BoardMods.ExtraRemoved`), goldify's gold as gold.
+  - The power is solved per wave for 15 points (probe `BalanceProbe.WizardTowerPower`) up to about wave 15.
+  - Later no damage reaches 15: a spell every 5 s lands too few hits against the late boards, even with a reach of 10. The ceiling is about 15 points at wave 18, 9 at 30 and 6 at 40. There the power is the one that reaches 90% of the ceiling: his spells kill what they hit.
+  - The ley link needs an ascension and isn't rated.
+
+## 8. POI ideas (for later batches)
 
 Rule check: none is purely negative. Each risky one pays more when handled. The size is now the whole section; "structure" says what the POI places in it.
 
 ### Boons and towers
 | POI | What it does | Agency |
 |---|---|---|
-| **Mage Tower** | A neutral tower on a central rock that fires arcane bolts on its own. Its popup has upgrades for **mana**, not gold, and it gains levels from kills. It isn't a built tower and can't be demolished. | route, decision (mana into it or into your towers) |
 | **Ancient Forge** | An anvil cell: the tower on it gains +1 level at every wave end. | placement (which tower deserves it) |
 | **Wellspring** | Three mana crystals in a ring; siphons on them give +50%. | placement |
 | **Lookout Crag** | A tall rock with one build cell counting +3 high ground. | placement |
@@ -316,9 +388,10 @@ Rule check: none is purely negative. Each risky one pays more when handled. The 
 
 ---
 
-## 8. Next
+## 9. Next
 - Play the Lightning Trap: drag its slider with the mouse, check the arcs and the X-ray in play, the strike sound, and its damage against the real waves (balance-todo.md).
 - Play the merchants: the prices against the real gold (early Legendary Merchants especially), whether selling gets used, the shop window with the mouse.
 - Play the Soul Urn: how long it takes to fill with a real kill zone, the rune on strong towers and on a War Blimp's Radar.
+- Play the Wizard's Tower: his strength early (about 15 points from wave 3) and late (below the budget), whether the tornado and goldify feel special, the ley link's 10 mana/s against its 25% more spells, building round his land.
 - The next POIs, one at a time; each needs an icon, a spec and a scenario.
 - The balance simulation (framework B4) alongside, as planned for M8.

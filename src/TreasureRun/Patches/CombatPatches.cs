@@ -56,12 +56,15 @@ namespace TreasureRun.Patches
             ctx.IsDirect = _baseDmg > -1;
             ctx.IsSecondary = Combat.SecondaryDepth > 0;
             ctx.IsNested = nested;
+            ctx.IsFixed = Combat.FixedDepth > 0;
 
-            foreach (Action<HitContext> mod in Combat.HitModifiers)
-            {
-                try { mod(ctx); }
-                catch (Exception e) { Plugin.Log.LogError($"Hit modifier failed: {e}"); }
-            }
+            // Fixed damage (a Point of Interest) is exact: no treasure, card or castle modifier touches it.
+            if (!ctx.IsFixed)
+                foreach (Action<HitContext> mod in Combat.HitModifiers)
+                {
+                    try { mod(ctx); }
+                    catch (Exception e) { Plugin.Log.LogError($"Hit modifier failed: {e}"); }
+                }
 
             _baseDmg = ctx.IsDirect ? Mathf.Max(0, ctx.BaseDamage) : ctx.BaseDamage;
             healthDmg = ctx.HealthMult; armorDmg = ctx.ArmorMult; shieldDmg = ctx.ShieldMult;
@@ -76,7 +79,7 @@ namespace TreasureRun.Patches
                 {
                     Enemy = __instance, Source = whoHitMe,
                     BaseDamage = _baseDmg, HealthMult = healthDmg, ArmorMult = armorDmg, ShieldMult = shieldDmg,
-                    IsDirect = ctx.IsDirect, IsSecondary = ctx.IsSecondary, IsNested = nested,
+                    IsDirect = ctx.IsDirect, IsSecondary = ctx.IsSecondary, IsNested = nested, IsFixed = ctx.IsFixed,
                 },
             });
         }

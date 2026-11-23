@@ -16,4 +16,5 @@ Visual improvements noticed in playtests, collected for a later polish pass (lik
 
 | POI | Change | Where |
 |---|---|---|
+| **Wizard's Tower** | The tornado is a column of particles (it reads as a whirl of smoke); a twisted funnel mesh with a dusty base would look more like a tornado. The gold statue is a gilded palette: a shine sweeping over it would sell the metal. The land's blue shine is very subtle on light grass. The rod's lightning spiral is thin against the copper coil; the lantern is a dark cage whose green glow is faint by day. | `WizardTornado`, `GoldStatue`, `WizardLand.Dress`, `WizardGadgets.Spiral`, `WizardRecipes.Lantern` |
 | **Soul Urn** | The soul fire in the urn's mouth is small at low fill and easy to miss; a ring of runes on the plinth that lights up with the fill would show the progress at a glance. The souls read as comets (bright trail, small head); a wispier, flickering head would look more like a soul. | `SoulFx.SoulFire`, `SoulWisp`, `PoiRecipes.SoulUrn` |

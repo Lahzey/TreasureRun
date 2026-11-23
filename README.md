@@ -72,6 +72,7 @@ dotnet run -c Release -- build ../../models ascensions/particle/
 
 - The last argument is a name prefix (`castles/`, `ascensions/mortar/`, …); without it, everything is rebuilt.
 - Each model gets a `.vox`, a `.png` preview and, for tower ascensions, a `.json` sidecar.
+- `dotnet run -c Release -- preview <file.vox> <out.png> --game` renders one large view from the in-game camera's side (it sees a model's -x and +y faces), to check what players will see.
 - Known quirk: rebuilding `ascensions/particle/` (or everything) writes `beam_turret` slightly differently from the committed one. Restore it with `git checkout models/ascensions/particle/beam_turret.vox models/ascensions/particle/beam_turret.png`.
 - More in [docs/voxel-workflow.md](docs/voxel-workflow.md).
 

@@ -72,6 +72,8 @@ namespace TreasureRun.Balance
         /// <summary>Damage-over-time spreads on death to this many monsters (Contagion).</summary>
         public double DotSpread;
         public double OnDeathFactor = 1;
+        /// <summary>Share of the wave's hit points taken by other means (a POI's risen minions, monsters turned to gold).</summary>
+        public double ExtraRemoved;
 
         public double MaxHealth = 100, MaxHealthFactor = 1, HealPerWave, AbsorbPerWave;
         /// <summary>Extra safety of the castle beyond its health (Second Wind: x1.5).</summary>

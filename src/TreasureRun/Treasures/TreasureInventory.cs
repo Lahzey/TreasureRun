@@ -54,6 +54,12 @@ namespace TreasureRun.Treasures
         {
             RunState run = TreasureRunMode.Run;
             if (run == null || def == null || !counts.TryGetValue(def.Id, out int n)) return false;
+            // Ascensions are permanent: they are bound to the towers that carry them (models, planes, decks, grids).
+            if (Ascensions.AscensionRegistry.ForTreasure(def) != null)
+            {
+                Plugin.Log.LogWarning($"Refused to remove the ascension {def.Name}: ascensions are permanent.");
+                return false;
+            }
             if (n <= 1) counts.Remove(def.Id); else counts[def.Id] = n - 1;
             run.OwnedTreasures.Remove(def.Id);
             int i = active.FindLastIndex(e => e.Def != null && e.Def.Id == def.Id);

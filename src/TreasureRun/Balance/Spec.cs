@@ -134,6 +134,14 @@ namespace TreasureRun.Balance
         public Spec FixedSource(string text, Func<int, TowerInfo> info) => Add(Category.Offense, text, c =>
             c.Board.Groups.Add(new TowerGroup { Kind = TowerKind.Poi, Count = 1, Custom = info(c.Wave) }));
 
+        /// <summary>A fixed source with its own bonus (e.g. more targets for one that aims at the largest group).</summary>
+        public Spec FixedSource(string text, Func<int, TowerInfo> info, Action<TowerBonus> bonus) => Add(Category.Offense, text, c =>
+        {
+            var g = new TowerGroup { Kind = TowerKind.Poi, Count = 1, Custom = info(c.Wave) };
+            bonus(g.Bonus);
+            c.Board.Groups.Add(g);
+        });
+
         public Spec Levels(double n, TowerKind? t = null) => Tower(Category.Offense, $"+{n} levels", t, x => x.Levels += n);
         public Spec XpPercent(double p, TowerKind? t = null) => Tower(Category.Offense, $"{p:+0%} XP", t, x => x.XpFactor *= 1 + p);
         public Spec HeightFactor(double f) => Tower(Category.Offense, $"height bonus x{f}", null, x => x.HeightFactor *= f);

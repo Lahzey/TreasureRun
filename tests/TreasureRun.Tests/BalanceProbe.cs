@@ -120,6 +120,89 @@ namespace TreasureRun.Tests
             Directory.CreateDirectory(dir);
             File.WriteAllText(Path.Combine(dir, "lightning-trap.txt"), sb.ToString());
         }
+        /// <summary>
+        /// Wizard's Tower: the power (base damage) at which the tower, acquired at a wave, is worth the POI budget there;
+        /// a cubic fit over waves 3-45 without boss waves; each part's share at the fitted power; the rating. Writes
+        /// tests/out/wizard-tower.txt.
+        /// </summary>
+        [Test, Explicit]
+        public void WizardTowerPower()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("wave | power for 15 | ceiling pts | power for 90% of it | target | fitted | pts at fit | casts/wave | fire | bolt | ice | tornado dmg | drag slow | necro | goldify kill | gold");
+            var xs = new System.Collections.Generic.List<double>();
+            var ys = new System.Collections.Generic.List<double>();
+            double Pts(Spec spec, int w) => Valuation.PointsAt(spec, w, w, BoardVariant.Mixed);
+            for (int w = 1; w <= WaveModel.LastWave; w++)
+            {
+                double lo = 0, hi = 1e5;
+                if (Pts(ContentSpecs.WizardTower(_ => hi), w) < Pools.PoiBudget) lo = hi;
+                else
+                    for (int i = 0; i < 40; i++)
+                    {
+                        double mid = (lo + hi) / 2;
+                        if (Pts(ContentSpecs.WizardTower(_ => mid), w) < Pools.PoiBudget) lo = mid; else hi = mid;
+                    }
+                // Past some wave no damage reaches the budget (a spell every 5 s lands few hits): the ceiling, and the
+                // power that gets 90% of it.
+                double ceiling = Pts(ContentSpecs.WizardTower(_ => 1e5), w);
+                double clo = 0, chi = 1e5;
+                for (int i = 0; i < 40; i++)
+                {
+                    double mid = (clo + chi) / 2;
+                    if (Pts(ContentSpecs.WizardTower(_ => mid), w) < 0.9 * ceiling) clo = mid; else chi = mid;
+                }
+                double target = System.Math.Min(lo, chi);
+                double fit = Pois.WizardTowerLogic.Power(w);
+                Spec full = ContentSpecs.WizardTower(Pois.WizardTowerLogic.Power);
+                sb.Append($"{w,4} | {lo,8:0.00} | {ceiling,5:0.0} | {chi,8:0.0} | {target,8:0.0} | {fit,7:0.00} | {Pts(full, w),6:0.0} | {Pois.WizardTowerLogic.CastsPerWave(ReferenceBoards.Get(w, BoardVariant.Mixed)),5:0.0} |");
+                // Each part alone at the fitted power.
+                foreach (Atom a in full.Atoms)
+                {
+                    var one = new Spec();
+                    one.Atoms.Add(a);
+                    sb.Append($" {Pts(one, w),5:0.0}");
+                }
+                sb.AppendLine();
+                if (w >= 3 && w <= 45 && !WaveModel.Get(w).HasBoss) { xs.Add(w); ys.Add(target); }
+            }
+            double[] c = CubicFit(xs, ys);
+            sb.AppendLine($"Cubic fit of the target (waves 3-45, no boss waves): {c[0]:0.###} + {c[1]:0.####} w + {c[2]:0.#####} w^2 + {c[3]:0.######} w^3");
+            Rating r = Valuation.Rate("wizard_tower", "Wizard's Tower", "poi", null, false, ContentSpecs.Poi("wizard_tower"));
+            sb.AppendLine($"Rating: {r.Points:0.0} points (P80 {r.P80:0.0}, early {r.Early:0.0}, late {r.Late:0.0}, budget {r.Budget}).");
+            string dir = Path.Combine(TestContext.CurrentContext.TestDirectory, "..", "..", "..", "..", "out");
+            Directory.CreateDirectory(dir);
+            File.WriteAllText(Path.Combine(dir, "wizard-tower.txt"), sb.ToString());
+        }
+
+        /// <summary>Least-squares cubic through the points (normal equations).</summary>
+        private static double[] CubicFit(System.Collections.Generic.List<double> xs, System.Collections.Generic.List<double> ys)
+        {
+            var m = new double[4, 5];
+            for (int i = 0; i < xs.Count; i++)
+            {
+                double[] p = { 1, xs[i], xs[i] * xs[i], xs[i] * xs[i] * xs[i] };
+                for (int r = 0; r < 4; r++)
+                {
+                    for (int k = 0; k < 4; k++) m[r, k] += p[r] * p[k];
+                    m[r, 4] += p[r] * ys[i];
+                }
+            }
+            for (int col = 0; col < 4; col++)
+            {
+                int piv = col;
+                for (int r = col + 1; r < 4; r++) if (System.Math.Abs(m[r, col]) > System.Math.Abs(m[piv, col])) piv = r;
+                for (int k = 0; k < 5; k++) { double t = m[col, k]; m[col, k] = m[piv, k]; m[piv, k] = t; }
+                for (int r = 0; r < 4; r++)
+                {
+                    if (r == col) continue;
+                    double f = m[r, col] / m[col, col];
+                    for (int k = col; k < 5; k++) m[r, k] -= f * m[col, k];
+                }
+            }
+            return new[] { m[0, 4] / m[0, 0], m[1, 4] / m[1, 1], m[2, 4] / m[2, 2], m[3, 4] / m[3, 3] };
+        }
+
             /// <summary>Soul Urn: monsters per wave (with death spawns), for the charge it needs. Writes tests/out/soul-urn.txt.</summary>
         [Test, Explicit]
         public void SoulUrnCounts()

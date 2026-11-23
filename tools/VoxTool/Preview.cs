@@ -46,6 +46,21 @@ namespace VoxTool
             }
         }
 
+        /// <summary>
+        /// The in-game camera's view (it looks along world +x, -z, so it sees the model's -x and +y faces), drawn larger.
+        /// </summary>
+        public static Image RenderGame(VoxModel m, int viewSize = 800)
+        {
+            // A quarter turn: the model's +y becomes +x and its -x becomes +y, the two faces this view draws.
+            var turned = new VoxModel(m.SizeY, m.SizeX, m.SizeZ) { Name = m.Name, Palette = m.Palette };
+            for (int x = 0; x < m.SizeX; x++)
+                for (int y = 0; y < m.SizeY; y++)
+                    for (int z = 0; z < m.SizeZ; z++) turned.Voxels[y, m.SizeX - 1 - x, z] = m.Voxels[x, y, z];
+            var img = new Image(viewSize, viewSize, Background);
+            DrawView(img, turned, 0, viewSize, back: false);
+            return img;
+        }
+
         /// <summary>Back view = model rotated 180° around the vertical axis.</summary>
         private static byte Voxel(VoxModel m, int x, int y, int z, bool back) =>
             back ? m.Get(m.SizeX - 1 - x, m.SizeY - 1 - y, z) : m.Get(x, y, z);

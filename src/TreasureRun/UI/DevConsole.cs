@@ -563,7 +563,7 @@ namespace TreasureRun.UI
                 Debugging.ObjectDump.Write(go.transform, depth, Print);
             });
 
-            Add("poi", "poi [list | omen <id> [all] | next <id> | exits <L|T|R|LT|LR|TR|LTR> | rate <0-15> | shop | buy <slot> | sell <id> | press <buy n|sell id> | close | souls [n] | fill [chest|gold|rune]]",
+            Add("poi", "poi [list | omen <id> [all] | next <id> | exits <L|T|R|LT|LR|TR|LTR> | rate <0-15> | shop | buy <slot> | sell <id> | press <buy n|sell id> | close | souls [n] | fill [chest|gold|rune] | cast [fireball|lightning|ice|tornado|necromancy|goldify]]",
                 "Points of Interest: list omens and sites; put an omen on the open Expand buttons (first, or all); make the next " +
                 "omen roll succeed; force the exits of the next tile; set the mana per second of the nearest Lightning Trap; open the " +
                 "nearest open merchant's shop, buy an offer or sell a treasure there directly, press a button of the open shop " +
@@ -656,6 +656,19 @@ namespace TreasureRun.UI
                         Print("Filling.");
                     }
                     Print($"Soul Urn: {urn.Status}");
+                    return;
+                }
+                if (sub == "cast")
+                {
+                    Pois.WizardTower w = Pois.WizardTower.All.Where(x => x != null).OrderBy(x => x.Center.sqrMagnitude).FirstOrDefault();
+                    if (w == null) { Print("No Wizard's Tower."); return; }
+                    string s = Arg(a, 1, "").ToLowerInvariant();
+                    Pois.WizardSpell? spell = null;
+                    foreach (Pois.WizardSpell x in Pois.WizardTowerLogic.Spells)
+                        if (s.Length > 0 && Pois.WizardTowerLogic.Name(x).ToLowerInvariant().Replace(" ", "").StartsWith(s)) { spell = x; break; }
+                    w.Forced = spell;
+                    Print(w.TryCast() ? $"Cast{(spell != null ? " " + Pois.WizardTowerLogic.Name(spell.Value) : "")}." : "No monster in range (forced for the next cast).");
+                    Print($"Wizard's Tower: {w.Status}");
                     return;
                 }
                 Print("Unknown subcommand.");
@@ -896,6 +909,7 @@ namespace TreasureRun.UI
             if (hit.collider.gameObject.layer != LayerMask.NameToLayer("Grass"))
             { message = $"Cell blocked by {hit.collider.name} (layer {LayerMask.LayerToName(hit.collider.gameObject.layer)})."; return null; }
             Vector3 pos = new Vector3(x, Mathf.Round(3f * hit.point.y) / 3f, z);
+            if (Pois.WizardLand.Refuses(pos, match.Value.Key)) { message = Pois.WizardLand.Refusal + "."; return null; }
             GameObject go = UnityEngine.Object.Instantiate(match.Value.Key, pos, Quaternion.identity);
             go.GetComponent<IBuildable>()?.SetStats();
             if (pay) ResourceManager.instance.Spend(match.Value.Value.currentPrice);

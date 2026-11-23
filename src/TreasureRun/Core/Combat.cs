@@ -24,8 +24,10 @@ namespace TreasureRun.Core
         public bool IsSecondary;
         /// <summary>Re-entrant call on the same enemy (vanilla overflow damage or crit DoT pops).</summary>
         public bool IsNested;
+        /// <summary>Fixed damage from a Point of Interest (<see cref="Combat.FixedHit"/>): no modifier runs on it.</summary>
+        public bool IsFixed;
 
-        public bool CanProc => IsDirect && !IsSecondary && !IsNested;
+        public bool CanProc => IsDirect && !IsSecondary && !IsNested && !IsFixed;
 
         /// <summary>Multiply the damage of this hit: base damage for direct hits, multipliers for DoT/true damage.</summary>
         public void MultiplyDamage(float factor)
@@ -50,8 +52,10 @@ namespace TreasureRun.Core
         public bool WasCrit;
         public float CritMultiplier = 1f;
         public bool IsDirect, IsSecondary, IsNested;
+        /// <summary>Fixed damage from a Point of Interest: nothing procs on it.</summary>
+        public bool IsFixed;
         public bool Killed;
-        public bool CanProc => IsDirect && !IsSecondary && !IsNested;
+        public bool CanProc => IsDirect && !IsSecondary && !IsNested && !IsFixed;
     }
 
     public sealed class KillInfo
@@ -130,6 +134,48 @@ namespace TreasureRun.Core
             SecondaryDepth++;
             try { e.TakeDamage(source, Mathf.Max(0, baseDamage), h, a, s, slow, bleed, burn, poison, 0f, 0f); }
             finally { SecondaryDepth--; }
+        }
+
+        /// <summary>Nesting depth of <see cref="FixedHit"/> (its TakeDamage calls skip the hit modifiers).</summary>
+        internal static int FixedDepth;
+
+        /// <summary>
+        /// Fixed damage (Points of Interest, docs/poi-plan.md): <paramref name="baseDamage"/> times the layer multipliers,
+        /// split over shield, armor and health like vanilla (<see cref="FixedDamageLogic.Split"/>), and dealt exactly: no
+        /// crits, no treasure or card modifiers, no damage-over-time or mark bonuses, nothing procs on it. Each layer's part
+        /// goes through vanilla TakeDamage (damage numbers, tracking, battle cries, death) with its multiplier set so the
+        /// vanilla bonuses cancel out. Returns the damage dealt.
+        /// </summary>
+        public static int FixedHit(Enemy e, int baseDamage, int h, int a, int s, TowerType source = TowerType.Global, bool fortify = true)
+        {
+            if (!IsAlive(e) || baseDamage <= 0) return 0;
+            int before = CurrentHp(e);
+            int f = fortify ? e.FortifiedCheck() : 0;
+            var (ds, da, dh) = FixedDamageLogic.Split(baseDamage, f, h, a, s, e.health, e.armor, e.shield);
+            FixedDepth++;
+            try
+            {
+                if (ds > 0) FixedLayer(e, source, 2, ds);
+                if (da > 0 && IsAlive(e)) FixedLayer(e, source, 1, da);
+                if (dh > 0 && IsAlive(e)) FixedLayer(e, source, 0, dh);
+            }
+            finally { FixedDepth--; }
+            return e == null || e.dead ? before : Mathf.Max(0, before - CurrentHp(e));
+        }
+
+        /// <summary>Exact damage to the current layers (no fortify, no multipliers): a fixed source's true damage.</summary>
+        public static int FixedTrue(Enemy e, int amount, TowerType source = TowerType.Global) => FixedHit(e, amount, 1, 1, 1, source, fortify: false);
+
+        /// <summary>
+        /// One layer's exact part. Vanilla deals max(-999 - fortify + mark + freeze, 1) = 1 times (multiplier + the layer's
+        /// damage-over-time bonus + the mark's layer bonus), so the multiplier passed is the amount minus those bonuses.
+        /// </summary>
+        private static void FixedLayer(Enemy e, TowerType source, int layer, int amount)
+        {
+            Vector4 mark = e.MarkCheck();
+            int bonus = layer == 2 ? e.PoisonCheck() + (int)mark.w : layer == 1 ? e.BurnCheck() + (int)mark.z : e.BleedCheck() + (int)mark.y;
+            int mult = amount - bonus;
+            e.TakeDamage(source, -999, layer == 0 ? mult : 0, layer == 1 ? mult : 0, layer == 2 ? mult : 0, 0f, 0f, 0f, 0f, 0f, 0f);
         }
 
         public static List<Enemy> EnemiesInRadius(Vector3 center, float radius, Enemy exclude = null)

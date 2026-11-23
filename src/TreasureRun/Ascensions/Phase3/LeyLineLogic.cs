@@ -13,8 +13,11 @@ namespace TreasureRun.Ascensions.Phase3
         public bool Touches(LeyCell o) => Mathf.Abs(X - o.X) + Mathf.Abs(Z - o.Z) == 1;
     }
 
-    /// <summary>What a siphon's neighbour is. <see cref="Accelerator"/>: the Particle Accelerator's core (never a capacitor).</summary>
-    public enum LeyNeighbourKind { None, Siphon, Crystal, Accelerator }
+    /// <summary>
+    /// What a siphon's neighbour is. <see cref="Accelerator"/>: the Particle Accelerator's core (never a capacitor).
+    /// <see cref="Wizard"/>: a Wizard's Tower (a POI), fed like the core.
+    /// </summary>
+    public enum LeyNeighbourKind { None, Siphon, Crystal, Accelerator, Wizard }
 
     /// <summary>What sits next to a siphon in one direction, and at which height step.</summary>
     public struct LeyNeighbour

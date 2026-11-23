@@ -11,7 +11,8 @@ namespace VoxTool
     /// Command line voxel tooling for Treasure Run.
     ///   extract &lt;rippedAssetsDir&gt; &lt;outDir&gt; [--filter text] [--scene SceneName] [--no-preview]
     ///       Converts vanilla models (prefabs, optionally a scene) to .vox + .json sidecar + preview .png.
-    ///   preview &lt;file.vox&gt; [out.png]     Renders an isometric front/back preview.
+    ///   preview &lt;file.vox&gt; [out.png] [--game]   Renders an isometric front/back preview (--game: one large view from the
+    ///       in-game camera's side).
     ///   info &lt;file.vox&gt;                  Prints size, voxel count and colours.
     /// </summary>
     public static class Program
@@ -115,8 +116,10 @@ namespace VoxTool
         {
             if (args.Length < 1) return Usage();
             List<VoxModel> models = VoxFile.Read(args[0]);
+            bool game = args.Contains("--game");
+            args = args.Where(a => a != "--game").ToArray();
             string outPath = args.Length > 1 ? args[1] : Path.ChangeExtension(args[0], ".png");
-            Preview.Render(models[0]).SavePng(outPath);
+            (game ? Preview.RenderGame(models[0]) : Preview.Render(models[0])).SavePng(outPath);
             Console.WriteLine($"Preview written: {outPath}{(models.Count > 1 ? $" (first of {models.Count} models)" : "")}");
             return 0;
         }
@@ -148,6 +151,20 @@ namespace VoxTool
             { "planes/gatling_barrels", VoxTool.Recipes.PlaneRecipes.GatlingBarrels },
             { "pois/lightning_pole", VoxTool.Recipes.PoiRecipes.LightningPole },
             { "pois/soul_urn", VoxTool.Recipes.PoiRecipes.SoulUrn },
+            { "pois/wizard_tower", VoxTool.Recipes.WizardRecipes.Tower },
+            { "pois/wizard/chimney_ring", VoxTool.Recipes.WizardRecipes.ChimneyRing },
+            { "pois/wizard/chimney_rune", VoxTool.Recipes.WizardRecipes.ChimneyRune },
+            { "pois/wizard/chimney_crown", VoxTool.Recipes.WizardRecipes.ChimneyCrown },
+            { "pois/wizard/strap", VoxTool.Recipes.WizardRecipes.Strap },
+            { "pois/wizard/rod", VoxTool.Recipes.WizardRecipes.Rod },
+            { "pois/wizard/ice_balcony", VoxTool.Recipes.WizardRecipes.IceBalcony },
+            { "pois/wizard/ice_crystal", VoxTool.Recipes.WizardRecipes.IceCrystal },
+            { "pois/wizard/anemometer_arm", VoxTool.Recipes.WizardRecipes.AnemometerArm },
+            { "pois/wizard/anemometer_rotor", VoxTool.Recipes.WizardRecipes.AnemometerRotor },
+            { "pois/wizard/lantern_arm", VoxTool.Recipes.WizardRecipes.LanternArm },
+            { "pois/wizard/lantern", VoxTool.Recipes.WizardRecipes.Lantern },
+            { "pois/wizard/alembic", VoxTool.Recipes.WizardRecipes.Alembic },
+            { "pois/wizard/alembic_rings", VoxTool.Recipes.WizardRecipes.AlembicRings },
             { "pois/merchant/normal_wagon", VoxTool.Recipes.MerchantRecipes.NormalWagon },
             { "pois/merchant/normal_awning", VoxTool.Recipes.MerchantRecipes.NormalAwning },
             { "pois/merchant/normal_shutter", VoxTool.Recipes.MerchantRecipes.NormalShutter },

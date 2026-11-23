@@ -23,7 +23,7 @@ namespace TreasureRun.Tests
         {
             for (int seed = 0; seed < 25; seed++)
             {
-                foreach (SectionStyle style in new SectionStyle[] { new SectionStyle(), new LightningTrapStyle(), new MerchantStyle { Rotation = 90 * (seed % 4) }, new SoulUrnStyle() })
+                foreach (SectionStyle style in new SectionStyle[] { new SectionStyle(), new LightningTrapStyle(), new MerchantStyle { Rotation = 90 * (seed % 4) }, new SoulUrnStyle(), new WizardTowerStyle() })
                 {
                     SectionLayout l = PoiSectionLogic.Generate(exits, style, new SystemRng(seed));
                     Assert.That(PoiSectionLogic.Validate(l), Is.Null, $"{exits} seed {seed} {style.GetType().Name}");
@@ -337,6 +337,115 @@ namespace TreasureRun.Tests
             Spec s = ContentSpecs.Poi(SoulUrnLogic.Id);
             Assert.That(s, Is.Not.Null);
             Rating r = Valuation.Rate(SoulUrnLogic.Id, "Soul Urn", "poi", null, false, s);
+            Assert.That(r.Flag, Is.EqualTo(""), $"{r.Points:0.0} points");
+        }
+
+        [Test]
+        public void WizardTowerStandsAwayFromThePathAndTheEdge([ValueSource(nameof(AllExits))] SectionExits exits)
+        {
+            var cells = new HashSet<(int, int)>();
+            for (int seed = 0; seed < 40; seed++)
+            {
+                SectionLayout l = PoiSectionLogic.Generate(exits, new WizardTowerStyle(), new SystemRng(seed));
+                int reserved = 0;
+                for (int x = 0; x < 7; x++) for (int z = 0; z < 7; z++) if (l.Cells[x, z] == SectionCell.Reserved) reserved++;
+                Assert.That(reserved, Is.EqualTo(1), $"{exits} seed {seed}");
+                var (cx, cz) = WizardTowerStyle.CellOf(l);
+                Assert.That(cx, Is.InRange(1, 5), "not on the edge");
+                Assert.That(cz, Is.InRange(1, 5), "not on the edge");
+                for (int dx = -1; dx <= 1; dx++)
+                    for (int dz = -1; dz <= 1; dz++)
+                        Assert.That(l.IsPath(cx + dx, cz + dz), Is.False, $"{exits} seed {seed}: no path next to the tower at {cx},{cz}");
+                Assert.That(l.Height[cx, cz], Is.EqualTo(1), "on plain grass");
+                cells.Add((cx, cz));
+            }
+            Assert.That(cells.Count, Is.GreaterThanOrEqualTo(4), "the cell is random");
+        }
+
+        [Test]
+        public void WizardSpellsFollowTheirWeights()
+        {
+            var counts = new Dictionary<WizardSpell, int>();
+            const int n = 20000;
+            for (int i = 0; i < n; i++)
+            {
+                WizardSpell s = WizardTowerLogic.Pick((i + 0.5) / n, _ => true).Value;
+                counts[s] = counts.TryGetValue(s, out int c) ? c + 1 : 1;
+            }
+            foreach (WizardSpell s in WizardTowerLogic.Spells)
+                Assert.That(counts[s] / (double)n, Is.EqualTo(WizardTowerLogic.Chance(s)).Within(0.001), s.ToString());
+            Assert.That(WizardTowerLogic.Chance(WizardSpell.Fireball), Is.GreaterThan(WizardTowerLogic.Chance(WizardSpell.Tornado)));
+            Assert.That(WizardTowerLogic.Chance(WizardSpell.Tornado), Is.GreaterThan(WizardTowerLogic.Chance(WizardSpell.Goldify)));
+            // Spells without a target are skipped: only bosses in range means no tornado and no goldify.
+            var bosses = new List<WizardTarget> { new WizardTarget { Boss = true, Health = 100 } };
+            for (int i = 0; i < 100; i++)
+            {
+                WizardSpell s = WizardTowerLogic.Pick(i / 100.0, x => WizardTowerLogic.HasTarget(x, bosses)).Value;
+                Assert.That(s, Is.Not.EqualTo(WizardSpell.Tornado).And.Not.EqualTo(WizardSpell.Goldify));
+            }
+            Assert.That(WizardTowerLogic.Pick(0.5, _ => false), Is.Null);
+        }
+
+        [Test]
+        public void WizardSpellsPickTheirTargets()
+        {
+            var l = new List<WizardTarget>
+            {
+                new WizardTarget { X = 0, Z = 0, Progress = 30, Speed = 1, Health = 100 },
+                new WizardTarget { X = 0.5f, Z = 0, Progress = 29, Speed = 3, Health = 50, Armor = 80 },
+                new WizardTarget { X = 0.8f, Z = 0.3f, Progress = 28, Speed = 2, Health = 40, Shield = 10 },
+                new WizardTarget { X = 6, Z = 0, Progress = 10, Speed = 1, Health = 900, Boss = true },
+                new WizardTarget { X = 6.4f, Z = 0, Progress = 12, Speed = 1.5f, Health = 30, Shield = 60 },
+            };
+            Assert.That(WizardTowerLogic.FireballTarget(l), Is.EqualTo(2), "one of the group of three (ties: furthest along)");
+            Assert.That(WizardTowerLogic.LightningTarget(l), Is.EqualTo(4), "the most shield");
+            var noShields = l.Select(t => { t.Shield = 0; return t; }).ToList();
+            Assert.That(WizardTowerLogic.LightningTarget(noShields), Is.EqualTo(3), "then the most health");
+            Assert.That(WizardTowerLogic.IceTargets(l, 3), Is.EqualTo(new[] { 1, 2, 4 }), "the fastest, all different");
+            Assert.That(WizardTowerLogic.IceTargets(l.Take(2).ToList(), 3), Is.EqualTo(new[] { 1, 0, 1 }), "round again when fewer");
+            Assert.That(WizardTowerLogic.TornadoTarget(l), Is.EqualTo(4), "furthest along, not the boss");
+            Assert.That(WizardTowerLogic.GoldifyTarget(l), Is.EqualTo(1), "the toughest that isn't a boss (shield + armor + health)");
+            Assert.That(WizardTowerLogic.GoldifyTarget(new List<WizardTarget> { l[3] }), Is.EqualTo(-1), "never a boss");
+        }
+
+        [Test]
+        public void WizardDamageIsFixedAndGrowsWithTheWaves()
+        {
+            int prev = 0;
+            for (int w = WizardTowerLogic.MinWave; w <= 45; w++)
+            {
+                int d = WizardTowerLogic.LightningDamage(w);
+                Assert.That(d, Is.GreaterThanOrEqualTo(prev), $"wave {w}");
+                prev = d;
+            }
+            Assert.That(WizardTowerLogic.LightningDamage(10), Is.EqualTo(4 * WizardTowerLogic.FireballDamage(10)).Within(2));
+            Assert.That(WizardTowerLogic.CastInterval(false), Is.EqualTo(5f));
+            Assert.That(WizardTowerLogic.CastInterval(true), Is.EqualTo(4f));
+            Assert.That(WizardTowerLogic.OnLand(new Vector3(3.4f, 0, -3.4f)), Is.True);
+            Assert.That(WizardTowerLogic.OnLand(new Vector3(3.6f, 0, 0)), Is.False, "the next section");
+            Assert.That(WizardTowerLogic.InRange(new Vector3(9.9f, 0, 0)), Is.True, "a range of 10");
+            Assert.That(WizardTowerLogic.InRange(new Vector3(7.5f, 0, 7.5f)), Is.False);
+        }
+
+        [Test]
+        public void FixedDamageSplitsOverTheLayersLikeVanilla()
+        {
+            // 10 base x 12 on shield = 120 > 50: 50 to the shield, (120 - 50) / 12 = 5 base on armor x 3 = 15.
+            Assert.That(FixedDamageLogic.Split(10, 0, 6, 3, 12, 100, 40, 50), Is.EqualTo((50, 15, 0)));
+            // Armor broken too: 20 base x 3 = 60 > 40, (60 - 40) / 3 = 6 base on health x 6 = 36.
+            Assert.That(FixedDamageLogic.Split(20, 0, 6, 3, 12, 100, 40, 0), Is.EqualTo((0, 40, 36)));
+            // Fortify: max(base - 5, 1).
+            Assert.That(FixedDamageLogic.Split(3, 5, 6, 3, 12, 100, 0, 0), Is.EqualTo((0, 0, 6)));
+            // A layer the hit has no multiplier for stops it.
+            Assert.That(FixedDamageLogic.Split(10, 0, 6, 0, 12, 100, 40, 0), Is.EqualTo((0, 0, 0)));
+        }
+
+        [Test]
+        public void WizardTowerIsRatedAtThePoiBudget()
+        {
+            Spec s = ContentSpecs.Poi(WizardTowerLogic.Id);
+            Assert.That(s, Is.Not.Null);
+            Rating r = Valuation.Rate(WizardTowerLogic.Id, "Wizard's Tower", "poi", null, false, s);
             Assert.That(r.Flag, Is.EqualTo(""), $"{r.Points:0.0} points");
         }
 

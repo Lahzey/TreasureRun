@@ -95,6 +95,7 @@ namespace TreasureRun.Patches
             Vector3? free = FreeCell(c, bm.buildableMask);
             if (free == null) return Outcome.Skipped;
             Vector3 pos = free.Value;
+            if (Pois.WizardLand.Refuses(pos, bm.thingToBuild)) { Pois.WizardLand.Refuse(pos); return Outcome.Skipped; }
             if (!ResourceManager.instance.CheckMoney(bm.buildingCost))
             {
                 if (!warnedGold)

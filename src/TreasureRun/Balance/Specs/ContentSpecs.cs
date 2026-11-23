@@ -190,7 +190,43 @@ namespace TreasureRun.Balance
             ["legendary_merchant"] = () => Merchant(global::TreasureRun.Pois.MerchantKind.Legendary),
             ["ascension_merchant"] = () => Merchant(global::TreasureRun.Pois.MerchantKind.Ascension),
             ["soul_urn"] = SoulUrn,
+            ["wizard_tower"] = () => WizardTower(global::TreasureRun.Pois.WizardTowerLogic.Power),
         };
+
+        /// <summary>
+        /// The Wizard's Tower at a power (its base damage by wave, Pois.WizardTowerLogic.Power): every damaging spell is a
+        /// fixed source with its share of the casts (fireball, lightning, ice spikes, the tornado's grinding); the tornado's
+        /// drag counts as a slow, the necromancy's minions and goldify's kills as hit points taken, goldify's gold as gold.
+        /// </summary>
+        public static Spec WizardTower(Func<int, double> power)
+        {
+            return S.FixedSource("fireball at the largest group (blast, burn)", w => global::TreasureRun.Pois.WizardTowerLogic.FireballInfo(power(w)),
+                                 b => b.TargetFactor = global::TreasureRun.Pois.WizardTowerLogic.GroupBonus)
+                .FixedSource("lightning (shields first)", w => global::TreasureRun.Pois.WizardTowerLogic.LightningInfo(power(w)))
+                .FixedSource("ice spikes (fastest first, slow)", w => global::TreasureRun.Pois.WizardTowerLogic.IceInfo(power(w)))
+                .FixedSource("the tornado's grinding", w => global::TreasureRun.Pois.WizardTowerLogic.TornadoInfo(power(w)))
+                .Custom(Category.Control, "the tornado drags monsters back", c =>
+                    c.Mods.GlobalSlow = 1 - (1 - c.Mods.GlobalSlow) * (1 - global::TreasureRun.Pois.WizardTowerLogic.TornadoSlow(c.Board)))
+                .Custom(Category.Offense, "necromancy: monsters slain in the aura rise as minions", c =>
+                    c.Mods.ExtraRemoved += global::TreasureRun.Pois.WizardTowerLogic.NecromancyShare(c.Board))
+                .Custom(Category.Offense, "goldify kills the toughest monster (not a boss)", c =>
+                {
+                    WaveStats w = WaveModel.Get(c.Wave);
+                    c.Mods.ExtraRemoved += global::TreasureRun.Pois.WizardTowerLogic.GoldifiesPerWave(c.Board) * 2 / Math.Max(1, w.Count);
+                })
+                .Custom(Category.Economy, "goldify: 25x its kill gold", c =>
+                {
+                    double gold = 0;
+                    for (int w = c.Acquired; w <= c.Wave; w++)
+                        gold += (w == c.Wave ? 0.5 : 1) * global::TreasureRun.Pois.WizardTowerLogic.GoldifiesPerWave(ReferenceBoards.Get(w, c.Board.Variant))
+                                * global::TreasureRun.Pois.WizardTowerLogic.GoldifyFactor * global::TreasureRun.Pois.WizardTowerLogic.KillGold(w);
+                    c.Mods.ExtraGold += gold;
+                })
+                .Offered(global::TreasureRun.Pois.WizardTowerLogic.MinWave)
+                .Because($"a random spell every 5 s at monsters within {(global::TreasureRun.Pois.WizardTowerLogic.Range):0} cells (fireball, lightning, ice spikes 3 in 11.4 each, tornado and " +
+                         "necromancy 1, goldify 0.4); damage fixed by wave, solved for 15 points per wave (probe BalanceProbe.WizardTowerPower). " +
+                         "The ley link (10 mana/s for a spell every 4 s) needs the Ley Line Network and isn't rated");
+        }
 
         /// <summary>
         /// The Soul Urn: full after about <c>FillDelay</c> waves of kills in its reach, it leaves one of three rewards: a

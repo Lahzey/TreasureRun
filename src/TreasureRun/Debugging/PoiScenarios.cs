@@ -11,7 +11,7 @@ namespace TreasureRun.Debugging
     /// <summary>Points of Interest (docs/poi-plan.md): omens, generated sections for every exit combination, the Lightning Trap.</summary>
     internal static class PoiScenarios
     {
-        public static IEnumerable<Scenario> All => new Scenario[] { new PoiSectionsScenario(), new LightningTrapScenario(), new MerchantScenario(), new SoulUrnScenario() };
+        public static IEnumerable<Scenario> All => new Scenario[] { new PoiSectionsScenario(), new LightningTrapScenario(), new MerchantScenario(), new SoulUrnScenario(), new WizardTowerScenario() };
 
         /// <summary>Lets the running wave end (killing everything) so the Expand buttons are open again.</summary>
         public static IEnumerator OpenButtons(ScenarioContext c)
@@ -568,7 +568,9 @@ namespace TreasureRun.Debugging
             Tower a = onRune.GetComponent<Tower>(), b = plain.GetComponent<Tower>();
             TowerManager.instance.UpdateAllTowers();
             c.Info($"rune Ballista: {F(a.rps)} s per shot, plain: {F(b.rps)} s (heights {a.heightBonus}/{b.heightBonus})");
-            c.ExpectNear(b.rps / a.rps, 1f + bonus, 0.05f, $"the tower on the rune shoots {1f + bonus:0.00}x as fast");
+            // Percent attack speed adds up: the rune adds +100% of the base rate whatever other bonuses the run has.
+            float baseRate = 1f / (float)Balance.TowerData.Get(Balance.TowerKind.Crossbow).Interval;
+            c.ExpectNear((1f / a.rps - 1f / b.rps) / baseRate, bonus, 0.05f, $"the tower on the rune gains +{bonus:0%} of the base attack rate (x{b.rps / a.rps:0.00} here)");
             yield return c.Wait(0.8f);
             c.Expect(onRune.GetComponent<RuneShell>() != null && onRune.GetComponentsInChildren<MeshRenderer>().Any(r => r.name == "TR_RuneShell"),
                      "the tower on the rune wears the soulfire shell");
@@ -605,7 +607,7 @@ namespace TreasureRun.Debugging
             if (p != null)
             {
                 c.Info($"deck Ballista: {F(p.rps)} s per shot, plain: {F(b.rps)} s");
-                c.ExpectNear(b.rps / p.rps, 1f + bonus, 0.05f, "the deck's tower gets the rune's attack speed");
+                c.ExpectNear((1f / p.rps - 1f / b.rps) / baseRate, bonus, 0.05f, "the deck's tower gets the rune's attack speed");
                 yield return c.Wait(1f);
                 c.Expect(p.GetComponent<RuneShell>() != null, "the deck's tower wears the soulfire shell");
                 c.Expect(radar.GetComponent<RuneShell>() != null, "so does the Radar on the rune");

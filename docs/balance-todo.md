@@ -83,6 +83,22 @@ From [balance-report.md](balance-report.md) (M7.5). **No balance changes yet:** 
   - Is selling used? Sell prices differ per merchant (half of *this* merchant's price), so the Legendary Merchant pays more for the same treasure than the Normal one.
   - Ascension Merchant at 65%: is one cheap ascension of your choice too strong compared to finding it in an offer?
 
+**Wizard's Tower** (docs/poi-plan.md §7): 17.6 points against 15 (P80 19.3, early 19.3, late 7.1), with a reach of 10.
+- **Power** (his base damage by wave, `WizardTowerLogic.Power`): solved per wave so the tower is worth 15 points when it appears (probe `BalanceProbe.WizardTowerPower`, tests/out/wizard-tower.txt), fitted by a cubic: about 6 at wave 5, 35 at 10, 190 at 20, 450 at 30, 795 at 40. The reach went from 8 to 10 (his value early rose, so his damage there fell; late it barely changes).
+- **Late he can't reach the budget:** a spell every 5 s lands too few hits against the late boards, so even unlimited damage is worth about 15 points at wave 18, 9 at 30 and 6 at 40. From about wave 15 the power is the one that reaches 90% of that ceiling (his spells kill what they hit). Options if he should matter more late: more targets per spell (bigger blast, more spikes), a shorter interval that shrinks with the waves, or an omen window that ends (like the Soul Urn's, wave 40).
+- **Modelled, not measured:**
+  - the tornado as a slow (caught monsters held half its life on average and carried back);
+  - the necromancy as hit points taken: a fifth of the max health of the monsters slain in his reach while the aura is up (`NecromancyShare`: kills near him are assumed twice as likely as the path average);
+  - goldify's kill as the toughest monster in range (twice the average) and its gold as 25 times the kill gold (the wave model's gold plus four tower types).
+- **Reach** 0.85 (he stands where his section landed, not where the defence is) and the fireball's group bonus (+30% targets) are hand estimates.
+- **The ley link** (10 mana/s for a spell every 4 s, +25% spells) needs the Ley Line Network and isn't rated. At 10 mana/s it costs about as much as 1.5 Frost Keeps' worth of mana income a wave; check whether it's worth it.
+- **Check in play:**
+  - Is he too strong on waves 3-8 (he one-shoots early monsters, and the rating's early value is 19.3)?
+  - The wind-up (0.5-0.75 s) delays each spell; targets are picked when it leaves the gadget, so a few spells fizzle when the last monster leaves his reach meanwhile (not in the rating).
+  - Does his land, which can't be built on, cost a good spot often enough to matter (not in the rating)?
+  - The tornado pushes monsters back into his reach and other towers' reach again: stronger than the slow model suggests?
+- **Uncalibrated:** `Reach` 0.85, `GroupBonus` 1.3, the tornado slow's factor 0.5, the necromancy's kill share x2, goldify's x2 toughness.
+
 **Soul Urn** (docs/poi-plan.md §6): 12.8 points against 15.
 - **Size:** all the monsters its lane sends over three waves (the wave model, death spawns included), times the lane's share of the spawn points: 30 at wave 3, 120 at wave 10, about 210 at wave 15, 280 at wave 20, 450 at wave 30. Twice the first version (half of three waves), to make filling it a real effort.
 - **Rewards**, one in three each, valued at the urn's **first wave**, so stalling the fill to wait for a later wave pays nothing:

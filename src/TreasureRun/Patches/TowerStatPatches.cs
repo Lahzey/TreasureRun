@@ -12,6 +12,13 @@ namespace TreasureRun.Patches
     [HarmonyPatch]
     internal static class TowerStatPatches
     {
+        /// <summary>
+        /// Drops towers that were destroyed without being demolished (scenarios, dev tools) before vanilla recomputes the
+        /// stats of every tower of a type: a destroyed tower left in the set makes every later stat refresh throw.
+        /// </summary>
+        [HarmonyPrefix, HarmonyPatch(typeof(TowerFlyweight), nameof(TowerFlyweight.UpdateTowerStats))]
+        private static void UpdateTowerStatsPrefix(TowerFlyweight __instance) => __instance.towers?.RemoveWhere(t => t == null);
+
         internal static void Initialize()
         {
             // Hivemind (placeholder treasure): +1 damage per 3 towers.

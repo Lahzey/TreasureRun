@@ -46,6 +46,7 @@ namespace TreasureRun.Pois
             all.Add(Merchant.Create(MerchantKind.Legendary));
             all.Add(Merchant.Create(MerchantKind.Ascension));
             all.Add(SoulUrn.Create());
+            all.Add(WizardTower.Create());
         }
 
         /// <summary>POIs whose omen can appear at a wave.</summary>

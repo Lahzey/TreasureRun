@@ -240,8 +240,8 @@ namespace TreasureRun.Pois
                 XRayFlash.Flash(e, 0.09f + 0.06f * intensity);
                 Record.Set("hits", Record.Get("hits") + 1);
                 Record.Set("damage", Record.Get("damage") + damage);
-                e.TakeDamage(TowerType.Global, damage, LightningTrapLogic.HealthMult, LightningTrapLogic.ArmorMult, LightningTrapLogic.ShieldMult,
-                             0f, 0f, 0f, 0f, 0f, 0f);
+                // Fixed damage: no treasure or card changes it (docs/poi-plan.md §3.6).
+                Core.Combat.FixedHit(e, damage, LightningTrapLogic.HealthMult, LightningTrapLogic.ArmorMult, LightningTrapLogic.ShieldMult);
                 if (e == null || e.dead || e.health <= 0) Record.Set("kills", Record.Get("kills") + 1);
             }
             SoundLibrary.Play("pois/lightning_trap/trap_strike", Center, 0.45f + 0.45f * intensity, 0.1f, 3);
