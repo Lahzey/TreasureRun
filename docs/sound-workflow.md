@@ -65,7 +65,7 @@ Sound.Noise(NoiseColor.White, 0.4f, seed)
 ```
 
 - Sources: `Tone` (sine/triangle/saw/square/pulse, with frequency as a function of time), `FM`, `Noise` (white/pink/brown), `Silence`.
-- Shaping: `Envelope`, `Gain`, `Fade`, `Normalize`, `LowPass`/`HighPass`/`BandPass` (fixed or swept, 12 dB per octave), `BrickWall` (a steep FIR low-pass), `Drive`, `Crush`, `RingMod`.
+- Shaping: `Envelope`, `Gain`, `Fade`, `Normalize` (peak), `LevelRms` (loudness, peaks rounded off), `LowPass`/`HighPass`/`BandPass` (fixed or swept, 12 dB per octave), `Eq`, `Resonate` (a decaying ring), `BrickWall` (a steep FIR low-pass), `Drive`, `Crush`, `RingMod`.
 - Time: `Delay`, `Reverb`, `Pitch` (resample), `Reverse`, `Trim`.
 - Combining: `Layer`, `Mix(other, at, gain)`, `Then`.
 - Envelopes: `Env.Exp`, `Env.Adsr`, `Env.Points`, `Env.Sweep`.
@@ -75,8 +75,25 @@ Variants (`name_1`, `name_2`, …) are picked at random by the game when it play
 
 ## Building blocks: how everyday sounds are made
 
-Learned from recorded examples (each block in `Recipes/Foley.cs` names its source). Start from these before inventing; the
-general rules come first.
+Learned from recorded examples (each block names its source). Start from these before inventing; the general rules
+come first, then the families.
+
+**Where to start for a kind of sound:**
+
+| Kind | Start from | The idea in one line |
+|---|---|---|
+| Bell, chime, coin, metal | `SmallBell`, `Modal`, `Strike` | a noise strike, then decaying sine modes with detuned twins |
+| Click, key, latch, ratchet | `Clatter`, `Latch`, `Rattle`, `RegisterModel` | 1-6 ms noise ticks at irregular spacing, a low thunk under them |
+| Door, panel, crate, slam | `Slam`, `DoorModel` | a crack cluster, short wood rings, a heavy body below 125 Hz |
+| Cloth, rustle, flap | `ClothRustle`, `ClothModel` | dark noise in interpolated 10-30 ms grains, crackles on top |
+| Twigs, dry grass, a nest | `TwigRustle` | crisp stepped grains over a dark rustle |
+| Shell, egg, ice, glass breaking | `EggCrack`, `Tick`, `IcicleShatter` | brittle: ticks and cracks with no ring at all |
+| Splat, squish, goo | `Splat`, `WetClick`, `Gloop` | a low body, a fleshy splash, sharp wet clicks, no tones |
+| Explosion, thunder, impact | `WizardThunder`, `MegaBlast`, `MagmaImpact` | a crack, a falling low boom, a rolling brown-noise tail |
+| Wind, whoosh, tornado | `WizardTornado`, `RocketWhoosh` | noise through a moving band; a smooth envelope |
+| Electric zap, arc | `TrapStrike`, `ChainCrackle` | crackle grains and a buzz, band-limited high |
+| Hum, beam, machine loop | `BeamHum`, `SawHum`, `AccelPumpLoop` | stacked tones with slow beating, loops cut on whole periods |
+| Magic, choir, souls | `WizardNecroAura`, `UrnFill`, `SoulAbsorb` | detuned voices on a chord, an air swell, bells for the reveal |
 
 ### General rules
 - **Structure first.** Analyse the example (`SfxTool analyze file.mp3` writes the report and the picture) and write down its *events* with times before choosing any waveform: "a key rattle 0–0.3 s, a bell from 0.2 s, the drawer at 0.45–0.7 s, a click at 0.85 s". Most failed attempts had the right parts in the wrong proportions or order.
@@ -88,6 +105,7 @@ general rules come first.
 - **Weight is in the low body, hardness in the highs.** A door slam's highs are gone within about 50 ms, while its 40–150 Hz body rumbles for about 0.5 s. To make something heavier, lengthen and raise the low body; to make it harder, sharpen the crack, rather than making everything louder.
 - **Each band has its own envelope.** In real events the mids start first and linger, and the highs arrive late and die fast (a key stroke, a drawer, a door). One envelope over all frequencies sounds synthetic, so split a burst into a low-mid and a high layer with separate rise and decay.
 - **Check every layer for low leakage.** Band-passed and high-passed noise (12 dB per octave) still leaves energy at 40–200 Hz. Stack two high-passes, or compare against the example's low bands, before adding any thump. The first register attempt failed partly on a 100 Hz thump the recording doesn't have.
+- **Any tone in a short sound is heard as a thing.** A sine or a slow ring under 0.1 s reads as a water drop (rising pitch) or a metal ping, whatever it was meant to be. Brittle and wet sounds have no tones at all: make their resonances out of narrow-band noise (Q 3-5), never sines.
 - **Don't add what the example lacks.** Check for every part ("coins", "a thump") before including it. Ears expect coins in a register; this recording has none.
 - **Rooms:** a short reverb (room 0.3–0.5, mix 0.1–0.2, tail 0.2–0.45) puts dry layers into one space; more washes out the transients.
 
@@ -98,21 +116,7 @@ general rules come first.
 - Small bells live at 1.5–3.5 kHz; lower reads as a gong or a big bell.
 
 ### Mechanisms: registers, keys, latches (`Rattle`, `Clatter`, `Latch`)
-- **Cash register** (a fitted event model, `Recipes/RegisterModel.cs`; measured with `inspect` and `envelope`):
-  - **Key stroke, a ratchet:** a sliding noise bed rising over 0.2 s (its lows first, its highs late) under a series of clicks.
-    - Small clicks come 12 ms apart, then bigger ones accelerate (28, 30, 18, 14 ms apart), up to the strongest at the peak.
-    - Each click is a bright burst of a few milliseconds that briefly rings the mechanism (581 Hz, 2.2, 2.71, 4.52, 5.08, 7.17, 13.2 kHz).
-    - This "k-k-k-KAA" is the mechanical part; a smooth swell loses it.
-  - **Till bell,** struck at the peak:
-    - a cluster of modes around 2.1 kHz (2.02, 2.05, 2.09, 2.11 kHz) that beat against each other;
-    - the *loudest* mode at 4.8 kHz (neighbours 4.75 and 4.87 kHz), and 7.73 kHz;
-    - short-lived high modes (6.0–15.7 kHz) that make the strike bright.
-  - **Drawer:**
-    - a low swell as it starts to slide (below 1 kHz);
-    - then impacts: at 0.50 s, a small one, the main one (the loudest moment), and a bounce. Each is a very bright crack (4–16 kHz about 10 dB above 1–4 kHz) that rings the drawer's metal (730 Hz, 1.68, 3.88, 4.57, 5.25, 8.31 kHz), with its low body thump arriving about 8 ms later;
-    - grainy rattle between and after.
-  - **Tail:** soft knocks as the drawer settles, each ringing low modes of the counter (366, 824, 969 Hz), over a faint low rumble. No hiss.
-  - **No coins.** Almost nothing below 120 Hz.
+- **Cash register** (a fitted event model, `Recipes/RegisterModel.cs`, which has every measured number): a key stroke is a ratchet, small clicks 12 ms apart then bigger ones accelerating to the peak, each ringing the mechanism briefly, over a sliding noise bed ("k-k-k-KAA"; a smooth swell loses it). The till bell is a cluster of beating modes round 2.1 kHz with its loudest mode at 4.8 kHz. The drawer is a low swell, then three impacts (very bright cracks with a low thump 8 ms later), rattle, and soft knocks settling over a faint rumble. No coins, almost nothing below 120 Hz.
 - **Individual clicks** are band-passed noise ticks (2–6 kHz, 3–8 ms, irregular spacing); a soft low thunk (110–170 Hz) under a burst of them gives the mechanism body.
 - **A latch or catch** is a bright tick plus a short high ring (2.5–3.5 kHz, decay rate 60–80).
 - **Coins** are short high rings (2.4–4.2 kHz with modes 1, 1.47, 2.31) plus a click. Many in quick, falling succession make a pour.
@@ -127,7 +131,7 @@ general rules come first.
     - The body is a heavy thump below 125 Hz, arriving 20–40 ms after the first crack and holding for about 60 ms. It is the loudest moment, and most of a slam's energy is under 125 Hz.
     - A low resonance (45–90 Hz) gives the thump its pitch.
   - **Settling:** a few knocks and a rattle, and a low rumble (31–125 Hz) dying away over about 0.7 s.
-- **Wood rings short.** A wood mode that rings longer than about 0.1 s (decay below about 250 dB/s) becomes a tone and sounds like metal; `Clank(..., minDecay: 250)` prevents it.
+- **Wood rings short.** A wood mode that rings longer than about 0.1 s (decay below about 250 dB/s) becomes a tone and sounds like metal; `Clank(..., minDecay: 250)` prevents it. A small stick needs much faster: `Resonate` at 500-800 dB/s on twig snaps still pinged like water drops, and 1800-2600 dB/s read as wood.
 - Smaller or lighter panels: raise the knock and body frequencies, shorten the body.
 
 ### Cloth: rustle, flap (fitted `ClothModel`; `ClothRustle` for quick ones)
@@ -137,6 +141,16 @@ general rules come first.
   - **A crisp layer** of grains (1–8 kHz, 2–5 ms) sits about 20 dB under the body: the fabric's surface.
   - **Crackles and snaps** where it folds or pulls taut. Crackles are bright (1–4 kHz); snaps are short cracks with weight, around 500 Hz – 1 kHz and below, the loudest moments of the rustle.
 - **A flap** (cloth snapping taut) is a snap followed by a short swell of the body.
+
+### Brittle and wet: shells, twigs, splats (`EggCrack`, `TwigRustle`, `Splat`)
+- **An egg cracking** (fitted to a recording by hand): three tiny ticks 8-10 ms apart as the shell gives (`Tick`: 1-2 ms of twice high-passed noise, 15-20 dB under the crack); the main crack, broadband with a bite round 2.7 kHz and a low-mid knock of the body (100-500 Hz, as loud as the crack); a duller second crack (1-2 kHz) 25 ms later; fragments crackling for 90 ms; two faint low knocks as it settles. Nothing rings.
+- **Twigs and dry grass** (`TwigRustle`): crisp grains (700 Hz - 4 kHz, a new level every 3-12 ms, mostly quiet) over `ClothRustle` high-passed twice, and only a little of the low "whff" of the moving mass, or the bed turns into a rumble.
+- **A wet splat** (`Splat`, fitted to a recording; one `size` parameter scales it from a lizard bursting to a hatchling squished):
+  - the **impact**: low-passed brown noise (31-125 Hz) swelling in 30 ms and gone by 0.3 s, with only a little sine for weight (more sounds like a drum);
+  - the **splash**: dense grains over 450 Hz - 8 kHz plus a fleshy band round 1.2 kHz, strongest in the first 60 ms. Nothing between 250 and 500 Hz: that gap keeps it wet instead of muddy, and a splash brighter than about 8 kHz sounds like hiss;
+  - the **splatter**: a dozen sharp wet clicks (`WetClick`: noise band-passed at 1.5-7 kHz, dying in 2-15 ms) between 0.12 and 0.32 s, nearly as loud as the impact;
+  - the **drips**: sparse, brighter clicks (3-13 kHz) fading out to 0.75 s, only 10-15 dB under the splash, and two soft gloops (`Gloop`: narrow-band pink noise round 1-2.4 kHz, sagging a little).
+- **A hiss** is noise in a broad band round 3.5 kHz (Q about 1.2) with a slight 9 Hz flutter; a lower Q round 4-5 kHz buries everything else. **Slithering** is several streams of band-passed noise (1-2.5 kHz), each pulsed by a wriggle (sin^3 at 8-13 Hz).
 
 ## Matching an example (`compare`)
 
@@ -154,6 +168,7 @@ bin/Release/net8.0/SfxTool.exe compare <example.mp3> ../../sounds/<name>.wav <ou
 - The picture stacks both waveforms and fine spectrograms (4096-point FFT, 40 Hz–20 kHz) above a difference map: red where the candidate is louder, blue where it is quieter.
 - **Workflow:** one change per finding, a re-run after every change, and a look at the picture every few rounds (some differences, such as missing small events, show better there than in the numbers). Segments: one per event (stroke, gap, drawer, tail).
 - **Reading the score:** 13–14 dB means the parts are wrong; about 7 dB, the parts are right but the balance isn't; 3–4 dB is about the floor for noise-based sounds (two takes of the same noise differ by that much).
+- **Check the alignment.** The onset is found by a level threshold, so faint noise before the first event can shift the reference by a row (the egg crack's did, by 40 ms); then read the rows shifted, the score alone is meaningless.
 - **MP3 examples** have nothing above about 16 kHz. Match that with `BrickWall(15300, 511)` (a windowed-sinc FIR); biquad low-passes can't cut that steeply.
 
 ## Looking closer (`inspect`, `envelope`)
@@ -218,7 +233,7 @@ When an example has many measured details, write the sound as a **model** and le
 - **Image:** waveform with the loudness envelope (orange) on top; spectrogram below (40 Hz to 16 kHz, log scale, dotted lines at 100 Hz, 1 kHz and 10 kHz; vertical lines every 100 ms, brighter every second). Bright = loud.
 - **Report:** duration, peak, RMS, loudest 50 ms, attack time, time until −30 dB, brightness (spectral centroid), and per-100 ms brightness and dominant pitch.
 - **Matching the game:** compare with `SoundReference/reference.md`. Most vanilla one-shots sit at a loudest-50 ms level of about −8 to −16 dBFS and an RMS of about −15 to −25 dBFS. Examples: `CardLoud` −15.5 / −20.0, `Explosion1` −9.0 / −16.3, `TeslaZap` −9.6 / −14.3.
-- **Louder than normalising allows:** a sound with sharp peaks (a slam) hits 0 dBFS long before it sounds loud. `.Normalize(-1).Drive(2.5).Normalize(-1)` soft-limits it: the quiet parts rise by up to 8 dB, the peaks stay (the shutter: loudest 50 ms −11.0 → −6.8 dBFS, RMS −21.1 → −15.8; lower the quiet layers a little afterwards, the limiter lifts them more than the peak). World sounds fade with the camera's distance (the pool rolls off from 5 units); `SoundLibrary.PlayLoud` with a larger minimum distance (×5.62 = +15 dB for a far camera) keeps a loud event loud, and `PlayUi` plays without position (the same everywhere). A volume above 1 in `PlayUi` plays the clip on several sources started on the same sample, which add up coherently (2 = +6 dB); keep the file's peak below about −2 dBFS, since the sum can clip at full game volume.
+- **Louder than normalising allows:** a sound with sharp peaks (a slam) hits 0 dBFS long before it sounds loud. `.Normalize(-1).Drive(2.5).Normalize(-1)` soft-limits it: the quiet parts rise by up to 8 dB, the peaks stay (the shutter: loudest 50 ms −11.0 → −6.8 dBFS, RMS −21.1 → −15.8; lower the quiet layers a little afterwards, the limiter lifts them more than the peak). For variants whose sharp peaks differ (cracks, clicks), peak normalising leaves them up to 5 dB apart; `LevelRms(-20)` sets them to the same loudness and rounds the peaks off instead. World sounds fade with the camera's distance (the pool rolls off from 5 units); `SoundLibrary.PlayLoud` with a larger minimum distance (×5.62 = +15 dB for a far camera) keeps a loud event loud, and `PlayUi` plays without position (the same everywhere). A volume above 1 in `PlayUi` plays the clip on several sources started on the same sample, which add up coherently (2 = +6 dB); keep the file's peak below about −2 dBFS, since the sum can clip at full game volume.
 
 ## In the game
 

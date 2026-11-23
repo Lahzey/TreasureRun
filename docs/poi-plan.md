@@ -1,6 +1,6 @@
 # Points of Interest (M8): design and system
 
-**Status:** the system is built; the **Lightning Trap** (§4), the **Wandering Merchant** (§5, three kinds), the **Soul Urn** (§6) and the **Wizard's Tower** (§7) are in the game. Decisions are in §2. Code is in `src/TreasureRun/Pois`, and PLAN.md §7 links here.
+**Status:** the system is built; the **Lightning Trap** (§4), the **Wandering Merchant** (§5, three kinds), the **Soul Urn** (§6), the **Wizard's Tower** (§7) and the **Lizard Nest** (§8) are in the game. Decisions are in §2. Code is in `src/TreasureRun/Pois`, and PLAN.md §7 links here.
 
 Points of Interest (POIs) are special map sections that turn up while the map grows tile by tile. Each one has its own function. Their randomness and rarity make every map feel like a place with a story.
 
@@ -96,6 +96,7 @@ From the vanilla code (`TileManager`, `TileSpawnLocation`, `SpawnManager`):
 | `Merchant.cs`, `MerchantLogic.cs`, `MerchantShopUI.cs` | the Wandering Merchant: site and stock, prices and section style (pure), the shop window |
 | `SoulUrn.cs`, `SoulUrnLogic.cs`, `SoulRune.cs`, `SoulFx.cs` | the Soul Urn: site, charging and rewards; size, rewards, soul flight and section style (pure); the soulfire rune (attack speed, War Blimp deck); effects |
 | `WizardTower.cs`, `WizardTowerLogic.cs`, `WizardSpells.cs`, `WizardLand.cs` | the Wizard's Tower: site, casting and the ley link; spells, weights, targeting, damage, section style and balance inputs (pure); the spells and their effects; his land (blocked building, the shine) |
+| `LizardNest.cs`, `LizardNestLogic.cs`, `NestCreatures.cs` | the Lizard Nest: site, its wave and the chest; counts, stats by wave, the nest's cell and where its lizards join the path (pure); the lizards and hatchlings (vanilla monsters with our animated models) |
 | `PoiReach.cs` | a POI's reach drawn like a tower's range (Soul Urn, Wizard's Tower) |
 | `Core/FixedDamageLogic.cs`, `Combat.FixedHit` | fixed POI damage: exact, split over the layers like vanilla, untouched by treasures and cards |
 | `Treasures/TreasureSale.cs` | selling treasures (used by the merchant) |
@@ -119,6 +120,7 @@ From the vanilla code (`TileManager`, `TileSpawnLocation`, `SpawnManager`):
   - `poi shop` opens the nearest open merchant; `poi buy <slot>` and `poi sell <id>` trade there directly; `poi press <buy n|sell id>` presses a button of the open shop (confirmations need two presses); `poi close` closes it.
   - `poi souls [n]` sends n souls into the nearest charging Soul Urn (from random points around it); `poi fill [chest|gold|rune]` fills it at once, with that reward or a random one.
   - `poi cast [fireball|lightning|ice|tornado|necromancy|goldify]` makes the nearest Wizard's Tower cast now (that spell, if it has a target; else a random one).
+  - `poi hatch` hatches the nearest waiting Lizard Nest now (during a wave).
   - `cells <x> <z> [step]` prints a tile's height map.
   - `dump <object>` prints its hierarchy.
 - **Settings:** `PointsOfInterest.Enabled`, `PointsOfInterest.OmenChance`, `Debug.PoiForce` (every new button gets an omen).
@@ -127,6 +129,7 @@ From the vanilla code (`TileManager`, `TileSpawnLocation`, `SpawnManager`):
   - `poi-lightning-trap`: the pole cells are blocked; strikes per second, damage per strike and mana per second at 15 and 5 mana/s; at 0; out of mana; close-up and popup screenshots.
   - `poi-soul-urn`: the urn's cell blocked; its size for the wave and lane; souls from kills in reach (dummies on its path); the popup and its reach circle (radius 7, gone with the popup); gold (the formula at the urn's first wave, the cell free afterwards), a chest, a rune (+100%: a Ballista on it shoots twice as fast and wears the shell, its neighbour doesn't); a War Blimp's Radar on the rune (the deck shows the rune, the deck's Ballista gets the bonus, both wear the shell); screenshots of souls, reach, burst, chest, rune, shell and deck.
   - `poi-wizard-tower`: the tower's cell (off the edge and the path); its gadgets (16 chimney segments, the anemometer turning by itself); a spell winding up first (no second one meanwhile), the bulge travelling up the chimney, the fireball flying as the Magma Lobber's ball, lightning spiralling up the rod; every grass cell of his land refused; the shine, the motes, the popup and its reach; each spell on dummies: the fireball on the group (blast and burn exact), lightning on the shield (exact), the same with four damage treasures owned (still exact; a Lightning Trap strike too), three ice spikes on three dummies (exact, slowed), the tornado dragging a dummy back up the path but not a boss, a slain dummy rising in the aura, goldify on the toughest (not the boss; a statue, then 25 times its kill gold); an ascension that can't be sold or removed; the ley link (a siphon on his land next to the tower, a feed pipe; between waves idle without mana and ready with it; the popup naming its 10 mana per second; 10 mana/s drained in a wave, a spell every 4 s); screenshots of the tower, land, popup, the chimney's bulge, the rod's spiral, the crystal winding up, each spell and the link.
+  - `poi-lizard-nest`: the map grown away from the castle first, so the fast hatchlings have a long way to go; the nest's cell beside the path and blocked; its way onto the path; it hatches in the wave it was found; the lizards out within their gaps, their health, armor, speed and castle damage for the wave, our model in place of the vanilla art, walking onto the path and on, legs moving; a lizard slain: its brood (count, health, speed, starting where it fell and on its way, the hatchling model, wriggling off); a slain hatchling spawns nothing; the popup; after the wave a chest in the nest, the nest still blocking; no lizards in the next wave; screenshots of the nest hatching, a lizard (and a close-up), the burst, a hatchling close-up, the brood, the popup and the chest.
   - `poi-merchant`: all three merchants; wagon cells blocked; stock by kind; prices by the formula; selling (with the confirmation, unsellable treasures refused); buying all three at the Normal merchant (the last asks first, then it packs up, the closed wagon still blocks); one purchase at the Legendary (it stays) and at the Ascension Merchant (it leaves); wagon and shop screenshots per skin.
 
 ### 3.6 Balance
@@ -342,7 +345,53 @@ An erratic wizard's crooked tower. Named with the possessive: someone lives ther
   - Later no damage reaches 15: a spell every 5 s lands too few hits against the late boards, even with a reach of 10. The ceiling is about 15 points at wave 18, 9 at 30 and 6 at 40. There the power is the one that reaches 90% of the ceiling: his spells kill what they hit.
   - The ley link needs an ascension and isn't rated.
 
-## 8. POI ideas (for later batches)
+## 8. Lizard Nest (built)
+
+A nest of giant lizards beside the path: a risk in the wave it is found, a treasure chest afterwards.
+
+- **Section:** generic (paths from every exit meet in the centre, random hills).
+  - The nest stands on a random grass cell **next to the path** (4 neighbours), off the section's edge where possible (`LizardNestStyle`, chosen after the paths are laid, so at plain height 1).
+  - Its cell stays blocked for good: a low solid box on the Building layer; a click opens the popup.
+- **Where the lizards join the path:** the path cell beside the nest (`LizardNestLogic.PathCell`), then the waypoint ahead towards the entry (`TargetWaypoint`: the cell's own waypoint, or the end of the route segment through it).
+  - The nest adds a waypoint of its own on that path cell (`TR_NestExit`, linked to it).
+  - So the lizards climb down off the nest onto the path, then follow the route like any monster.
+- **Its wave** is the one that starts when its tile is placed.
+  - The first lizard crawls out at once, the others 1.4 s apart (`SpawnGap`). A lizard is about 1.35 cells long and walks a cell a second, so they don't walk into each other.
+  - As the first one comes out the eggs break (the model swaps to the hatched nest). Each time, the nest shakes, twigs fly, the rustle sound plays, and the lizard rises out of the bowl.
+  - If the wave ends before all are out, the rest stay in.
+- **Lizards** (`LizardNestLogic`):
+  - 1 at wave 1, rising to 5 at wave 40 (1 + 4 x (wave - 1) / 39, rounded): 2 from wave 6, 3 from 16, 4 from 26, 5 from 36.
+  - Each has **12 times the wave's average monster** as health (health, armor and shield together, from the wave model) and 1.2 times as armor, no shield. So a lizard is equally strong for its wave whenever the nest turns up: about 2,000 health at wave 3, 5,000 at 10, 18,500 at 20, 43,000 at 30 and 76,000 at 40.
+  - Speed 1 (a Goblin walks at 2), 3 castle damage, kill gold 4 times the wave's average kill.
+  - Monster cards (+% health and so on) apply as to every monster.
+- **The brood:** when a lizard dies it bursts (a splat of goo, the burst sound). **5 to 15 hatchlings** (5 at wave 1, 15 at wave 40) wriggle out where it fell and on along its way.
+  - A hatchling has 0.12 times the wave's average monster as health, no armor or shield: one hit for most towers. That is about 20 at wave 3, 50 at 10, 185 at 20, 430 at 30 and 760 at 40.
+  - Speed 3.4 (each one within 8%; a Bat flies at 3.6), 1 castle damage, kill gold 1 (plus the tower types).
+  - A lizard that the Wizard's Tower turns to gold is pure gold: no brood.
+- **The monsters** are vanilla Goblins underneath (`NestCreatures.cs`): pathfinder, health bar, collider, death and gold.
+  - Their art is hidden, and our animated voxel model sits in its place under the walk animator's direction transform, so they turn the way they walk.
+  - They count as the wave's monsters (`currentEnemies`, `Combat.EnemySpawned`). The freeze tint shows on the lizard's body.
+  - **Lizard** (`pois/lizard/…`, 0.027 per voxel, about 1.35 long with its tail): a low body, dark green with blotches, a cream belly and an orange crest of spikes; a head with yellow slit eyes; a tail of three pieces; four sprawling legs.
+    - **Animation:** a diagonal gait (front right with back left, then the other pair), each leg swinging forward and lifting. The spine sways with the steps, the head steadies against it, and the tail swings behind in a travelling wave.
+    - The pace follows the distance actually walked. Slowed, it walks slower; frozen, it stands still, breathing, its tail curling a little.
+  - **Hatchling** (`pois/hatchling/…`, 0.024 per voxel, about half a cell long): a big round green head (a dark back, a pale belly, big black eyes with a glint), three body pieces getting smaller, and a fin. **No legs.**
+    - It wriggles like a tadpole: a wave runs down its body, growing towards the fin, faster the faster it goes. The whole body weaves a little from side to side.
+    - It pops out with a hop.
+  - **Nest** (`pois/lizard_nest`, `pois/lizard_nest_hatched`, 12 x 12 x 6 at 0.1): a ring of woven twigs with sticks along the rim and poking out, dry grass in the bowl, four speckled leathery eggs. Hatched, it holds broken shells with pale insides, shell bits and slime.
+  - Omen icon `poi/lizard_nest`: a lizard rearing out of its nest, a foreleg with pale claws gripping the rim, an egg on either side.
+- **After the wave:** a treasure chest stands in the nest (the vanilla chest, a treasure offer in Treasure Run), with a rustle and "The lizards' treasure!".
+  - The nest stays and keeps its cell blocked, but never hatches again.
+- **Popup:** before its wave, what will happen. During it, how many lizards are out of how many, the hatchlings, and how many are still out there. Afterwards, an empty nest and how many of its brood were slain.
+- **Sounds** (`tools/SfxTool/Recipes/LizardSounds.cs`, `pois/lizard_nest/…`; the egg crack and the splat are modelled on recorded examples):
+  - `nest_rustle` (3 variants, 1.1 s): an egg cracking at the start (shell ticks, the crack with its knock, a duller second crack, fragments crackling), and twigs and dry grass rustling in one swelling gesture throughout.
+  - `lizard_burst` (2 variants, 0.9 s): a wet splat. A heavy low impact under a fleshy wet splash, sharp splatter, then sparse bright drips and two soft gloops.
+  - `hatchling_squish` (3 variants, 0.25 s, played quietly, at most 3 at once): the same splat in miniature.
+- **Balance** (`ContentSpecs.LizardNest`): **18.1 points** (P80 18.9, early 10.9, late 17.9) against 15: a risk that pays a little more when it works out. Omens from wave 3. Notes in balance-todo.md.
+  - The lizards and all their hatchlings count as more health and armor on the monsters of its one wave. The evaluator then sees the tougher wave, leaks included.
+  - The chest counts from the next wave (a treasure pick), and their kill gold as gold.
+  - The chest dominates (the risk is one wave of the ten-wave horizon), so the lever was the lizards' toughness: at 6 times the wave's average monster the nest rated 19.6 (over budget), at 12 times 18.1 (probe `BalanceProbe.LizardNestLevers`, tests/out/lizard-nest.txt).
+
+## 9. POI ideas (for later batches)
 
 Rule check: none is purely negative. Each risky one pays more when handled. The size is now the whole section; "structure" says what the POI places in it.
 
@@ -373,7 +422,6 @@ Rule check: none is purely negative. Each risky one pays more when handled. The 
 ### Risky (dangerous, pays well)
 | POI | Risk | Reward |
 |---|---|---|
-| **Monster Nest** | A targetable nest that releases extra monsters mid-path each wave, more the longer it lives. | Destroy it: the **treasure chest** it guards. |
 | **Bandit Camp** | Bandit waves come out of the camp and steal gold if they reach the castle. | Clear the camp: its loot (twice what it took) and a treasure. |
 | **Dark Totem** | Monsters passing it gain a shield. | Destroy it with towers: Rare treasure offer. |
 | **Dragon's Lair** | Every 5 waves the dragon flies the path as a boss. | Kill it: Legendary treasure offer. |
@@ -388,10 +436,11 @@ Rule check: none is purely negative. Each risky one pays more when handled. The 
 
 ---
 
-## 9. Next
+## 10. Next
 - Play the Lightning Trap: drag its slider with the mouse, check the arcs and the X-ray in play, the strike sound, and its damage against the real waves (balance-todo.md).
 - Play the merchants: the prices against the real gold (early Legendary Merchants especially), whether selling gets used, the shop window with the mouse.
 - Play the Soul Urn: how long it takes to fill with a real kill zone, the rune on strong towers and on a War Blimp's Radar.
+- Play the Lizard Nest: how risky its wave feels early (a 2,000-health lizard at wave 3) and late (five lizards and 75 hatchlings), whether the hatchlings leak, the chest's worth against that risk.
 - Play the Wizard's Tower: his strength early (about 15 points from wave 3) and late (below the budget), whether the tornado and goldify feel special, the ley link's 10 mana/s against its 25% more spells, building round his land.
 - The next POIs, one at a time; each needs an icon, a spec and a scenario.
 - The balance simulation (framework B4) alongside, as planned for M8.

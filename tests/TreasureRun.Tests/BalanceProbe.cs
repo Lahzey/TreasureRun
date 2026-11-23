@@ -264,5 +264,30 @@ namespace TreasureRun.Tests
             Directory.CreateDirectory(dir);
             File.WriteAllText(Path.Combine(dir, "soul-urn-levers.txt"), sb.ToString());
         }
+
+        /// <summary>Lizard Nest: rating by toughness (x the lizards' and hatchlings' health), and the value curve. Writes tests/out/lizard-nest.txt.</summary>
+        [Test, Explicit]
+        public void LizardNestLevers()
+        {
+            var sb = new StringBuilder();
+            foreach (double k in new[] { 1.0, 1.25, 1.5, 2.0, 2.5, 3.0 })
+            {
+                Spec s = ContentSpecs.LizardNest(k);
+                Rating r = Valuation.Rate("lizard_nest", "Lizard Nest", "poi", null, false, s);
+                sb.Append($"toughness {k:0.00}: {r.Points:0.0} (P80 {r.P80:0.0}, early {r.Early:0.0}, late {r.Late:0.0}, peak {r.PeakWave}) |");
+                for (int w = 3; w <= 45; w += 3) sb.Append($" {w}:{Valuation.Value(s, w, BoardVariant.Mixed):0.0}");
+                sb.AppendLine();
+            }
+            sb.AppendLine("wave | lizards | brood | lizard hp | armor | hatchling hp | extra share of the wave | gold");
+            for (int w = 1; w <= 45; w++)
+            {
+                var (h, a) = Pois.LizardNestLogic.ExtraLayers(w);
+                WaveStats ws = WaveModel.Get(w);
+                sb.AppendLine($"{w,3} | {Pois.LizardNestLogic.Lizards(w)} | {Pois.LizardNestLogic.Brood(w),2} | {Pois.LizardNestLogic.LizardHealthAt(w),6} | {Pois.LizardNestLogic.LizardArmorAt(w),5} | {Pois.LizardNestLogic.HatchlingHealthAt(w),5} | {(h + a) / ws.Total:0%} | {Pois.LizardNestLogic.KillGold(w):0}");
+            }
+            string dir = Path.Combine(TestContext.CurrentContext.TestDirectory, "..", "..", "..", "..", "out");
+            Directory.CreateDirectory(dir);
+            File.WriteAllText(Path.Combine(dir, "lizard-nest.txt"), sb.ToString());
+        }
     }
 }

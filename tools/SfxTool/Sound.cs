@@ -115,6 +115,22 @@ namespace SfxTool
             return peak <= 0f ? Copy() : Gain((float)Math.Pow(10, peakDb / 20.0) / peak);
         }
 
+        /// <summary>
+        /// Scales so the RMS over the whole sound is <paramref name="rmsDb"/> dBFS, then rounds off any peak above
+        /// <paramref name="ceilingDb"/> (tanh). For variants with sharp, uneven peaks (cracks, clicks), where normalising
+        /// the peak leaves them at different loudness.
+        /// </summary>
+        public Sound LevelRms(float rmsDb, float ceilingDb = -1f)
+        {
+            double sum = 0;
+            foreach (float x in S) sum += x * x;
+            float rms = (float)Math.Sqrt(sum / Math.Max(1, Length));
+            if (rms <= 0f) return Copy();
+            float ceiling = (float)Math.Pow(10, ceilingDb / 20.0);
+            return Gain((float)Math.Pow(10, rmsDb / 20.0) / rms).Map((x, _) => Math.Abs(x) <= ceiling * 0.7f ? x
+                : Math.Sign(x) * (ceiling * 0.7f + ceiling * 0.3f * (float)Math.Tanh((Math.Abs(x) - ceiling * 0.7f) / (ceiling * 0.3f))));
+        }
+
         public Sound Fade(float fadeIn, float fadeOut) => Map((x, t) =>
         {
             float g = 1f;

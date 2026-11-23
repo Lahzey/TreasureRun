@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Lizard Nest: a lizard rearing up out of its nest of twigs, an egg on either side. Colours follow the models: scales #5e9a3c (belly #d6c688, crest #e0702c, eye #f5d63c), twigs #7a5634 / #b08a58 / #4e3620, eggs #ece4c4, on moss #1e2416. -->
+  <circle cx="32" cy="32" r="30" fill="#1e2416" stroke="#8cc84a" stroke-width="3"/>
+  <g stroke="#1e2416" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round">
+    <!-- the hollow of the nest, and the eggs in it -->
+    <ellipse cx="32" cy="41" rx="21" ry="6" fill="#3a2a18"/>
+    <ellipse cx="18.5" cy="40" rx="4" ry="5" fill="#ece4c4"/>
+    <ellipse cx="44.5" cy="40" rx="4" ry="5" fill="#ece4c4"/>
+    <circle cx="17.5" cy="38.5" r="0.8" fill="#9c916a" stroke="none"/>
+    <circle cx="45.5" cy="38" r="0.8" fill="#9c916a" stroke="none"/>
+    <!-- the lizard: neck and head rising from the nest, snout to the right -->
+    <path d="M24 43 C23 32 25 24 31 19.5 C35 16 43 15.5 49 18.5 Q51.8 20.2 50 22.8 C46 24.6 41 24.6 37.5 25.6 C33.5 28 32.5 35 33.5 43 Z" fill="#5e9a3c"/>
+    <path d="M37.5 25.6 C33.5 28 32.5 35 33.5 43 L30.5 43 C30 35 31 29 35.5 25.6 Z" fill="#d6c688" stroke="none"/>
+    <path d="M23.7 37 L20.4 35.2 L24 33.2 Z M24.4 30.6 L21.4 28.2 L25.4 27 Z M27.4 24.6 L25.4 21.2 L29.4 21.8 Z M32.2 19.8 L31.4 16 L35 18 Z" fill="#e0702c"/>
+    <circle cx="41" cy="19.6" r="2.3" fill="#f5d63c"/>
+    <path d="M41 18 V21.2" stroke-width="1.1"/>
+    <path d="M50 22.8 L42 23.4" stroke-width="1"/>
+    <!-- the front of the nest: woven twigs, a few poking out -->
+    <path d="M9 41 Q11 55 32 56 Q53 55 55 41 Q44 47 32 47 Q20 47 9 41 Z" fill="#7a5634"/>
+    <!-- a foreleg gripping the rim, pale claws over the twigs -->
+    <path d="M32 35 Q38.5 35.5 40.5 43 L37 44.2 Q35.8 39.8 32.2 39.4 Z" fill="#5e9a3c"/>
+    <path d="M37.2 44 L36.8 47 M38.9 43.6 L39.2 46.6 M40.6 43 L41.7 45.8" fill="none" stroke="#ece4c4" stroke-width="1.3"/>
+    <path d="M12 45 L27 51.5 M21 53.5 L44 47.5 M37 53.5 L52 44.5" fill="none" stroke="#b08a58" stroke-width="1.8"/>
+    <path d="M15 49.5 L30 47.8 M33 50 L48 52" fill="none" stroke="#4e3620" stroke-width="1.6"/>
+    <path d="M10 41.5 L5.5 38 M54 41.5 L58.5 37.5" fill="none" stroke="#b08a58" stroke-width="1.8"/>
+  </g>
+</svg>

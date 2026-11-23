@@ -1,0 +1,6 @@
+pois/lizard_nest/lizard_burst_2
+  duration 0.90 s | peak -1.0 dBFS | RMS -17.7 dBFS | loudest 50 ms -10.1 dBFS
+  attack 20 ms | decays to -30 dB at 0.75 s | brightness (spectral centroid) 6.2k
+  envelope per 50 ms (dBFS): -10 -10 -14 -14 -20 -22 -22 -25 -29 -25 -30 -36 -31 -32 -35 -50 -56 -60
+  brightness per 100 ms:    5.3k 6.3k 6.3k 6.6k 8.7k 7.0k 5.5k 8.3k 6.3k
+  dominant pitch per 100 ms: 65 65 108 2.3k 3.9k 2.4k 2.3k 2.0k 2.0k

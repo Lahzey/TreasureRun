@@ -1,0 +1,6 @@
+pois/lizard_nest/hatchling_squish_2
+  duration 0.25 s | peak -1.0 dBFS | RMS -19.6 dBFS | loudest 50 ms -13.5 dBFS
+  attack 10 ms | decays to -30 dB at 0.20 s | brightness (spectral centroid) 6.5k
+  envelope per 50 ms (dBFS): -13 -21 -34 -34 -60
+  brightness per 100 ms:    6.0k 9.8k 10.7k
+  dominant pitch per 100 ms: 1.9k 4.7k 4.8k

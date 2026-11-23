@@ -191,6 +191,7 @@ namespace TreasureRun.Balance
             ["ascension_merchant"] = () => Merchant(global::TreasureRun.Pois.MerchantKind.Ascension),
             ["soul_urn"] = SoulUrn,
             ["wizard_tower"] = () => WizardTower(global::TreasureRun.Pois.WizardTowerLogic.Power),
+            ["lizard_nest"] = () => LizardNest(1),
         };
 
         /// <summary>
@@ -226,6 +227,32 @@ namespace TreasureRun.Balance
                 .Because($"a random spell every 5 s at monsters within {(global::TreasureRun.Pois.WizardTowerLogic.Range):0} cells (fireball, lightning, ice spikes 3 in 11.4 each, tornado and " +
                          "necromancy 1, goldify 0.4); damage fixed by wave, solved for 15 points per wave (probe BalanceProbe.WizardTowerPower). " +
                          "The ley link (10 mana/s for a spell every 4 s) needs the Ley Line Network and isn't rated");
+        }
+
+        /// <summary>
+        /// The Lizard Nest: in the wave it appears (the acquisition wave) its lizards and their hatchlings join the wave, as
+        /// more health and armor on that wave's monsters (Pois.LizardNestLogic.ExtraLayers); a treasure chest from the next
+        /// wave on (a treasure pick); their kill gold.
+        /// </summary>
+        public static Spec LizardNest(double toughness)
+        {
+            return S.Custom(Category.Survival, "lizards and their brood join the wave it appears in", c =>
+                {
+                    if (c.Wave != c.Acquired) return;
+                    WaveStats w = WaveModel.Get(c.Wave);
+                    var (health, armor) = global::TreasureRun.Pois.LizardNestLogic.ExtraLayers(c.Wave);
+                    health *= toughness; armor *= toughness;
+                    if (w.Armor > 0) c.Mods.Monster.ExtraArmor += (float)(armor / w.Armor);
+                    else health += armor;
+                    c.Mods.Monster.ExtraHealth += (float)(health / Math.Max(1, w.Health));
+                })
+                .Custom(Category.Meta, "a treasure chest after that wave", c => { if (c.Wave > c.Acquired) c.Mods.DirectPoints += Pools.TreasurePick(c.Wave); })
+                .Custom(Category.Economy, "their kill gold", c => c.Mods.ExtraGold += (c.Wave > c.Acquired ? 1 : 0.5) * global::TreasureRun.Pois.LizardNestLogic.KillGold(c.Acquired))
+                .Offered(global::TreasureRun.Pois.LizardNestLogic.MinWave)
+                .Because($"{(global::TreasureRun.Pois.LizardNestLogic.MinLizards)}-{(global::TreasureRun.Pois.LizardNestLogic.MaxLizards)} lizards ({(global::TreasureRun.Pois.LizardNestLogic.LizardHealth):0.#}x " +
+                         $"the wave's average monster in health, {(global::TreasureRun.Pois.LizardNestLogic.LizardArmor):0.#}x in armor), each releasing " +
+                         $"{(global::TreasureRun.Pois.LizardNestLogic.MinBrood)}-{(global::TreasureRun.Pois.LizardNestLogic.MaxBrood)} hatchlings ({(global::TreasureRun.Pois.LizardNestLogic.HatchlingHealth):0.##}x), " +
+                         "counted as more health and armor on its one wave; then a chest");
         }
 
         /// <summary>

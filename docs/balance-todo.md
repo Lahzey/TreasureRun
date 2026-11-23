@@ -99,6 +99,19 @@ From [balance-report.md](balance-report.md) (M7.5). **No balance changes yet:** 
   - The tornado pushes monsters back into his reach and other towers' reach again: stronger than the slow model suggests?
 - **Uncalibrated:** `Reach` 0.85, `GroupBonus` 1.3, the tornado slow's factor 0.5, the necromancy's kill share x2, goldify's x2 toughness.
 
+**Lizard Nest** (docs/poi-plan.md §8): 18.1 points against 15 (P80 18.9, early 10.9, late 17.9).
+- **The chest dominates:** it counts from the wave after the nest's wave, nine of the ten waves the framework looks at, while the risk is a single wave. So the value is about a treasure pick less a tenth of that wave's extra toughness, and the only lever that moves it much is the lizards' toughness (probe `BalanceProbe.LizardNestLevers`, tests/out/lizard-nest.txt): 6 times the wave's average monster rated 19.6 (over budget), 12 times 18.1.
+- **Its risk shrinks over the run.** Each lizard is a fixed multiple of the wave's average monster (as asked), but the waves grow faster than the lizards' count: the nest adds 240% of its wave's hit points at wave 3, about 100% at 10, 50% at 20, 40% at 30 and 20% at 40. Early it is a hard trade (value 10.9 from wave 3), late an almost free chest. Options if that feels wrong: start the omens later (wave 5 or 6), or let the toughness factor grow with the wave.
+- **Modelled, not measured:**
+  - the lizards and hatchlings as more health and armor spread over the whole wave's monsters. In play the health sits in a few slow lizards (speed 1: long in range, easy for single-target towers) and many fast hatchlings (speed 3.4: they leak, but die to any hit, and their overkill is wasted);
+  - the lizards' 3 castle damage per leak (not in the rating);
+  - their kill gold with 2 tower types per kill.
+- **Check in play:**
+  - Can an early board (waves 3-6) kill a 2,000-4,000 health lizard at all? A leak costs 3 health; is the chest worth it?
+  - Late, do the 75 hatchlings of five lizards slip past area towers that killed their parents (they spread out fast)?
+  - Does the chest in the nest feel like the reward for that wave, or like a free chest that turns up anyway?
+- **Uncalibrated:** `LizardHealth` 12, `LizardArmor` 1.2, `HatchlingHealth` 0.12, `LizardGold` 4, `TypesPerKill` 2.
+
 **Soul Urn** (docs/poi-plan.md §6): 12.8 points against 15.
 - **Size:** all the monsters its lane sends over three waves (the wave model, death spawns included), times the lane's share of the spawn points: 30 at wave 3, 120 at wave 10, about 210 at wave 15, 280 at wave 20, 450 at wave 30. Twice the first version (half of three waves), to make filling it a real effort.
 - **Rewards**, one in three each, valued at the urn's **first wave**, so stalling the fill to wait for a later wave pays nothing:

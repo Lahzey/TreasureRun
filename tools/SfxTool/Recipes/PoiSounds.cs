@@ -17,6 +17,7 @@ namespace SfxTool
             Add("pois/soul_urn/urn_fill", UrnFill);
             Add("pois/soul_urn/rune_ignite", RuneIgnite);
             RegisterWizard();
+            RegisterLizardNest();
         }
 
         /// <summary>One coin: a short metallic tick (two high partials) with a noise click.</summary>

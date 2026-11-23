@@ -11,7 +11,7 @@ namespace TreasureRun.Debugging
     /// <summary>Points of Interest (docs/poi-plan.md): omens, generated sections for every exit combination, the Lightning Trap.</summary>
     internal static class PoiScenarios
     {
-        public static IEnumerable<Scenario> All => new Scenario[] { new PoiSectionsScenario(), new LightningTrapScenario(), new MerchantScenario(), new SoulUrnScenario(), new WizardTowerScenario() };
+        public static IEnumerable<Scenario> All => new Scenario[] { new PoiSectionsScenario(), new LightningTrapScenario(), new MerchantScenario(), new SoulUrnScenario(), new WizardTowerScenario(), new LizardNestScenario() };
 
         /// <summary>Lets the running wave end (killing everything) so the Expand buttons are open again.</summary>
         public static IEnumerator OpenButtons(ScenarioContext c)
@@ -34,15 +34,20 @@ namespace TreasureRun.Debugging
             Object.FindObjectsOfType<TileSpawnLocation>().Where(m => m.gameObject.activeInHierarchy)
                 .OrderBy(m => m.transform.position.sqrMagnitude).FirstOrDefault();
 
+        /// <summary>The open Expand button farthest from the castle (to grow the map away from it).</summary>
+        public static TileSpawnLocation FarMarker() =>
+            Object.FindObjectsOfType<TileSpawnLocation>().Where(m => m.gameObject.activeInHierarchy)
+                .OrderByDescending(m => m.transform.position.sqrMagnitude).FirstOrDefault();
+
         /// <summary>Puts a Lightning Trap omen on an open Expand button and uses it; returns the new site (null if none).</summary>
         public static IEnumerator Expand(ScenarioContext c, SectionExits? exits, List<LightningTrap> result) =>
             Expand(c, exits, PoiRegistry.Get(LightningTrapLogic.Id), result);
 
         /// <summary>Puts an omen of <paramref name="def"/> on an open Expand button and uses it; adds the new site to the list.</summary>
-        public static IEnumerator Expand<T>(ScenarioContext c, SectionExits? exits, PoiDef def, List<T> result) where T : PoiSite
+        public static IEnumerator Expand<T>(ScenarioContext c, SectionExits? exits, PoiDef def, List<T> result, bool far = false) where T : PoiSite
         {
             yield return OpenButtons(c);
-            TileSpawnLocation marker = OpenMarker();
+            TileSpawnLocation marker = far ? FarMarker() : OpenMarker();
             c.Expect(marker != null, "an open Expand button");
             if (marker == null) yield break;
             c.Expect(PoiDirector.PlaceOmen(marker, def), $"omen {def.Id} placed");

@@ -23,7 +23,7 @@ namespace TreasureRun.Tests
         {
             for (int seed = 0; seed < 25; seed++)
             {
-                foreach (SectionStyle style in new SectionStyle[] { new SectionStyle(), new LightningTrapStyle(), new MerchantStyle { Rotation = 90 * (seed % 4) }, new SoulUrnStyle(), new WizardTowerStyle() })
+                foreach (SectionStyle style in new SectionStyle[] { new SectionStyle(), new LightningTrapStyle(), new MerchantStyle { Rotation = 90 * (seed % 4) }, new SoulUrnStyle(), new WizardTowerStyle(), new LizardNestStyle() })
                 {
                     SectionLayout l = PoiSectionLogic.Generate(exits, style, new SystemRng(seed));
                     Assert.That(PoiSectionLogic.Validate(l), Is.Null, $"{exits} seed {seed} {style.GetType().Name}");
@@ -446,6 +446,72 @@ namespace TreasureRun.Tests
             Spec s = ContentSpecs.Poi(WizardTowerLogic.Id);
             Assert.That(s, Is.Not.Null);
             Rating r = Valuation.Rate(WizardTowerLogic.Id, "Wizard's Tower", "poi", null, false, s);
+            Assert.That(r.Flag, Is.EqualTo(""), $"{r.Points:0.0} points");
+        }
+
+        [Test]
+        public void LizardNestStandsBesideThePathAndItsLizardsWalkToTheEntry([ValueSource(nameof(AllExits))] SectionExits exits)
+        {
+            var cells = new HashSet<(int, int)>();
+            for (int seed = 0; seed < 40; seed++)
+            {
+                SectionLayout l = PoiSectionLogic.Generate(exits, new LizardNestStyle(), new SystemRng(seed));
+                int reserved = 0;
+                for (int x = 0; x < 7; x++) for (int z = 0; z < 7; z++) if (l.Cells[x, z] == SectionCell.Reserved) reserved++;
+                Assert.That(reserved, Is.EqualTo(1), $"{exits} seed {seed}");
+                var nest = LizardNestStyle.CellOf(l);
+                Assert.That(l.Height[nest.x, nest.z], Is.EqualTo(1), "on plain grass");
+                var (px, pz) = LizardNestLogic.PathCell(l, nest);
+                Assert.That(l.IsPath(px, pz), Is.True, $"{exits} seed {seed}: a path cell beside the nest at {nest}");
+                Assert.That(System.Math.Abs(px - nest.x) + System.Math.Abs(pz - nest.z), Is.EqualTo(1), "a direct neighbour");
+                // From there the waypoints lead to the entry, and the first one lies ahead along a straight path.
+                int w = LizardNestLogic.TargetWaypoint(l, px, pz);
+                Assert.That(w, Is.GreaterThanOrEqualTo(0));
+                SectionWaypoint first = l.Waypoints[w];
+                Assert.That(first.X == px || first.Z == pz, Is.True, "straight ahead");
+                for (int i = System.Math.Min(first.X, px); i <= System.Math.Max(first.X, px); i++)
+                    for (int k = System.Math.Min(first.Z, pz); k <= System.Math.Max(first.Z, pz); k++)
+                        Assert.That(l.IsPath(i, k), Is.True, $"{exits} seed {seed}: path all the way to the waypoint");
+                int steps = 0;
+                while (l.Waypoints[w].Role != "last" && steps++ < 20) w = l.Waypoints[w].Next;
+                Assert.That(l.Waypoints[w].Role, Is.EqualTo("last"), $"{exits} seed {seed}: the route reaches the entry");
+                cells.Add(nest);
+            }
+            Assert.That(cells.Count, Is.GreaterThanOrEqualTo(4), "the cell is random");
+        }
+
+        [Test]
+        public void LizardNestScalesWithTheWave()
+        {
+            Assert.That(LizardNestLogic.Lizards(1), Is.EqualTo(1));
+            Assert.That(LizardNestLogic.Lizards(LizardNestLogic.RampTo), Is.EqualTo(5));
+            Assert.That(LizardNestLogic.Lizards(60), Is.EqualTo(5));
+            Assert.That(LizardNestLogic.Brood(1), Is.EqualTo(5));
+            Assert.That(LizardNestLogic.Brood(LizardNestLogic.RampTo), Is.EqualTo(15));
+            for (int w = 2; w <= 45; w++)
+            {
+                Assert.That(LizardNestLogic.Lizards(w), Is.GreaterThanOrEqualTo(LizardNestLogic.Lizards(w - 1)));
+                Assert.That(LizardNestLogic.Brood(w), Is.GreaterThanOrEqualTo(LizardNestLogic.Brood(w - 1)));
+                // The same strength for its wave whenever it turns up: health a fixed multiple of the wave's average monster.
+                double mean = LizardNestLogic.MeanMonster(w);
+                Assert.That(LizardNestLogic.LizardHealthAt(w) / mean, Is.EqualTo(LizardNestLogic.LizardHealth).Within(0.02), $"wave {w}");
+                Assert.That(LizardNestLogic.LizardArmorAt(w), Is.LessThan(LizardNestLogic.LizardHealthAt(w) / 5), "only a little armor");
+                Assert.That(LizardNestLogic.HatchlingHealthAt(w) / mean, Is.EqualTo(LizardNestLogic.HatchlingHealth).Within(0.05), $"wave {w}");
+                Assert.That(LizardNestLogic.LizardGoldAt(w), Is.GreaterThan(LizardNestLogic.HatchlingGold));
+            }
+            Assert.That(LizardNestLogic.LizardSpeed, Is.LessThan(1.5f), "slow");
+            Assert.That(LizardNestLogic.HatchlingSpeed, Is.GreaterThan(3f), "fast");
+            Assert.That(LizardNestLogic.SpawnSeconds(5), Is.LessThanOrEqualTo(6f), "all out within the first seconds");
+            Assert.That(LizardNestLogic.SpawnGap * LizardNestLogic.LizardSpeed, Is.GreaterThanOrEqualTo(1.35f), "a lizard's length apart");
+        }
+
+        [Test]
+        public void LizardNestIsRatedAtThePoiBudget()
+        {
+            Spec s = ContentSpecs.Poi(LizardNestLogic.Id);
+            Assert.That(s, Is.Not.Null);
+            Rating r = Valuation.Rate(LizardNestLogic.Id, "Lizard Nest", "poi", null, false, s);
+            TestContext.WriteLine($"Lizard Nest: {r.Points:0.0} points (P80 {r.P80:0.0}, early {r.Early:0.0}, late {r.Late:0.0}, peak {r.PeakWave})");
             Assert.That(r.Flag, Is.EqualTo(""), $"{r.Points:0.0} points");
         }
 

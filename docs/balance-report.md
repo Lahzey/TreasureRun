@@ -6,7 +6,7 @@ How to read it (docs/balance-framework.md): **points** ≈ % tougher monsters th
 
 Budgets: cards 2–6, Common 12, Uncommon 18, Rare 24, Epic 30, Legendary 36, Mythical 54; ascensions 25% more than their rarity; Points of Interest 15. All constants are uncalibrated until M8. The treasures are mostly placeholders: no balance changes until M9.
 
-**Summary:** 651 items, 30 over budget, 466 under, 1 unrated, 0 missing specs.
+**Summary:** 652 items, 30 over budget, 466 under, 1 unrated, 0 missing specs.
 
 ## Treasures
 
@@ -209,6 +209,7 @@ Budgets: cards 2–6, Common 12, Uncommon 18, Rare 24, Epic 30, Legendary 36, My
 
 | Item | Rarity | Points | Budget | Flag | Early / late / peak | b · b_t | Situation | Split (off/ctl/eco/surv/meta) | Source | Note |
 |---|---|---|---|---|---|---|---|---|---|---|
+| **Lizard Nest** (`lizard_nest`) | POI | 18.1 | 15.0 |  | 10.9 / 17.9 / w35 | 1.00 · 0.87 |  | 0/0/9/-13/78 | formula | 1-5 lizards (12x the wave's average monster in health, 1.2x in armor), each releasing 5-15 hatchlings (0.12x), counted as more health and armor on its one wave; then a chest |
 | **Wizard's Tower** (`wizard_tower`) | POI | 17.6 | 15.0 |  | 19.3 / 7.1 / w9 | 1.00 · 0.73 |  | 65/4/30/0/0 | formula | a random spell every 5 s at monsters within 10 cells (fireball, lightning, ice spikes 3 in 11.4 each, tornado and necromancy 1, goldify 0.4); damage fixed by wave, solved for 15 points per wave (probe BalanceProbe.WizardTowerPower). The ley link (10 mana/s for a spell every 4 s) needs the Ley Line Network and isn't rated |
 | **Legendary Merchant** (`legendary_merchant`) | POI | 15.2 | 15.0 |  | 9.4 / 14.6 / w36 | 1.00 · 0.87 |  | 0/0/-44/0/56 | formula | the discounted offer and one more bought, rated at their budgets; price from MerchantLogic |
 | **Lightning Trap** (`lightning_trap`) | POI | 15.1 | 15.0 |  | 9.2 / 12.8 / w8 | 1.00 · 0.79 |  | 100/0/0/0/0 | formula | strikes everything in the centre cell 4 times a second; 0-15 mana/s (rated at the best rate per wave), damage in proportion, mana paid in mana buildings; solved for 15 points per wave |
