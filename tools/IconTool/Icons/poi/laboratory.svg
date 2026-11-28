@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Laboratory: a small tower under study in a glass chamber on the lab's steel plate, two emitter orbs beaming at it, bubbles rising. Colours follow the model: steel #686e7a / #3a3e48, beams and orbs #8cf4ff, brass #caa64a, copper #bc703c, the tower's stone #b4aa98, on lab night #141a22. -->
+  <circle cx="32" cy="32" r="30" fill="#141a22" stroke="#8cf4ff" stroke-width="3"/>
+  <g stroke="#141a22" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round">
+    <!-- the plate and the glow ring round the chamber -->
+    <path d="M8 46 L32 39 L56 46 L32 54 Z" fill="#3a3e48"/>
+    <ellipse cx="32" cy="46" rx="12.5" ry="4.2" fill="none" stroke="#8cf4ff" stroke-width="1.8"/>
+    <!-- the pylons on either side: copper coils, brass collars, glowing orbs -->
+    <path d="M10.5 45 V27 H14.5 V45 Z" fill="#686e7a"/>
+    <path d="M9.5 41 H15.5 M9.5 37 H15.5 M9.5 33 H15.5" stroke="#bc703c" stroke-width="2"/>
+    <rect x="9" y="25.5" width="7" height="2.5" fill="#caa64a"/>
+    <circle cx="12.5" cy="21.5" r="4" fill="#8cf4ff"/>
+    <path d="M49.5 45 V27 H53.5 V45 Z" fill="#686e7a"/>
+    <path d="M48.5 41 H54.5 M48.5 37 H54.5 M48.5 33 H54.5" stroke="#bc703c" stroke-width="2"/>
+    <rect x="48" y="25.5" width="7" height="2.5" fill="#caa64a"/>
+    <circle cx="51.5" cy="21.5" r="4" fill="#8cf4ff"/>
+    <!-- the beams from the orbs to the specimen -->
+    <path d="M16 23 L27 31 M48 23 L37 31" stroke="#8cf4ff" stroke-width="2" opacity="0.8"/>
+    <!-- the specimen: a little stone tower with a crenellated top -->
+    <path d="M26.5 46 V28 H25 V23 H28 V25 H30.5 V23 H33.5 V25 H36 V23 H39 V28 H37.5 V46 Z" fill="#b4aa98"/>
+    <path d="M30 46 V40 Q32 37.5 34 40 V46 Z" fill="#5a4a3a"/>
+    <rect x="30.6" y="30" width="2.8" height="4" fill="#5a4a3a" stroke="none"/>
+    <!-- the scanning ring around it -->
+    <ellipse cx="32" cy="34" rx="8.5" ry="2.6" fill="none" stroke="#8cf4ff" stroke-width="1.6"/>
+    <!-- the glass chamber over it -->
+    <path d="M20 46 V22 Q20 11 32 11 Q44 11 44 22 V46" fill="none" stroke="#c4e2e8" stroke-width="1.6" opacity="0.85"/>
+    <path d="M23.5 42 V23 Q23.5 15.5 29 14.2" fill="none" stroke="#ffffff" stroke-width="1.2" opacity="0.6"/>
+    <rect x="29" y="8" width="6" height="3.5" fill="#caa64a"/>
+    <!-- bubbles -->
+    <circle cx="41" cy="27" r="1.2" fill="#8cf4ff" stroke="none"/>
+    <circle cx="40" cy="20" r="0.9" fill="#8cf4ff" stroke="none"/>
+  </g>
+</svg>

@@ -1,0 +1,6 @@
+pois/laboratory/power_up
+  duration 1.40 s | peak -5.0 dBFS | RMS -19.0 dBFS | loudest 50 ms -14.6 dBFS
+  attack 785 ms | decays to -30 dB at 1.37 s | brightness (spectral centroid) 3.5k
+  envelope per 50 ms (dBFS): -28 -24 -20 -21 -22 -22 -22 -23 -22 -22 -20 -19 -18 -17 -16 -15 -15 -16 -16 -15 -16 -18 -21 -23 -25 -26 -32 -43
+  brightness per 100 ms:    6.3k 608 371 456 526 561 5.8k 4.9k 4.6k 4.4k 3.0k 1.5k 1.1k 1.1k
+  dominant pitch per 100 ms: 108 108 108 194 194 108 108 108 108 108 1.8k 194 194 108

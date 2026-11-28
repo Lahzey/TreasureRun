@@ -563,12 +563,12 @@ namespace TreasureRun.UI
                 Debugging.ObjectDump.Write(go.transform, depth, Print);
             });
 
-            Add("poi", "poi [list | omen <id> [all] | next <id> | exits <L|T|R|LT|LR|TR|LTR> | rate <0-15> | shop | buy <slot> | sell <id> | press <buy n|sell id> | close | souls [n] | fill [chest|gold|rune] | cast [fireball|lightning|ice|tornado|necromancy|goldify] | hatch]",
+            Add("poi", "poi [list | omen <id> [all] | next <id> | exits <L|T|R|LT|LR|TR|LTR> | rate <0-15> | shop | buy <slot> | sell <id> | press <buy n|sell id> | close | souls [n] | fill [chest|gold|rune] | cast [fireball|lightning|ice|tornado|necromancy|goldify] | hatch | research [n]]",
                 "Points of Interest: list omens and sites; put an omen on the open Expand buttons (first, or all); make the next " +
                 "omen roll succeed; force the exits of the next tile; set the mana per second of the nearest Lightning Trap; open the " +
                 "nearest open merchant's shop, buy an offer or sell a treasure there directly, press a button of the open shop " +
                 "(confirmations need two presses), close the shop window; send souls into the nearest Soul Urn, or fill it at once " +
-                "(with a given reward, else a random one); make the nearest Wizard's Tower cast; hatch the nearest waiting Lizard Nest (during a wave).", true, a =>
+                "(with a given reward, else a random one); make the nearest Wizard's Tower cast; hatch the nearest waiting Lizard Nest (during a wave); make the nearest busy Laboratory research n waves now.", true, a =>
             {
                 string sub = Arg(a, 0, "list").ToLowerInvariant();
                 Core.RunState run = TreasureRunMode.Run;
@@ -678,6 +678,15 @@ namespace TreasureRun.UI
                     if (SpawnManager.instance == null || !SpawnManager.instance.combat) { Print("Only during a wave (start one first)."); return; }
                     n.ForceHatch();
                     Print($"Lizard Nest: {n.Status}");
+                    return;
+                }
+                if (sub == "research")
+                {
+                    Pois.Laboratory l = Pois.Laboratory.All.Where(x => x != null && !x.Empty).OrderBy(x => x.Center.sqrMagnitude).FirstOrDefault();
+                    if (l == null) { Print("No Laboratory with something in its chamber."); return; }
+                    int n = int.Parse(Arg(a, 1, "1"));
+                    for (int i = 0; i < n; i++) l.ForceResearch();
+                    Print($"Laboratory: {l.Status}. Research: {Pois.LabResearch.Summary()}");
                     return;
                 }
                 Print("Unknown subcommand.");
@@ -919,10 +928,16 @@ namespace TreasureRun.UI
             { message = $"Cell blocked by {hit.collider.name} (layer {LayerMask.LayerToName(hit.collider.gameObject.layer)})."; return null; }
             Vector3 pos = new Vector3(x, Mathf.Round(3f * hit.point.y) / 3f, z);
             if (Pois.WizardLand.Refuses(pos, match.Value.Key)) { message = Pois.WizardLand.Refusal + "."; return null; }
-            GameObject go = UnityEngine.Object.Instantiate(match.Value.Key, pos, Quaternion.identity);
-            go.GetComponent<IBuildable>()?.SetStats();
-            if (pay) ResourceManager.instance.Spend(match.Value.Value.currentPrice);
-            message = $"Built {match.Key} at {x},{z} (height +{Mathf.RoundToInt(pos.y * 3f) - 1}).";
+            int price = match.Value.Value.currentPrice;
+            Pois.Laboratory lab = Pois.Laboratory.SlotAt(pos);
+            GameObject go = lab != null && lab.Empty ? lab.Insert(match.Value.Key, pay ? price : 0) : null;
+            if (go == null)
+            {
+                go = UnityEngine.Object.Instantiate(match.Value.Key, pos, Quaternion.identity);
+                go.GetComponent<IBuildable>()?.SetStats();
+            }
+            if (pay) ResourceManager.instance.Spend(price);
+            message = $"Built {match.Key} at {x},{z} (height +{Mathf.RoundToInt(pos.y * 3f) - 1}){(Pois.LabSpecimen.Is(go) ? " in a Laboratory's chamber" : "")}.";
             return go;
         }
 

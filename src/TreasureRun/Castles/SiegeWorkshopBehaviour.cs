@@ -223,7 +223,7 @@ namespace TreasureRun.Castles
         {
             if (!IsSiege(__instance)) return;
             int damage = __instance.damage + DamagePerHeavierShot * CardCounters.Get(CastleCards.HeavierShot);
-            if (Has(CastleTreasures.SiegeEngineer)) damage += Object.FindObjectsOfType<Tower>().Count(t => !IsSiege(t));
+            if (Has(CastleTreasures.SiegeEngineer)) damage += Object.FindObjectsOfType<Tower>().Count(t => !IsSiege(t) && !Pois.LabSpecimen.Is(t));
             if (Has(CastleTreasures.GrandBombard)) damage *= 3;
             __instance.damage = damage;
             __instance.rps /= 1f + FireRatePerQuickReload * CardCounters.Get(CastleCards.QuickReload);

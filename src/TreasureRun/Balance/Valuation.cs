@@ -29,8 +29,14 @@ namespace TreasureRun.Balance
     /// <summary>Value curves, the good moment (80th percentile) and the breadth penalties (sections 1.2 and 1.3).</summary>
     public static class Valuation
     {
-        /// <summary>Waves an acquisition is judged over.</summary>
-        public const int Horizon = 10;
+        /// <summary>
+        /// Weight of each later wave in the value curve: wave a + k counts Decay^k. The weights add up to about 10 waves,
+        /// as the old flat 10-wave horizon did, so a steady effect rates about the same; an effect that grows over the run
+        /// (the Laboratory's research) is seen beyond the tenth wave, at less weight.
+        /// </summary>
+        public const double Decay = 0.9;
+        /// <summary>Waves past this weight are left out (Decay^28 is about 0.05).</summary>
+        public const double MinWeight = 0.05;
         /// <summary>The good moment: this percentile of the value curve.</summary>
         public const double Percentile = 0.8;
         /// <summary>Exponent of the situational and timing penalty.</summary>
@@ -122,13 +128,19 @@ namespace TreasureRun.Balance
             TradeMana(b, ManaGap(b) - gap0);
         }
 
-        /// <summary>V(a): the average points over the next <see cref="Horizon"/> waves of an item acquired at a.</summary>
+        /// <summary>
+        /// V(a): the weighted average of the points over the rest of the run of an item acquired at a, wave a + k weighing
+        /// <see cref="Decay"/>^k (down to <see cref="MinWeight"/>).
+        /// </summary>
         public static double Value(Spec s, int a, BoardVariant variant, Func<Atom, bool> only = null)
         {
-            int last = Math.Min(WaveModel.LastWave, a + Horizon - 1);
-            double sum = 0;
-            for (int w = a; w <= last; w++) sum += PointsAt(s, a, w, variant, only);
-            return sum / (last - a + 1);
+            double sum = 0, weights = 0, weight = 1;
+            for (int w = a; w <= WaveModel.LastWave && weight >= MinWeight; w++, weight *= Decay)
+            {
+                sum += weight * PointsAt(s, a, w, variant, only);
+                weights += weight;
+            }
+            return weights > 0 ? sum / weights : 0;
         }
 
         /// <summary>Gives the board a tower it must have for the item (its requirement): 12% of the tower gold moves to it.</summary>

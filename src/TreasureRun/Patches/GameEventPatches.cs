@@ -22,7 +22,7 @@ namespace TreasureRun.Patches
         [HarmonyPostfix, HarmonyPatch(typeof(TowerManager), nameof(TowerManager.AddNewTower))]
         private static void AddNewTowerPostfix(Tower t)
         {
-            if (!TreasureRunMode.Active) return;
+            if (!TreasureRunMode.Active || Pois.LabSpecimen.Is(t)) return; // a Laboratory's specimen is only a model
             GameEvents.TrackTower(t, added: true);
             GameEvents.ChangeTowerCount(+1);
             GameEvents.RaiseTowerBuilt(t);
@@ -31,7 +31,7 @@ namespace TreasureRun.Patches
         [HarmonyPostfix, HarmonyPatch(typeof(TowerManager), nameof(TowerManager.RemoveTower))]
         private static void RemoveTowerPostfix(Tower t)
         {
-            if (!TreasureRunMode.Active) return;
+            if (!TreasureRunMode.Active || Pois.LabSpecimen.Is(t)) return;
             GameEvents.TrackTower(t, added: false);
             GameEvents.ChangeTowerCount(-1);
         }

@@ -69,9 +69,9 @@ Headroom points alone change a lot with the moment:
 
 Judging all of them at one fixed wave favours one kind and punishes the others. Judging each at its *perfect* moment overrates niche peaks (+1 damage at wave 1). So every item is valued **as if it is acquired at a good moment for it: the top 20% of its timing, not the very best.**
 
-1. **Value curve.** V(a) is the item's worth if acquired at wave *a*: the average of its headroom points over the next **10 waves**, measured on those waves' boards with the item on them since *a*.
+1. **Value curve.** V(a) is the item's worth if acquired at wave *a*: the weighted average of its headroom points over the rest of the run, wave *a + k* weighing **0.9^k** (left out below 0.05), measured on those waves' boards with the item on them since *a*.
    - Gold and levels gained since *a* are counted as spent at each of those waves.
-   - The 10-wave horizon is the stretch a pick has to carry you through. It's tunable; one horizon for everything keeps the curves comparable.
+   - The weights add up to about 10 waves, the stretch a pick has to carry you through, so a steady item rates as on a flat 10-wave horizon; an item that grows over the run (the Laboratory's research) counts its later waves at less weight. Tunable (`Valuation.Decay`); one curve for everything keeps the items comparable.
 2. **Offer window.** The waves in which the item can actually be offered. That's 1–50 by default; later where an unlock comes first, for example an ascension's tower, or a card behind an earlier card.
 3. **Points = the 80th percentile of V(a) over the offer window.** For a curve that falls (flat gold, flat damage, heals) that's its value at the start of the window plus a fifth of it. For one that rises (scaling), near the end. For a flat curve (% effects), its constant value.
 
@@ -89,7 +89,7 @@ This needs no separate formula for "flat" and "scaling" parts: an item is a sum 
 
 As a result, for the same points, a peaky item may hit harder at its moment than an all-round item.
 
-Cost curves in the classic sense (Schreiber, §12) put every cost and benefit into one currency; this is the same idea with time as part of the currency: the currency is "headroom over the next 10 waves".
+Cost curves in the classic sense (Schreiber, §12) put every cost and benefit into one currency; this is the same idea with time as part of the currency: the currency is "headroom over the coming waves, the nearer ones weighing more".
 
 ### 1.3 Requirements and situational effects
 
@@ -454,7 +454,7 @@ B0–B3 give a usable report before M8, with formulas and hand estimates. B4 mak
 7. **Simulation:** the full simulation is part of M8.
 
 **Still open (defaults proposed):**
-1. The horizon of the value curve: 10 waves.
+1. The horizon of the value curve: weights 0.9^k over the rest of the run (about 10 waves' worth).
 2. The penalty exponent: 0.3 (b = 0.55 → −16%, b = 0.08 → −53%).
 3. The outlier flag: ±25% of the budget.
 4. A budget for castles and Points of Interest. **Decided for POIs:** 15 points (`Pools.PoiBudget`, between a Common and an Uncommon treasure); a POI with a risk may pay more when it works out. Castles: still open.
@@ -489,7 +489,7 @@ No source found a formal method for the timing problem (flat vs scaling value). 
 | Reference boards (B1) | `Balance/ReferenceBoards.cs` | 7 variants (Mixed, SingleTarget, Area, DamageOverTime, Mana, CannonLine, Tall). Tower mixes are set at waves 1/10/20/30/40 and interpolated. The gold invested follows the wave model's income (kills, tower types, tree chops). Mana buildings cover 90% of the board's mana demand |
 | Evaluator (B1) | `Balance/Evaluator.cs` | §3–§4: per tower group, hits × damage per hit (harmonic over the wave's layer mix) × crit × reliability (accuracy, overkill, mana) × targets (density) × active time. Also damage over time with tick caps and pops, slow and freeze equilibria, leaks, and a separate boss check (waves 15/25/35/45) combined by a soft minimum |
 | Atoms and specs (B1–B2) | `Balance/Spec.cs`, `Balance/Specs/ContentSpecs.cs`, `Balance/Specs/VanillaCards.cs` | about 70 atom kinds; vanilla cards are translated from their serialized fields, read in game by reflection |
-| Valuation (B1) | `Balance/Valuation.cs` | value curve over the offer window (horizon 10 waves), 80th percentile, timing breadth, situational breadth, split by category |
+| Valuation (B1) | `Balance/Valuation.cs` | value curve over the offer window (weights 0.9^k over the rest of the run), 80th percentile, timing breadth, situational breadth, split by category |
 | Report (B1) | `Balance/Report.cs` | markdown and CSV; the console detail per item |
 | In game (B3) | `Balance/Game/BalanceGame.cs`, `BalanceOverlay.cs`, `Debugging/BalanceScenarios.cs` | `balance <id or title>`, `balance report`, `balance coverage`, `balance pathstats`; the offer overlay (setting `Debug.BalanceOverlay`: points in the title of offered treasures, `+` over budget and `-` under, and under the text of level-up cards); scenarios `balance` (coverage, sanity) and `balance-area` (Tesla coverage and Mortar hits on dummies, path statistics) |
 | Tests | `tests/TreasureRun.Tests/BalanceTests.cs` | the sanity checks of §8, coverage, vanilla translation, the offline preview |

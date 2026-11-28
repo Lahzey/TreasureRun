@@ -289,5 +289,43 @@ namespace TreasureRun.Tests
             Directory.CreateDirectory(dir);
             File.WriteAllText(Path.Combine(dir, "lizard-nest.txt"), sb.ToString());
         }
+
+        /// <summary>Laboratory: rating by research per wave, and the value curve by wave. Writes tests/out/laboratory.txt.</summary>
+        [Test, Explicit]
+        public void LaboratoryLevers()
+        {
+            var sb = new StringBuilder();
+            foreach (bool idle in new[] { true })
+                foreach (double p in new[] { 0.01, 0.03, 0.05, 0.08 })
+                {
+                    Spec s = ContentSpecs.Laboratory(p, idle);
+                    Rating r = Valuation.Rate("laboratory", "Laboratory", "poi", null, false, s);
+                    sb.Append($"{p:0%} per wave{(idle ? ", idle copy" : ", no cost  ")}: {r.Points:0.0} (P80 {r.P80:0.0}, early {r.Early:0.0}, late {r.Late:0.0}, peak {r.PeakWave}) {r.Flag} |");
+                    for (int w = 2; w <= 45; w += 3) sb.Append($" {w}:{Valuation.Value(s, w, s.Variant):0.0}");
+                    sb.AppendLine();
+                }
+            // Where the value comes from at 5%: the main kind (no mana) and its share of the tower gold, research and the idle copy apart.
+            Spec five = ContentSpecs.Laboratory(0.05);
+            sb.AppendLine("wave | main kind | its gold share | research | idle copy | research at +10 waves");
+            for (int a = 2; a <= 44; a += 6)
+            {
+                Board b = ReferenceBoards.Get(a, BoardVariant.CannonLine);
+                TowerGroup main = null;
+                double total = 0;
+                foreach (TowerGroup g in b.Scope(null))
+                {
+                    total += b.GroupCost(g);
+                    TowerInfo t = TowerData.Get(g.Kind);
+                    if (g.Count > 0 && t.ManaRate <= 0 && t.ManaPerSecond <= 0 && (main == null || b.GroupCost(g) > b.GroupCost(main))) main = g;
+                }
+                double research = Valuation.Value(five, a, BoardVariant.CannonLine, x => x.Category == Category.Offense);
+                double idle = Valuation.Value(five, a, BoardVariant.CannonLine, x => x.Category == Category.Economy);
+                double later = Valuation.PointsAt(five, a, System.Math.Min(45, a + 10), BoardVariant.CannonLine, x => x.Category == Category.Offense);
+                sb.AppendLine($"{a,3} | {main?.Kind} x{main?.Count:0.#} | {(main != null ? b.GroupCost(main) / total : 0):0%} | {research:0.0} | {idle:0.0} | {later:0.0}");
+            }
+            string dir = Path.Combine(TestContext.CurrentContext.TestDirectory, "..", "..", "..", "..", "out");
+            Directory.CreateDirectory(dir);
+            File.WriteAllText(Path.Combine(dir, "laboratory.txt"), sb.ToString());
+        }
     }
 }

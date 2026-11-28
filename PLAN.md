@@ -175,7 +175,7 @@ Treasures that turn a tower into something new. They share an exclusion group pe
 Next: phase 1 (Repeater, Springald, Lone Scout, Chain Lightning, Supercharge, Sealed Fate, Nest of Bats). Design intent: [docs/ascensions.txt](docs/ascensions.txt); implementation plan (framework, card presentation, models, sounds, offline tests): [docs/ascension-plan.md](docs/ascension-plan.md).
 
 ## 7. Points of interest
-**Design and system (M8): [docs/poi-plan.md](docs/poi-plan.md).** Built: omens (the POI's icon on an Expand button, rolled for every new button, can't be removed), whole 7×7 sections generated for any exit combination, budget 15 points; the POIs so far are the **Lightning Trap**, the **Wandering Merchant** (Normal, Legendary, Ascension), the **Soul Urn**, the **Wizard's Tower** and the **Lizard Nest**. The original notes:
+**Design and system (M8): [docs/poi-plan.md](docs/poi-plan.md).** Built: omens (the POI's icon on an Expand button, rolled for every new button, can't be removed), whole 7×7 sections generated for any exit combination, budget 15 points; the POIs so far are the **Lightning Trap**, the **Wandering Merchant** (Normal, Legendary, Ascension), the **Soul Urn**, the **Wizard's Tower**, the **Lizard Nest** and the **Laboratory**. The original notes:
 - Tiles are placed by the player during the run, so POIs come along with new tiles:
   - postfix on `TileManager.SpawnNewTile`
   - roll a chance via `Luck` (category `POI`)
@@ -216,7 +216,7 @@ Next: phase 1 (Repeater, Springald, Lone Scout, Chain Lightning, Supercharge, Se
 | **M6 Main tower** | Play menu overhaul, castle framework, 10 castles (more to come) |
 | **M7 Ascensions** | Radar/BiPlane → Strike Fighter / Carpet Bomber / War Blimp (done); infrastructure (done); then the other towers in three phases ([docs/ascension-plan.md](docs/ascension-plan.md)) |
 | **M7.5 Balance framework** | Power points for every card, treasure, tower and building: effect atoms, formulas on authored reference boards, value at a good moment, situational factor, rarity budgets, report ([docs/balance-framework.md](docs/balance-framework.md), steps B0–B3). Done: report in [docs/balance-report.md](docs/balance-report.md) |
-| **M8 POIs** | System and the first POIs (Lightning Trap, Wandering Merchant, Soul Urn, Wizard's Tower, Lizard Nest) built ([docs/poi-plan.md](docs/poi-plan.md)); more POIs; the full balance simulation alongside (balance framework B4) |
+| **M8 POIs** | System and the first POIs (Lightning Trap, Wandering Merchant, Soul Urn, Wizard's Tower, Lizard Nest, Laboratory) built ([docs/poi-plan.md](docs/poi-plan.md)); more POIs; the full balance simulation alongside (balance framework B4) |
 | **M9 Content & balance** | 150+ treasures, Prism of Ascendance, Mythicals, release; recorded reference boards for the final balance touches (balance framework B5) |
 | **M10 Save/resume** | Between-wave save and load for Treasure Run, then optionally for vanilla mode |
 

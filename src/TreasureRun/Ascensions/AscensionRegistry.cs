@@ -151,6 +151,7 @@ namespace TreasureRun.Ascensions
             AscensionTarget? target = AscensionTargets.Of(go);
             if (!target.HasValue) return;
             if (go.GetComponent<Castles.SiegeCastleTower>() != null) return; // the Siege Workshop's castle cannon stays a castle weapon
+            if (Pois.LabSpecimen.Is(go)) return; // a Laboratory's specimen is only a model
             AscensionDef def = Owned(target.Value);
             if (def?.Component == null || go.GetComponent(def.Component) != null) return;
             var comp = (AscendedTower)go.AddComponent(def.Component);

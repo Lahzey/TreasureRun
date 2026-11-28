@@ -179,6 +179,8 @@ namespace VoxTool
             { "pois/hatchling/body2", VoxTool.Recipes.LizardRecipes.HatchlingBody2 },
             { "pois/hatchling/body3", VoxTool.Recipes.LizardRecipes.HatchlingBody3 },
             { "pois/hatchling/fin", VoxTool.Recipes.LizardRecipes.HatchlingFin },
+            { "pois/laboratory", VoxTool.Recipes.LabRecipes.Laboratory },
+            { "pois/laboratory_active", VoxTool.Recipes.LabRecipes.LaboratoryActive },
             { "pois/merchant/normal_wagon", VoxTool.Recipes.MerchantRecipes.NormalWagon },
             { "pois/merchant/normal_awning", VoxTool.Recipes.MerchantRecipes.NormalAwning },
             { "pois/merchant/normal_shutter", VoxTool.Recipes.MerchantRecipes.NormalShutter },

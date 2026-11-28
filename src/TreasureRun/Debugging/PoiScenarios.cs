@@ -11,7 +11,7 @@ namespace TreasureRun.Debugging
     /// <summary>Points of Interest (docs/poi-plan.md): omens, generated sections for every exit combination, the Lightning Trap.</summary>
     internal static class PoiScenarios
     {
-        public static IEnumerable<Scenario> All => new Scenario[] { new PoiSectionsScenario(), new LightningTrapScenario(), new MerchantScenario(), new SoulUrnScenario(), new WizardTowerScenario(), new LizardNestScenario() };
+        public static IEnumerable<Scenario> All => new Scenario[] { new PoiSectionsScenario(), new LightningTrapScenario(), new MerchantScenario(), new SoulUrnScenario(), new WizardTowerScenario(), new LizardNestScenario(), new LaboratoryScenario() };
 
         /// <summary>Lets the running wave end (killing everything) so the Expand buttons are open again.</summary>
         public static IEnumerator OpenButtons(ScenarioContext c)
@@ -70,8 +70,11 @@ namespace TreasureRun.Debugging
             if (site != null) result.Add(site);
         }
 
-        /// <summary>Checks a built section against its layout: heights and path cells by raycast, waypoints linked.</summary>
-        public static void CheckSection(ScenarioContext c, PoiSite site)
+        /// <summary>
+        /// Checks a built section against its layout: heights and path cells by raycast, waypoints linked. An
+        /// <paramref name="open"/> reserved cell is one the structure leaves buildable (the Laboratory's chamber): grass.
+        /// </summary>
+        public static void CheckSection(ScenarioContext c, PoiSite site, (int x, int z)? open = null)
         {
             SectionLayout l = site.Layout;
             int wrong = 0;
@@ -82,7 +85,7 @@ namespace TreasureRun.Debugging
                     if (!Physics.Raycast(new Vector3(p.x, 40f, p.z), Vector3.down, out RaycastHit hit, 80f, ~0, QueryTriggerInteraction.Ignore)) { wrong++; continue; }
                     string layer = LayerMask.LayerToName(hit.collider.gameObject.layer);
                     if (l.IsPath(x, z)) { if (layer != "Path") wrong++; }
-                    else if (l.Cells[x, z] == SectionCell.Reserved) { if (layer == "Grass" || layer == "Path") wrong++; }
+                    else if (l.Cells[x, z] == SectionCell.Reserved && open != (x, z)) { if (layer == "Grass" || layer == "Path") wrong++; }
                     else if (layer != "Grass" || Mathf.Abs(hit.point.y - l.Height[x, z] / 3f) > 0.05f) wrong++;
                 }
             c.Expect(wrong == 0, $"terrain matches the layout ({wrong} cells wrong)");

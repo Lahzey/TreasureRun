@@ -57,6 +57,13 @@ namespace TreasureRun.Pois
 
         public bool IsOpen => open != null;
 
+        /// <summary>Closes the popup if it is open (e.g. after its action removed what it was about).</summary>
+        public void Close()
+        {
+            if (open != null && UIManager.instance != null) UIManager.instance.CloseUI(open.gameObject);
+            open = null;
+        }
+
         public void Show(Vector3 at)
         {
             // A click on the open popup's own slider or button also hits whatever lies behind it: don't reopen then.

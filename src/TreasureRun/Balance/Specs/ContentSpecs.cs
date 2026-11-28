@@ -192,6 +192,7 @@ namespace TreasureRun.Balance
             ["soul_urn"] = SoulUrn,
             ["wizard_tower"] = () => WizardTower(global::TreasureRun.Pois.WizardTowerLogic.Power),
             ["lizard_nest"] = () => LizardNest(1),
+            ["laboratory"] = () => Laboratory(global::TreasureRun.Pois.LaboratoryLogic.PerWave),
         };
 
         /// <summary>
@@ -227,6 +228,50 @@ namespace TreasureRun.Balance
                 .Because($"a random spell every 5 s at monsters within {(global::TreasureRun.Pois.WizardTowerLogic.Range):0} cells (fireball, lightning, ice spikes 3 in 11.4 each, tornado and " +
                          "necromancy 1, goldify 0.4); damage fixed by wave, solved for 15 points per wave (probe BalanceProbe.WizardTowerPower). " +
                          "The ley link (10 mana/s for a spell every 4 s) needs the Ley Line Network and isn't rated");
+        }
+
+        /// <summary>
+        /// The Laboratory: from the wave after it appears, the main tower kind of the board it appeared on is studied (the
+        /// one with the most gold in it among the towers that need no mana: faster attacks don't cost more mana, the lab's
+        /// good case): one more copy bought for the chamber, idle, and <paramref name="perWave"/> more attack speed per wave
+        /// since on every tower of that kind. Buildings' output and the Lookout's mark are the other uses; attack speed is
+        /// the one a player picks.
+        /// </summary>
+        public static Spec Laboratory(double perWave, bool idleCopy = true)
+        {
+            return S.Custom(Category.Offense, $"research: {perWave:+0%} attack speed per wave on the main tower kind", c =>
+                {
+                    int waves = c.Wave - c.Acquired;
+                    TowerKind? kind = MainKind(c.Acquired, c.Board.Variant);
+                    if (waves <= 0 || kind == null) return;
+                    foreach (TowerGroup g in c.Board.Scope(kind)) g.Bonus.RateFactor *= 1 + perWave * waves;
+                })
+                .Custom(Category.Economy, "one copy of it idle in the chamber", c =>
+                {
+                    if (c.Wave <= c.Acquired || !idleCopy) return;
+                    Board then = ReferenceBoards.Get(c.Acquired, c.Board.Variant);
+                    TowerKind? kind = MainKind(c.Acquired, c.Board.Variant);
+                    if (kind == null) return;
+                    c.Mods.ExtraGold -= then.Price(kind.Value, then.Group(kind.Value)?.Count ?? 0);
+                })
+                .Offered(global::TreasureRun.Pois.LaboratoryLogic.MinWave)
+                .Situational(BoardVariant.CannonLine, 0.8, "best on a board built round one tower kind without mana costs; on mana boards faster attacks cost mana")
+                .Because($"the main tower kind without mana costs studied from the next wave: {perWave:0%} more attack speed per wave for the rest of the run, " +
+                         "one copy of it bought for the chamber and idle (refunded when sold, not counted)");
+        }
+
+        /// <summary>The tower kind without mana costs with the most gold in it on a reference board (fixed sources aside).</summary>
+        private static TowerKind? MainKind(int wave, BoardVariant variant)
+        {
+            Board b = ReferenceBoards.Get(wave, variant);
+            TowerGroup best = null;
+            foreach (TowerGroup g in b.Scope(null))
+            {
+                TowerInfo t = TowerData.Get(g.Kind);
+                if (g.Count <= 0 || t.ManaRate > 0 || t.ManaPerSecond > 0) continue;
+                if (best == null || b.GroupCost(g) > b.GroupCost(best)) best = g;
+            }
+            return best?.Kind;
         }
 
         /// <summary>

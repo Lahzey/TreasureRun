@@ -99,6 +99,18 @@ From [balance-report.md](balance-report.md) (M7.5). **No balance changes yet:** 
   - The tornado pushes monsters back into his reach and other towers' reach again: stronger than the slow model suggests?
 - **Uncalibrated:** `Reach` 0.85, `GroupBonus` 1.3, the tornado slow's factor 0.5, the necromancy's kill share x2, goldify's x2 toughness.
 
+**Laboratory** (docs/poi-plan.md §9): 8.3 points against 15 (P80 10.2, early 5.2, late 3.8, peak at wave 21): under, at +5% per wave (chosen in play; the copy in the chamber always costs like a tower).
+- **Rated in its good case:** the "cannon line" board (one tower kind without mana costs carries most of the gold; breadth 0.8). On the mixed board the main kind without mana costs is the Mortar from wave 20 with 12-25% of the tower gold, so research on it moves little; and on a mana tower faster attacks cost more mana.
+- **Rate by research per wave** (with the new value curve below, probe `BalanceProbe.LaboratoryLevers`, tests/out/laboratory.txt): 1% -3.2, 3% 3.4, **5% 8.3**, 8% 15.3.
+- **The idle copy** costs most when the main kind is expensive and few: at wave 11-14 the cannon line's main kind turns from the Ballista to the Cannon (one 750-gold copy idle), the dip in the curve.
+- **The Lookout's mark and the buildings' output aren't rated** (attack speed is the use a player picks). Check in play whether +5% a wave on a Haunted House or a University gets strong late.
+- **Check in play:** which kinds players study; whether swapping the specimen to spread research gets used (a tower sells for the latest copy's price, a building for what it cost); whether the lab taking the section's middle 3x3, with the path round it, costs good tower spots.
+
+**The value curve now looks past ten waves** (changed for the Laboratory): V(a) is the weighted average of the points over the rest of the run, wave a + k weighing 0.9^k (to a weight of 0.05). The weights add up to about ten waves, so steady items rate about the same; growing ones count their later waves. Ratings fitted on the old flat 10-wave horizon are off and wait for the final framework (their offline tests are skipped, `PoiTests.OldHorizon`):
+- the merchants' prices (the fair-value fit is now 19% off) and the Legendary Merchant's rating (20.3, over);
+- the Soul Urn's gold (now 0.82 of a chest's worth).
+The balance report is regenerated with it: 36 items over budget and 470 under (30 and 467 before).
+
 **Lizard Nest** (docs/poi-plan.md §8): 18.1 points against 15 (P80 18.9, early 10.9, late 17.9).
 - **The chest dominates:** it counts from the wave after the nest's wave, nine of the ten waves the framework looks at, while the risk is a single wave. So the value is about a treasure pick less a tenth of that wave's extra toughness, and the only lever that moves it much is the lizards' toughness (probe `BalanceProbe.LizardNestLevers`, tests/out/lizard-nest.txt): 6 times the wave's average monster rated 19.6 (over budget), 12 times 18.1.
 - **Its risk shrinks over the run.** Each lizard is a fixed multiple of the wave's average monster (as asked), but the waves grow faster than the lizards' count: the nest adds 240% of its wave's hit points at wave 3, about 100% at 10, 50% at 20, 40% at 30 and 20% at 40. Early it is a hard trade (value 10.9 from wave 3), late an almost free chest. Options if that feels wrong: start the omens later (wave 5 or 6), or let the toughness factor grow with the wave.

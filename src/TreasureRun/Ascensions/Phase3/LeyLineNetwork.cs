@@ -228,6 +228,7 @@ namespace TreasureRun.Ascensions.Phase3
             timer = 1f;
             ResourceManager.instance.AddMana(Income);
             Gathered += Income;
+            Pois.LabResearch.ExtraMana(this, Income); // a Laboratory's siphon research
         }
     }
 

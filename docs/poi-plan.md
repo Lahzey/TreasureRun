@@ -1,6 +1,6 @@
 # Points of Interest (M8): design and system
 
-**Status:** the system is built; the **Lightning Trap** (§4), the **Wandering Merchant** (§5, three kinds), the **Soul Urn** (§6), the **Wizard's Tower** (§7) and the **Lizard Nest** (§8) are in the game. Decisions are in §2. Code is in `src/TreasureRun/Pois`, and PLAN.md §7 links here.
+**Status:** the system is built; the **Lightning Trap** (§4), the **Wandering Merchant** (§5, three kinds), the **Soul Urn** (§6), the **Wizard's Tower** (§7), the **Lizard Nest** (§8) and the **Laboratory** (§9) are in the game. Decisions are in §2. Code is in `src/TreasureRun/Pois`, and PLAN.md §7 links here.
 
 Points of Interest (POIs) are special map sections that turn up while the map grows tile by tile. Each one has its own function. Their randomness and rarity make every map feel like a place with a story.
 
@@ -97,6 +97,7 @@ From the vanilla code (`TileManager`, `TileSpawnLocation`, `SpawnManager`):
 | `SoulUrn.cs`, `SoulUrnLogic.cs`, `SoulRune.cs`, `SoulFx.cs` | the Soul Urn: site, charging and rewards; size, rewards, soul flight and section style (pure); the soulfire rune (attack speed, War Blimp deck); effects |
 | `WizardTower.cs`, `WizardTowerLogic.cs`, `WizardSpells.cs`, `WizardLand.cs` | the Wizard's Tower: site, casting and the ley link; spells, weights, targeting, damage, section style and balance inputs (pure); the spells and their effects; his land (blocked building, the shine) |
 | `LizardNest.cs`, `LizardNestLogic.cs`, `NestCreatures.cs` | the Lizard Nest: site, its wave and the chest; counts, stats by wave, the nest's cell and where its lizards join the path (pure); the lizards and hatchlings (vanilla monsters with our animated models) |
+| `Laboratory.cs`, `LaboratoryLogic.cs`, `LabResearch.cs` | the Laboratory: site, chamber and looks, the specimen; research numbers, yields and section style (pure); research per kind, the stat provider, the buildings' yields, the build and stats hooks |
 | `PoiReach.cs` | a POI's reach drawn like a tower's range (Soul Urn, Wizard's Tower) |
 | `Core/FixedDamageLogic.cs`, `Combat.FixedHit` | fixed POI damage: exact, split over the layers like vanilla, untouched by treasures and cards |
 | `Treasures/TreasureSale.cs` | selling treasures (used by the merchant) |
@@ -121,6 +122,7 @@ From the vanilla code (`TileManager`, `TileSpawnLocation`, `SpawnManager`):
   - `poi souls [n]` sends n souls into the nearest charging Soul Urn (from random points around it); `poi fill [chest|gold|rune]` fills it at once, with that reward or a random one.
   - `poi cast [fireball|lightning|ice|tornado|necromancy|goldify]` makes the nearest Wizard's Tower cast now (that spell, if it has a target; else a random one).
   - `poi hatch` hatches the nearest waiting Lizard Nest now (during a wave).
+  - `poi research [n]` makes the nearest Laboratory with something in its chamber research n waves now.
   - `cells <x> <z> [step]` prints a tile's height map.
   - `dump <object>` prints its hierarchy.
 - **Settings:** `PointsOfInterest.Enabled`, `PointsOfInterest.OmenChance`, `Debug.PoiForce` (every new button gets an omen).
@@ -130,6 +132,7 @@ From the vanilla code (`TileManager`, `TileSpawnLocation`, `SpawnManager`):
   - `poi-soul-urn`: the urn's cell blocked; its size for the wave and lane; souls from kills in reach (dummies on its path); the popup and its reach circle (radius 7, gone with the popup); gold (the formula at the urn's first wave, the cell free afterwards), a chest, a rune (+100%: a Ballista on it shoots twice as fast and wears the shell, its neighbour doesn't); a War Blimp's Radar on the rune (the deck shows the rune, the deck's Ballista gets the bonus, both wear the shell); screenshots of souls, reach, burst, chest, rune, shell and deck.
   - `poi-wizard-tower`: the tower's cell (off the edge and the path); its gadgets (16 chimney segments, the anemometer turning by itself); a spell winding up first (no second one meanwhile), the bulge travelling up the chimney, the fireball flying as the Magma Lobber's ball, lightning spiralling up the rod; every grass cell of his land refused; the shine, the motes, the popup and its reach; each spell on dummies: the fireball on the group (blast and burn exact), lightning on the shield (exact), the same with four damage treasures owned (still exact; a Lightning Trap strike too), three ice spikes on three dummies (exact, slowed), the tornado dragging a dummy back up the path but not a boss, a slain dummy rising in the aura, goldify on the toughest (not the boss; a statue, then 25 times its kill gold); an ascension that can't be sold or removed; the ley link (a siphon on his land next to the tower, a feed pipe; between waves idle without mana and ready with it; the popup naming its 10 mana per second; 10 mana/s drained in a wave, a spell every 4 s); screenshots of the tower, land, popup, the chimney's bulge, the rod's spiral, the crystal winding up, each spell and the link.
   - `poi-lizard-nest`: the map grown away from the castle first, so the fast hatchlings have a long way to go; the nest's cell beside the path and blocked; its way onto the path; it hatches in the wave it was found; the lizards out within their gaps, their health, armor, speed and castle damage for the wave, our model in place of the vanilla art, walking onto the path and on, legs moving; a lizard slain: its brood (count, health, speed, starting where it fell and on its way, the hatchling model, wriggling off); a slain hatchling spawns nothing; the popup; after the wave a chest in the nest, the nest still blocking; no lizards in the next wave; screenshots of the nest hatching, a lizard (and a close-up), the burst, a hatchling close-up, the brood, the popup and the chest.
+  - `poi-laboratory`: the lab in the middle with the path round it; its eight cells refused, the chamber free; camera rays aimed at the chamber's floor (they meet the lab's near boxes first) show the build ghost in the chamber; a Ballista built into it through the vanilla build path: counted for the price (the next Ballista 10g -> 25g) but not as a tower, its behaviour and colliders off, neither aiming, shooting nor learning for 4 s with a monster in front of it; the lab lit; a wave start: every other Ballista +5% attack speed, five waves five times that, the specimen untouched; the popup with the research and a sell button; selling: the copy's refund, the chamber free, the lab dark, the research kept; a Radar in the chamber sends no plane; a Mana Siphon studied: after 4 waves (+20%) a siphon's 20 gathers bring 24 mana instead of 20, the studied one sells for its 100g; 20 waves of Haunted House research: its tax doubled, the tax rate itself restored; 50 waves of Lookout research grow its multipliers; screenshots idle, active, research and popup.
   - `poi-merchant`: all three merchants; wagon cells blocked; stock by kind; prices by the formula; selling (with the confirmation, unsellable treasures refused); buying all three at the Normal merchant (the last asks first, then it packs up, the closed wagon still blocks); one purchase at the Legendary (it stays) and at the Ascension Merchant (it leaves); wagon and shop screenshots per skin.
 
 ### 3.6 Balance
@@ -391,7 +394,35 @@ A nest of giant lizards beside the path: a risk in the wave it is found, a treas
   - The chest counts from the next wave (a treasure pick), and their kill gold as gold.
   - The chest dominates (the risk is one wave of the ten-wave horizon), so the lever was the lizards' toughness: at 6 times the wave's average monster the nest rated 19.6 (over budget), at 12 times 18.1 (probe `BalanceProbe.LizardNestLevers`, tests/out/lizard-nest.txt).
 
-## 9. POI ideas (for later batches)
+## 9. Laboratory (built)
+
+A lab in the middle of its section. Whatever stands in its chamber is studied: its kind gets a little better at every wave start, for good.
+
+- **Section:** the lab takes the centre 3x3 cells (`LaboratoryStyle`, reserved before routing). The routes meet in the cell in front of the entry and run round the lab, so for every exit combination the path rings it on one or both sides and the monsters walk round it.
+  - The eight outer cells are blocked for good: solid boxes on the Building layer; a click opens the popup.
+  - The **chamber** (the centre cell) is the one cell of the lab that can be built on, while it is empty. The camera's ray to the chamber's floor meets the near boxes first, so the build ghost looks past them (`Laboratory.ChamberUnder`, a `SamplePoint` hook): aimed at the chamber over the lab, it shows in the chamber.
+- **The chamber:** any tower or building goes in the usual way (a click, a shift-click, a paint stroke; the build hook in `LabPatches`) and becomes a **specimen** (`LabSpecimen`), only a model:
+  - it does nothing at all: its behaviours and colliders are off, its stats are never computed (so a Radar sends no plane), ascensions don't attach to it (it shows the vanilla model), and the mod doesn't count it as a tower (tower counts, neighbours, "on build" treasures). A click on it opens the lab's popup (the chamber gets a box while it is full);
+  - a tower still sits in its kind's flyweight, so **it counts for the price** like any copy and sells like one (the latest copy's price); a building refunds what was paid for it;
+  - selling it (the popup's button) frees the chamber for a different one.
+- **Research** (`LabResearch`, kept in the run's counters per kind): at the start of every wave the kind in the chamber gains a wave of research, **+5%** (`LaboratoryLogic.PerWave`), kept for the rest of the run whatever the chamber holds later (several labs add up). A floating text names the kind and its research ("Ballista: +35% attack speed").
+  - **Attacking towers:** +5% attack speed per wave for every tower of the kind (StatLayer percent, so it adds to other percent bonuses).
+  - **The Lookout** (it never fires): +5% mark per wave, on its damage and its health, armor and shield multipliers, which the mark adds to every hit (small whole numbers, rounded like every percent bonus: 10 waves turn a x2 into a x3).
+  - **Buildings** (Mana Siphon, Mana Bank, Mine, University, Haunted House): +5% output per wave (`LabYieldPatches`). Their prices stay: a discount would make them free in the end (a free Mana Bank would break the Arcane Tower).
+    - Siphons and Banks gather that much more mana, the fraction carried to the next second (`LaboratoryLogic.Yield`; a siphon's 1 mana a second at +20% gives an extra mana every 5 seconds). Ley Line siphons too (from their own tick).
+    - A Haunted House taxes at that much higher a rate (raised only while it collects).
+    - A Mine's 10% repair chance and a University's three roll chances (its percentages plus the card bonus) grow by that much (`LaboratoryLogic.Chance`, at most certain).
+- **Looks:** dark while the chamber is empty. While something is in it the lab powers up: the model switches to its lit palette (the tank's fluid, the orbs, the screens, the chamber's ring), beams reach out from the four emitter orbs to the specimen, a scanning ring rides up and down it, a glow ring pulses on the floor and bubbles rise in the tank. Each wave of research flashes it all.
+  - **Model** (`pois/laboratory`, `pois/laboratory_active`, 30 x 30 x 24 at 0.1 = the 3x3 cells, `tools/VoxTool/Recipes/LabRecipes.cs`): tiles with a steel curb and hazard stripes; four emitter pylons at the corners (steel shafts wound with copper, brass collars, orbs leaning over the chamber), tall at the back and low in front; a tank of fluid with something curled up inside; a workbench with flasks and test tubes; a low console of screens and levers; a row of capacitors. The middle, where a tower's base stands, holds only the chamber's plate. World-aligned, so the tall parts are always at the back.
+  - Omen icon `poi/laboratory`: a little stone tower in a glass chamber, two emitter pylons beaming at it, a scanning ring.
+- **Sounds** (`tools/SfxTool/Recipes/LabSounds.cs`, `pois/laboratory/...`):
+  - `power_up` (1.4 s): a relay click, the lab's hum swelling in as its filters open, a charging whine gliding up, a crackle as the emitters take, a glassy ping as the field locks on;
+  - `power_down` (1 s): the relay, the hum sagging and closing down, the whine falling away;
+  - `research` (1.2 s): the tank bubbling and a little rising run of glassy pings (C, E, G, C).
+- **Popup:** what it studies and how far, the rule, other kinds researched, and a Sell button with the refund. Empty: the rule and the research so far.
+- **Balance** (`ContentSpecs.Laboratory`): **8.3 points** against 15, under the budget (P80 10.2). Rated in its good case, the "cannon line" board (one tower kind without mana costs carrying most of the gold; breadth 0.8): the main kind without mana costs studied from the wave after it appears, +5% attack speed per wave on it, one copy of it bought for the chamber and idle. Omens from wave 2. Notes in balance-todo.md.
+
+## 10. POI ideas (for later batches)
 
 Rule check: none is purely negative. Each risky one pays more when handled. The size is now the whole section; "structure" says what the POI places in it.
 
@@ -436,11 +467,12 @@ Rule check: none is purely negative. Each risky one pays more when handled. The 
 
 ---
 
-## 10. Next
+## 11. Next
 - Play the Lightning Trap: drag its slider with the mouse, check the arcs and the X-ray in play, the strike sound, and its damage against the real waves (balance-todo.md).
 - Play the merchants: the prices against the real gold (early Legendary Merchants especially), whether selling gets used, the shop window with the mouse.
 - Play the Soul Urn: how long it takes to fill with a real kill zone, the rune on strong towers and on a War Blimp's Radar.
 - Play the Lizard Nest: how risky its wave feels early (a 2,000-health lizard at wave 3) and late (five lizards and 75 hatchlings), whether the hatchlings leak, the chest's worth against that risk.
+- Play the Laboratory: whether +5% per wave feels right (it rates 8.3, balance-todo.md), which kinds players study and whether they swap, the lab's look and beams at the default zoom.
 - Play the Wizard's Tower: his strength early (about 15 points from wave 3) and late (below the budget), whether the tornado and goldify feel special, the ley link's 10 mana/s against its 25% more spells, building round his land.
 - The next POIs, one at a time; each needs an icon, a spec and a scenario.
 - The balance simulation (framework B4) alongside, as planned for M8.

@@ -48,6 +48,7 @@ namespace TreasureRun.Pois
             all.Add(SoulUrn.Create());
             all.Add(WizardTower.Create());
             all.Add(LizardNest.Create());
+            all.Add(Laboratory.Create());
         }
 
         /// <summary>POIs whose omen can appear at a wave.</summary>
